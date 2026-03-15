@@ -1,0 +1,969 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  :root {
+    --bg: #0a0c0f;
+    --bg2: #0f1318;
+    --bg3: #151b24;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8e6df;
+    --muted: #6b7380;
+    --accent: #c8a96e;
+    --accent2: #e8c47a;
+    --green: #3ecf8e;
+    --red: #e8534a;
+    --blue: #4a9eff;
+    --font: 'DM Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    line-height: 1.5;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 28px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo-group {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .logo-mark {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #c8a96e 0%, #8b6d3a 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: #0a0c0f;
+    letter-spacing: -0.5px;
+  }
+
+  .logo-text {
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--text);
+  }
+
+  .logo-sub {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--green);
+    letter-spacing: 0.05em;
+  }
+
+  .live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .date-label {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+
+  .nav-tabs {
+    display: flex;
+    gap: 0;
+    padding: 0 28px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    overflow-x: auto;
+  }
+
+  .nav-tab {
+    padding: 12px 18px;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: color 0.15s;
+    user-select: none;
+  }
+
+  .nav-tab:hover { color: var(--text); }
+  .nav-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .page { display: none; padding: 24px 28px 40px; }
+  .page.active { display: block; }
+
+  .section-title {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .metric-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+
+  .metric-label {
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .metric-value {
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--text);
+    font-family: var(--mono);
+    line-height: 1.2;
+  }
+
+  .metric-value.green { color: var(--green); }
+  .metric-value.red { color: var(--red); }
+  .metric-value.gold { color: var(--accent2); }
+  .metric-value.blue { color: var(--blue); }
+
+  .metric-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .card-title {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    letter-spacing: 0.02em;
+  }
+
+  .chart-wrap {
+    position: relative;
+    width: 100%;
+    height: 220px;
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 680px) { .two-col { grid-template-columns: 1fr; } }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  thead th {
+    text-align: left;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 0 10px 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-weight: 400;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+    cursor: pointer;
+  }
+
+  tbody tr:hover { background: rgba(255,255,255,0.02); }
+  tbody tr:last-child { border-bottom: none; }
+
+  tbody td {
+    padding: 10px 10px 10px 0;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 11px;
+    vertical-align: middle;
+  }
+
+  tbody td.label {
+    font-family: var(--font);
+    font-size: 12px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    font-family: var(--font);
+    font-weight: 500;
+  }
+
+  .badge-green { background: rgba(62,207,142,0.12); color: #3ecf8e; }
+  .badge-red { background: rgba(232,83,74,0.12); color: #e8534a; }
+  .badge-gold { background: rgba(232,196,122,0.12); color: #e8c47a; }
+  .badge-blue { background: rgba(74,158,255,0.12); color: #4a9eff; }
+  .badge-gray { background: rgba(255,255,255,0.06); color: #6b7380; }
+
+  .bar-track {
+    background: rgba(255,255,255,0.05);
+    border-radius: 2px;
+    height: 4px;
+    width: 100%;
+    margin-top: 6px;
+  }
+
+  .bar-fill {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--accent);
+  }
+
+  .bar-fill.green { background: var(--green); }
+  .bar-fill.red { background: var(--red); }
+
+  .win-loss-viz {
+    display: flex;
+    gap: 2px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .wl-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+  }
+
+  .separator {
+    height: 1px;
+    background: var(--border);
+    margin: 20px 0;
+  }
+
+  .row-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+
+  .row-label:last-child { border-bottom: none; }
+
+  .stat-key { color: var(--muted); }
+
+  .player-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .player-row:last-child { border-bottom: none; }
+
+  .avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2a3a52, #1a2a3c);
+    border: 1px solid var(--border2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .player-info { flex: 1; }
+  .player-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .player-meta { font-size: 11px; color: var(--muted); }
+
+  .donut-wrap {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .asset-bar {
+    display: flex;
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 8px 0;
+  }
+</style>
+
+<div class="header">
+  <div class="logo-group">
+    <div class="logo-mark">BSC</div>
+    <div>
+      <div class="logo-text">Black Sky Capital</div>
+      <div class="logo-sub">KFC Hedge Fund</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+    <div class="date-label">15.03.2026</div>
+  </div>
+</div>
+
+<div class="nav-tabs">
+  <div class="nav-tab active" onclick="switchTab('overview')">Overview</div>
+  <div class="nav-tab" onclick="switchTab('positions')">Positions</div>
+  <div class="nav-tab" onclick="switchTab('investors')">Investors</div>
+  <div class="nav-tab" onclick="switchTab('analytics')">Analytics</div>
+</div>
+
+<!-- OVERVIEW PAGE -->
+<div class="page active" id="page-overview">
+  <div class="metric-grid">
+    <div class="metric-card">
+      <div class="metric-label">Fund NAV</div>
+      <div class="metric-value gold">$3.23B</div>
+      <div class="metric-sub">Net asset value</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Total P&L</div>
+      <div class="metric-value green">+$1.183B</div>
+      <div class="metric-sub">Realised + Unrealised</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Total Return</div>
+      <div class="metric-value green">+57.72%</div>
+      <div class="metric-sub">On $2.05B deposited</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Win Rate</div>
+      <div class="metric-value gold">86.96%</div>
+      <div class="metric-sub">20 wins / 3 losses</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Realised P&L</div>
+      <div class="metric-value green">+$1.140B</div>
+      <div class="metric-sub">23 closed trades</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Unrealised P&L</div>
+      <div class="metric-value green">+$43.08M</div>
+      <div class="metric-sub">2 open positions</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Margin Deployed</div>
+      <div class="metric-value blue">$195.27M</div>
+      <div class="metric-sub">On open positions</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Notional Exposure</div>
+      <div class="metric-value blue">$3.905B</div>
+      <div class="metric-sub">Total leveraged</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">P&L Breakdown</span>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="pnlChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Asset Class Allocation</span>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="assetChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Trade Outcomes</span></div>
+      <div class="row-label">
+        <span class="stat-key">Take Profit Hits</span>
+        <span style="color: var(--green); font-family: var(--mono);">16 / 23</span>
+      </div>
+      <div class="row-label">
+        <span class="stat-key">Stop Loss Hits</span>
+        <span style="color: var(--red); font-family: var(--mono);">4 / 23</span>
+      </div>
+      <div class="row-label">
+        <span class="stat-key">Closed (other)</span>
+        <span style="font-family: var(--mono);">3 / 23</span>
+      </div>
+      <div class="row-label">
+        <span class="stat-key">Active Positions</span>
+        <span style="color: var(--blue); font-family: var(--mono);">2</span>
+      </div>
+      <div class="separator" style="margin: 12px 0;"></div>
+      <div style="font-size: 10px; color: var(--muted); margin-bottom: 8px; letter-spacing: 0.06em; text-transform: uppercase;">Win / Loss Heatmap</div>
+      <div class="win-loss-viz" id="wlViz"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Risk Metrics</span></div>
+      <div class="row-label">
+        <span class="stat-key">Profit Factor</span>
+        <span style="color: var(--green); font-family: var(--mono);">7.22×</span>
+      </div>
+      <div class="row-label">
+        <span class="stat-key">Sharpe Ratio</span>
+        <span style="font-family: var(--mono);">0.62</span>
+      </div>
+      <div class="row-label">
+        <span class="stat-key">Expectancy / Trade</span>
+        <span style="color: var(--green); font-family: var(--mono);">$49.6M</span>
+      </div>
+      <div class="row-label">
+        <span class="stat-key">Avg Hold Period</span>
+        <span style="font-family: var(--mono);">1.09 days</span>
+      </div>
+      <div class="row-label">
+        <span class="stat-key">Max Potential Loss</span>
+        <span style="color: var(--red); font-family: var(--mono);">$225.3M</span>
+      </div>
+      <div class="row-label">
+        <span class="stat-key">Active Liquidations</span>
+        <span style="color: var(--green); font-family: var(--mono);">0</span>
+      </div>
+      <div class="row-label">
+        <span class="stat-key">Current Drawdown</span>
+        <span style="color: var(--green); font-family: var(--mono);">$0</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- POSITIONS PAGE -->
+<div class="page" id="page-positions">
+  <div style="margin-bottom: 16px; display: flex; gap: 8px; align-items: center;">
+    <span class="badge badge-blue">2 OPEN</span>
+    <span class="badge badge-gray">23 CLOSED</span>
+    <span style="font-size: 11px; color: var(--muted); margin-left: 8px;">25 total trades</span>
+  </div>
+
+  <div class="card" style="margin-bottom: 16px;">
+    <div class="card-header"><span class="card-title">Open Positions</span><span class="live-badge"><div class="live-dot"></div>LIVE</span></div>
+    <div style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Asset</th>
+            <th>Side</th>
+            <th>Entry</th>
+            <th>Current</th>
+            <th>Qty</th>
+            <th>Lev</th>
+            <th>Unrealised P&L</th>
+            <th>SL</th>
+            <th>TP</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>24</td>
+            <td class="label">Oil Futures</td>
+            <td><span class="badge badge-green">LONG</span></td>
+            <td>97.633</td>
+            <td>98.71</td>
+            <td>1,200,000</td>
+            <td>20×</td>
+            <td style="color: var(--green);">+$25.85M</td>
+            <td style="color: var(--red);">92.00</td>
+            <td style="color: var(--green);">148.50</td>
+            <td><span class="badge badge-blue">ACTIVE</span></td>
+          </tr>
+          <tr>
+            <td>25</td>
+            <td class="label">Oil Futures</td>
+            <td><span class="badge badge-green">LONG</span></td>
+            <td>97.633</td>
+            <td>98.71</td>
+            <td>800,000</td>
+            <td>20×</td>
+            <td style="color: var(--green);">+$17.23M</td>
+            <td style="color: var(--red);">92.00</td>
+            <td style="color: var(--green);">138.00</td>
+            <td><span class="badge badge-blue">ACTIVE</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">Closed Positions</span></div>
+    <div style="overflow-x: auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Asset</th>
+            <th>Class</th>
+            <th>Side</th>
+            <th>Entry</th>
+            <th>Exit</th>
+            <th>Hold</th>
+            <th>P&L ($)</th>
+            <th>Result</th>
+          </tr>
+        </thead>
+        <tbody id="closedBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- INVESTORS PAGE -->
+<div class="page" id="page-investors">
+  <div class="metric-grid" style="margin-bottom: 20px;">
+    <div class="metric-card">
+      <div class="metric-label">Total Deposits</div>
+      <div class="metric-value gold">$2.050B</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Total Withdrawals</div>
+      <div class="metric-value">$0</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Investors</div>
+      <div class="metric-value">2</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Fund Transactions</div>
+      <div class="metric-value">2</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">Investor Roster</span></div>
+    <div class="player-row">
+      <div class="avatar">K</div>
+      <div class="player-info">
+        <div class="player-name">Kimmo</div>
+        <div class="player-meta">Fund Manager · Deposited 01 Mar 2026</div>
+      </div>
+      <div style="text-align: right;">
+        <div style="font-family: var(--mono); font-size: 13px; color: var(--accent);">$2.000B</div>
+        <div style="font-size: 11px; color: var(--muted);">97.56% of fund</div>
+        <span class="badge badge-green" style="margin-top: 4px;">UNLOCKED</span>
+      </div>
+    </div>
+    <div class="player-row">
+      <div class="avatar">A</div>
+      <div class="player-info">
+        <div class="player-name">Andre</div>
+        <div class="player-meta">Investor · Deposited 12 Mar 2026</div>
+      </div>
+      <div style="text-align: right;">
+        <div style="font-family: var(--mono); font-size: 13px; color: var(--accent);">$50.0M</div>
+        <div style="font-size: 11px; color: var(--muted);">2.44% of fund</div>
+        <span class="badge badge-red" style="margin-top: 4px;">LOCKED · 27d</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Fund Ownership</span></div>
+      <div style="margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px;">
+          <span style="color: var(--muted);">Kimmo</span>
+          <span style="font-family: var(--mono);">97.56%</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width: 97.56%; background: var(--accent);"></div></div>
+      </div>
+      <div>
+        <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px;">
+          <span style="color: var(--muted);">Andre</span>
+          <span style="font-family: var(--mono);">2.44%</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width: 2.44%; background: var(--blue);"></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">P&L Share (Pro-rata)</span></div>
+      <div class="row-label">
+        <span class="stat-key">Kimmo P&L Share</span>
+        <span style="color: var(--green); font-family: var(--mono);">+$1.154B</span>
+      </div>
+      <div class="row-label">
+        <span class="stat-key">Andre P&L Share</span>
+        <span style="color: var(--green); font-family: var(--mono);">+$28.86M</span>
+      </div>
+      <div class="row-label">
+        <span class="stat-key">Andre Unlock Date</span>
+        <span style="font-family: var(--mono);">11 Apr 2026</span>
+      </div>
+      <div class="row-label">
+        <span class="stat-key">Andre Net Payout</span>
+        <span style="color: var(--accent); font-family: var(--mono);">$78.86M</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ANALYTICS PAGE -->
+<div class="page" id="page-analytics">
+  <div class="two-col">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Best vs Worst Trades</span></div>
+      <div class="row-label">
+        <span class="stat-key">Best Trade</span>
+        <span style="color: var(--green); font-family: var(--mono);">+$408.4M</span>
+      </div>
+      <div class="row-label">
+        <span class="stat-key">Worst Trade</span>
+        <span style="color: var(--red); font-family: var(--mono);">-$121.0M</span>
+      </div>
+      <div class="row-label">
+        <span class="stat-key">Avg Win</span>
+        <span style="color: var(--green); font-family: var(--mono);">+$66.2M</span>
+      </div>
+      <div class="row-label">
+        <span class="stat-key">Avg Loss</span>
+        <span style="color: var(--red); font-family: var(--mono);">-$61.1M</span>
+      </div>
+      <div class="row-label">
+        <span class="stat-key">Avg P&L per Trade</span>
+        <span style="color: var(--green); font-family: var(--mono);">+$51.4M</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Stake Factor Scale</span></div>
+      <div id="stakeTable"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">Trade P&L by Position</span></div>
+    <div class="chart-wrap" style="height: 280px;">
+      <canvas id="plBarChart"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><span class="card-title">P&L by Asset Class</span></div>
+    <div class="chart-wrap" style="height: 220px;">
+      <canvas id="assetPnlChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const isDark = true;
+
+const positions = [
+  {id:1,status:'Closed',class:'Stock',ticker:'Stock',side:'Long',entry:307.98,exit:305.56,qty:2500000,lev:20,pnl:-121000000,hold:3,result:'STOP LOSS HIT'},
+  {id:2,status:'Closed',class:'Stock',ticker:'Stock',side:'Long',entry:278.53,exit:273.5,qty:575000,lev:20,pnl:-57845000,hold:0,result:'STOP LOSS HIT'},
+  {id:3,status:'Closed',class:'Forex',ticker:'AUD/USD',side:'Short',entry:0.7798,exit:0.777,qty:300000000,lev:20,pnl:16800000,hold:2,result:'STOP LOSS HIT'},
+  {id:4,status:'Closed',class:'Futures',ticker:'Gold',side:'Long',entry:5106.38,exit:5234,qty:160000,lev:20,pnl:408384000,hold:1,result:'TAKE PROFIT HIT'},
+  {id:5,status:'Closed',class:'Forex',ticker:'AUD/USD',side:'Short',entry:0.77852,exit:0.7759,qty:500000000,lev:15,pnl:19650000,hold:1,result:'TAKE PROFIT HIT'},
+  {id:6,status:'Closed',class:'Futures',ticker:'Gold',side:'Long',entry:5078,exit:5172,qty:140000,lev:20,pnl:263200000,hold:0,result:'TAKE PROFIT HIT'},
+  {id:7,status:'Closed',class:'Crypto',ticker:'BTC',side:'Long',entry:70509.74,exit:71230,qty:15000,lev:20,pnl:216078000,hold:0,result:'TAKE PROFIT HIT'},
+  {id:8,status:'Closed',class:'Futures',ticker:'Oil',side:'Long',entry:78.585,exit:86.28,qty:500000,lev:10,pnl:38475000,hold:0,result:'TAKE PROFIT HIT'},
+  {id:9,status:'Closed',class:'Crypto',ticker:'BTC',side:'Short',entry:70755.2,exit:69975,qty:7200,lev:20,pnl:112348800,hold:0,result:'TAKE PROFIT HIT'},
+  {id:10,status:'Closed',class:'Futures',ticker:'Oil',side:'Long',entry:85.43,exit:90.16,qty:15000,lev:20,pnl:1419000,hold:1,result:'TAKE PROFIT HIT'},
+  {id:11,status:'Closed',class:'Futures',ticker:'Oil',side:'Long',entry:87.13,exit:96.49,qty:25000,lev:10,pnl:2340000,hold:3,result:'TAKE PROFIT HIT'},
+  {id:12,status:'Closed',class:'Index',ticker:'Nikkei',side:'Short',entry:22748.99,exit:22387.68,qty:18000,lev:10,pnl:65035260,hold:3,result:'CLOSED'},
+  {id:13,status:'Closed',class:'Forex',ticker:'AUD/USD',side:'Short',entry:0.7817,exit:0.776,qty:400000000,lev:10,pnl:22800000,hold:0,result:'TAKE PROFIT HIT'},
+  {id:14,status:'Closed',class:'Stock',ticker:'Stock',side:'Long',entry:212.415,exit:214.5,qty:1500000,lev:10,pnl:31275000,hold:5,result:'TAKE PROFIT HIT'},
+  {id:15,status:'Closed',class:'Crypto',ticker:'BTC',side:'Short',entry:72775.14,exit:72150,qty:8000,lev:10,pnl:50011200,hold:0,result:'TAKE PROFIT HIT'},
+  {id:16,status:'Closed',class:'Stock',ticker:'Netflix',side:'Short',entry:98.875,exit:98.1,qty:6000000,lev:10,pnl:46500000,hold:0,result:'CLOSED'},
+  {id:17,status:'Closed',class:'Index',ticker:'SPX',side:'Short',entry:6869.5,exit:6835,qty:25000,lev:10,pnl:8625000,hold:0,result:'TAKE PROFIT HIT'},
+  {id:18,status:'Closed',class:'Futures',ticker:'Oil',side:'Long',entry:78.78,exit:79.2,qty:750000,lev:20,pnl:6300000,hold:0,result:'TAKE PROFIT HIT'},
+  {id:19,status:'Closed',class:'Forex',ticker:'USD/JPY',side:'Short',entry:157,exit:156.72,qty:800000,lev:20,pnl:4480000,hold:1,result:'TAKE PROFIT HIT'},
+  {id:20,status:'Closed',class:'Crypto',ticker:'BTC',side:'Short',entry:73988,exit:73370.54,qty:1000,lev:5,pnl:3087300,hold:0,result:'CLOSED'},
+  {id:21,status:'Closed',class:'Stock',ticker:'Stock',side:'Short',entry:1599.5,exit:1570,qty:5000,lev:10,pnl:1475000,hold:1,result:'TAKE PROFIT HIT'},
+  {id:22,status:'Closed',class:'ETF',ticker:'ETF',side:'Long',entry:20.69,exit:20.47,qty:800000,lev:25,pnl:-4400000,hold:1,result:'STOP LOSS HIT'},
+  {id:23,status:'Closed',class:'Futures',ticker:'Oil',side:'Long',entry:70.9,exit:76,qty:100000,lev:10,pnl:5100000,hold:3,result:'TAKE PROFIT HIT'},
+];
+
+function fmtNum(n) {
+  if (Math.abs(n) >= 1e9) return (n/1e9).toFixed(2)+'B';
+  if (Math.abs(n) >= 1e6) return (n/1e6).toFixed(1)+'M';
+  if (Math.abs(n) >= 1e3) return (n/1e3).toFixed(0)+'K';
+  return n.toFixed(0);
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('page-'+name).classList.add('active');
+}
+
+// Win/Loss dots
+(function() {
+  const viz = document.getElementById('wlViz');
+  const results = [
+    'STOP','STOP','TP','TP','TP','TP','TP','TP','TP','TP',
+    'CLOSE','TP','TP','TP','TP','CLOSE','TP','TP','TP','CLOSE',
+    'TP','STOP','TP'
+  ];
+  results.forEach(r => {
+    const d = document.createElement('div');
+    d.className = 'wl-dot';
+    d.style.background = r === 'TP' ? '#3ecf8e' : r === 'STOP' ? '#e8534a' : '#4a9eff';
+    d.title = r;
+    viz.appendChild(d);
+  });
+})();
+
+// Stake table
+(function() {
+  const tb = document.getElementById('stakeTable');
+  const levels = [
+    [1,'1×','$5'],
+    [2,'10×','$50'],
+    [3,'100×','$500'],
+    [4,'1,000×','$5,000'],
+    [5,'10,000×','$50,000'],
+    [6,'100,000×','$500,000'],
+    [7,'1,000,000×','$5M'],
+    [8,'10,000,000×','$50M'],
+  ];
+  levels.forEach(([l,m,b]) => {
+    const row = document.createElement('div');
+    row.className = 'row-label';
+    row.innerHTML = `<span class="stat-key">Level ${l}</span><span style="font-family:var(--mono);font-size:11px;"><span style="color:var(--accent);">${m}</span> · Min ${b}</span>`;
+    tb.appendChild(row);
+  });
+})();
+
+// Closed positions table
+(function() {
+  const tbody = document.getElementById('closedBody');
+  positions.forEach(p => {
+    const tr = document.createElement('tr');
+    const isWin = p.pnl > 0;
+    const resultBadge = p.result === 'TAKE PROFIT HIT' ? 'badge-green' : p.result === 'STOP LOSS HIT' ? 'badge-red' : 'badge-blue';
+    const resultLabel = p.result === 'TAKE PROFIT HIT' ? 'TP HIT' : p.result === 'STOP LOSS HIT' ? 'SL HIT' : 'CLOSED';
+    tr.innerHTML = `
+      <td>${p.id}</td>
+      <td class="label">${p.class} · ${p.ticker}</td>
+      <td class="label">${p.class}</td>
+      <td><span class="badge ${p.side==='Long'?'badge-green':'badge-red'}">${p.side.toUpperCase()}</span></td>
+      <td>${p.entry}</td>
+      <td>${p.exit}</td>
+      <td>${p.hold}d</td>
+      <td style="color:${isWin?'var(--green)':'var(--red)'};">${isWin?'+':''}$${fmtNum(p.pnl)}</td>
+      <td><span class="badge ${resultBadge}">${resultLabel}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+})();
+
+// Chart defaults
+Chart.defaults.color = '#6b7380';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+Chart.defaults.font.family = "'DM Mono', monospace";
+Chart.defaults.font.size = 11;
+
+// P&L Doughnut
+new Chart(document.getElementById('pnlChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Realised P&L', 'Unrealised P&L', 'Capital Deployed'],
+    datasets: [{
+      data: [1140.1, 43.1, 2050],
+      backgroundColor: ['#3ecf8e', '#4a9eff', 'rgba(255,255,255,0.08)'],
+      borderColor: ['#0f1318'],
+      borderWidth: 3,
+      hoverOffset: 4
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '70%',
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` $${ctx.parsed.toFixed(1)}M`
+        }
+      }
+    }
+  }
+});
+
+// Asset class doughnut
+const assetPnl = {Futures:726218000,Crypto:381525300,Forex:63729999,Stock:-43895000,Index:73660260,ETF:-4400000};
+new Chart(document.getElementById('assetChart'), {
+  type: 'doughnut',
+  data: {
+    labels: Object.keys(assetPnl),
+    datasets: [{
+      data: Object.values(assetPnl).map(v => Math.abs(v)/1e6),
+      backgroundColor: ['#c8a96e','#4a9eff','#3ecf8e','#e8534a','#9b8dd4','#6b7380'],
+      borderColor: ['#0f1318'],
+      borderWidth: 3,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '70%',
+    plugins: { legend: { display: false } }
+  }
+});
+
+// P&L Bar
+new Chart(document.getElementById('plBarChart'), {
+  type: 'bar',
+  data: {
+    labels: positions.map(p => `#${p.id}`),
+    datasets: [{
+      data: positions.map(p => +(p.pnl/1e6).toFixed(1)),
+      backgroundColor: positions.map(p => p.pnl > 0 ? 'rgba(62,207,142,0.7)' : 'rgba(232,83,74,0.7)'),
+      borderRadius: 3,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: '#6b7380' } },
+      y: {
+        grid: { color: 'rgba(255,255,255,0.05)' },
+        ticks: { color: '#6b7380', callback: v => '$'+v+'M' }
+      }
+    }
+  }
+});
+
+// Asset class P&L
+const assetLabels = Object.keys(assetPnl);
+const assetVals = Object.values(assetPnl).map(v => +(v/1e6).toFixed(1));
+new Chart(document.getElementById('assetPnlChart'), {
+  type: 'bar',
+  data: {
+    labels: assetLabels,
+    datasets: [{
+      label: 'P&L ($M)',
+      data: assetVals,
+      backgroundColor: assetVals.map(v => v > 0 ? 'rgba(62,207,142,0.7)' : 'rgba(232,83,74,0.7)'),
+      borderRadius: 4,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: '#6b7380' } },
+      y: {
+        grid: { color: 'rgba(255,255,255,0.05)' },
+        ticks: { color: '#6b7380', callback: v => '$'+v+'M' }
+      }
+    }
+  }
+});
+</script>
