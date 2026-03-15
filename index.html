@@ -500,71 +500,79 @@ async function fetchSheet(sheetId, apiKey, tabName) {
 }
 
 function parseFundMeasures(rows) {
+  // Google Sheets returns all columns — label is in col B (index 1), value in col C (index 2)
+  // But also try col A (index 0) as label in case sheet structure differs
   const map = {};
-  rows.forEach(row => { if(row[1]&&row[2]!==undefined) map[row[1].trim()]=row[2]; });
+  rows.forEach(row => {
+    // Try B/C first (index 1/2)
+    if (row[1] && row[2] !== undefined && row[2] !== '') map[row[1].toString().trim()] = row[2];
+    // Also try A/B (index 0/1) as fallback
+    if (row[0] && row[1] !== undefined && row[1] !== '' && !map[row[0]]) map[row[0].toString().trim()] = row[1];
+  });
 
-  // Raw number — strips $, commas, spaces. Handles negatives in parens e.g. (121,000,000)
-  const num = k => {
-    let v = (map[k]||'0').toString().trim();
-    if (!v || v === '—' || v === '') return 0;
-    const neg = v.startsWith('(') && v.endsWith(')');
-    v = v.replace(/[$()\s,]/g,'');
-    const n = parseFloat(v) || 0;
+  const clean = v => {
+    if (!v && v !== 0) return 0;
+    const s = v.toString().trim();
+    if (!s || s === '—' || s === '') return 0;
+    const neg = s.startsWith('(') && s.endsWith(')');
+    const n = parseFloat(s.replace(/[$()\s,]/g,'')) || 0;
     return neg ? -n : n;
   };
 
-  // Percentage — Google Sheets may return "57.72%" or "0.5772" or "57.72"
-  // We always want a decimal like 0.5772
-  const pct = k => {
-    let v = (map[k]||'0').toString().trim();
-    if (!v || v === '—') return 0;
-    if (v.endsWith('%')) {
-      // "57.72%" → 0.5772
-      return parseFloat(v.replace('%','')) / 100;
-    }
-    const n = parseFloat(v.replace(/[,$]/g,'')) || 0;
-    // If already a decimal like 0.5772, return as-is
-    // If it looks like a whole number percent like 57.72, divide by 100
+  const pct = v => {
+    const s = (v||'0').toString().trim();
+    if (!s || s === '—') return 0;
+    if (s.endsWith('%')) return parseFloat(s.replace('%','')) / 100;
+    const n = clean(v);
     return Math.abs(n) > 1 ? n / 100 : n;
   };
 
   return {
-    nav:              num('Fund NAV ($)'),
-    totalPnl:         num('Total P&L ($)'),
-    realisedPnl:      num('Realised P&L ($)'),
-    unrealisedPnl:    num('Unrealised P&L ($)'),
-    totalReturn:      pct('Total Return (%)'),
-    winRate:          pct('Win Rate (%)'),
-    totalDeposited:   num('Total Capital Deposited ($)'),
-    fundBalance:      num('Current Fund Balance ($)'),
-    peakBalance:      num('Peak Fund Balance ($)'),
-    drawdown:         num('Current Drawdown ($)'),
-    maxLoss:          num('Max Potential Loss ($)'),
-    notional:         num('Total Notional Exposure ($)'),
-    marginDeployed:   num('Margin Deployed ($)'),
-    activeLiquidations: num('Active Liquidations'),
-    totalTrades:      num('Total Trades (Closed)'),
-    winTrades:        num('Winning Trades'),
-    lossTrades:       num('Losing Trades'),
-    tpHits:           num('Take Profit Hits (Closed)'),
-    slHits:           num('Stop Loss Hits (Closed)'),
-    profitFactor:     num('Profit Factor'),
-    sharpe:           num('Sharpe Ratio (trade-based)'),
-    expectancy:       num('Expectancy ($ per trade)'),
-    avgHold:          num('Avg Hold Period — Closed (days)'),
-    bestTrade:        num('Best Trade ($)'),
-    worstTrade:       num('Worst Trade ($)'),
-    avgWin:           num('Average Winning Trade ($)'),
-    avgLoss:          num('Average Losing Trade ($)'),
-    avgPnlPerTrade:   num('Average P&L per Trade ($)'),
+    nav:              clean(map['Fund NAV ($)']),
+    totalPnl:         clean(map['Total P&L ($)']),
+    realisedPnl:      clean(map['Realised P&L ($)']),
+    unrealisedPnl:    clean(map['Unrealised P&L ($)']),
+    totalReturn:      pct(map['Total Return (%)']),
+    winRate:          pct(map['Win Rate (%)']),
+    totalDeposited:   clean(map['Total Capital Deposited ($)']),
+    fundBalance:      clean(map['Current Fund Balance ($)']),
+    peakBalance:      clean(map['Peak Fund Balance ($)']),
+    drawdown:         clean(map['Current Drawdown ($)']),
+    maxLoss:          clean(map['Max Potential Loss ($)']),
+    notional:         clean(map['Total Notional Exposure ($)']),
+    marginDeployed:   clean(map['Margin Deployed ($)']),
+    activeLiquidations: clean(map['Active Liquidations']),
+    totalTrades:      clean(map['Total Trades (Closed)']),
+    winTrades:        clean(map['Winning Trades']),
+    lossTrades:       clean(map['Losing Trades']),
+    tpHits:           clean(map['Take Profit Hits (Closed)']),
+    slHits:           clean(map['Stop Loss Hits (Closed)']),
+    profitFactor:     clean(map['Profit Factor']),
+    sharpe:           clean(map['Sharpe Ratio (trade-based)']),
+    expectancy:       clean(map['Expectancy ($ per trade)']),
+    avgHold:          clean(map['Avg Hold Period — Closed (days)']),
+    bestTrade:        clean(map['Best Trade ($)']),
+    worstTrade:       clean(map['Worst Trade ($)']),
+    avgWin:           clean(map['Average Winning Trade ($)']),
+    avgLoss:          clean(map['Average Losing Trade ($)']),
+    avgPnlPerTrade:   clean(map['Average P&L per Trade ($)']),
   };
 }
 
 function parsePositions(rows) {
   let hi = rows.findIndex(r=>r[0]==='#');
   if(hi<0) return [];
-  const clean = v => parseFloat((v||'0').toString().replace(/[,$%\s]/g,'').replace(/[()]/g,'')) || 0;
-  return rows.slice(hi+1).filter(r=>r[0]&&!isNaN(parseInt(r[0]))&&r[2]).map(r=>({
+  const clean = v => {
+    if (!v && v !== 0) return 0;
+    const s = v.toString().trim();
+    const neg = s.startsWith('(') && s.endsWith(')');
+    const n = parseFloat(s.replace(/[$()\s,]/g,'')) || 0;
+    return neg ? -n : n;
+  };
+  return rows.slice(hi+1).filter(r => {
+    // Must have a row number, a valid status and an asset class
+    return r[0] && !isNaN(parseInt(r[0])) && r[1] && (r[1]==='Open'||r[1]==='Closed') && r[2] && r[2].trim() !== '' && r[2].trim() !== '-';
+  }).map(r=>({
     id:      parseInt(r[0]),
     status:  r[1]||'',
     cls:     r[2]||'',
@@ -574,12 +582,7 @@ function parsePositions(rows) {
     qty:     clean(r[7]),
     lev:     clean(r[8]),
     exit:    clean(r[14]),
-    pnl:     (() => {
-      const v = (r[16]||'0').toString().trim();
-      const neg = v.startsWith('(') && v.endsWith(')');
-      const n = parseFloat(v.replace(/[$()\s,]/g,'')) || 0;
-      return neg ? -n : n;
-    })(),
+    pnl:     clean(r[16]),
     hold:    clean(r[20]),
     sl:      r[21] ? clean(r[21]) : null,
     tp:      r[22] ? clean(r[22]) : null,
