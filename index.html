@@ -502,49 +502,113 @@ async function fetchSheet(sheetId, apiKey, tabName) {
 function parseFundMeasures(rows) {
   const map = {};
   rows.forEach(row => { if(row[1]&&row[2]!==undefined) map[row[1].trim()]=row[2]; });
-  const num = k => parseFloat((map[k]||'0').toString().replace(/[,$%]/g,''))||0;
+
+  // Raw number — strips $, commas, spaces. Handles negatives in parens e.g. (121,000,000)
+  const num = k => {
+    let v = (map[k]||'0').toString().trim();
+    if (!v || v === '—' || v === '') return 0;
+    const neg = v.startsWith('(') && v.endsWith(')');
+    v = v.replace(/[$()\s,]/g,'');
+    const n = parseFloat(v) || 0;
+    return neg ? -n : n;
+  };
+
+  // Percentage — Google Sheets may return "57.72%" or "0.5772" or "57.72"
+  // We always want a decimal like 0.5772
+  const pct = k => {
+    let v = (map[k]||'0').toString().trim();
+    if (!v || v === '—') return 0;
+    if (v.endsWith('%')) {
+      // "57.72%" → 0.5772
+      return parseFloat(v.replace('%','')) / 100;
+    }
+    const n = parseFloat(v.replace(/[,$]/g,'')) || 0;
+    // If already a decimal like 0.5772, return as-is
+    // If it looks like a whole number percent like 57.72, divide by 100
+    return Math.abs(n) > 1 ? n / 100 : n;
+  };
+
   return {
-    nav:num('Fund NAV ($)'), totalPnl:num('Total P&L ($)'), realisedPnl:num('Realised P&L ($)'),
-    unrealisedPnl:num('Unrealised P&L ($)'), totalReturn:num('Total Return (%)'),
-    winRate:num('Win Rate (%)'), totalDeposited:num('Total Capital Deposited ($)'),
-    fundBalance:num('Current Fund Balance ($)'), peakBalance:num('Peak Fund Balance ($)'),
-    drawdown:num('Current Drawdown ($)'), maxLoss:num('Max Potential Loss ($)'),
-    notional:num('Total Notional Exposure ($)'), marginDeployed:num('Margin Deployed ($)'),
-    activeLiquidations:num('Active Liquidations'), totalTrades:num('Total Trades (Closed)'),
-    winTrades:num('Winning Trades'), lossTrades:num('Losing Trades'),
-    tpHits:num('Take Profit Hits (Closed)'), slHits:num('Stop Loss Hits (Closed)'),
-    profitFactor:num('Profit Factor'), sharpe:num('Sharpe Ratio (trade-based)'),
-    expectancy:num('Expectancy ($ per trade)'), avgHold:num('Avg Hold Period — Closed (days)'),
-    bestTrade:num('Best Trade ($)'), worstTrade:num('Worst Trade ($)'),
-    avgWin:num('Average Winning Trade ($)'), avgLoss:num('Average Losing Trade ($)'),
-    avgPnlPerTrade:num('Average P&L per Trade ($)'),
+    nav:              num('Fund NAV ($)'),
+    totalPnl:         num('Total P&L ($)'),
+    realisedPnl:      num('Realised P&L ($)'),
+    unrealisedPnl:    num('Unrealised P&L ($)'),
+    totalReturn:      pct('Total Return (%)'),
+    winRate:          pct('Win Rate (%)'),
+    totalDeposited:   num('Total Capital Deposited ($)'),
+    fundBalance:      num('Current Fund Balance ($)'),
+    peakBalance:      num('Peak Fund Balance ($)'),
+    drawdown:         num('Current Drawdown ($)'),
+    maxLoss:          num('Max Potential Loss ($)'),
+    notional:         num('Total Notional Exposure ($)'),
+    marginDeployed:   num('Margin Deployed ($)'),
+    activeLiquidations: num('Active Liquidations'),
+    totalTrades:      num('Total Trades (Closed)'),
+    winTrades:        num('Winning Trades'),
+    lossTrades:       num('Losing Trades'),
+    tpHits:           num('Take Profit Hits (Closed)'),
+    slHits:           num('Stop Loss Hits (Closed)'),
+    profitFactor:     num('Profit Factor'),
+    sharpe:           num('Sharpe Ratio (trade-based)'),
+    expectancy:       num('Expectancy ($ per trade)'),
+    avgHold:          num('Avg Hold Period — Closed (days)'),
+    bestTrade:        num('Best Trade ($)'),
+    worstTrade:       num('Worst Trade ($)'),
+    avgWin:           num('Average Winning Trade ($)'),
+    avgLoss:          num('Average Losing Trade ($)'),
+    avgPnlPerTrade:   num('Average P&L per Trade ($)'),
   };
 }
 
 function parsePositions(rows) {
   let hi = rows.findIndex(r=>r[0]==='#');
   if(hi<0) return [];
-  return rows.slice(hi+1).filter(r=>r[0]&&!isNaN(parseInt(r[0]))&&r[3]).map(r=>({
-    id:parseInt(r[0]), status:r[1]||'', cls:r[2]||'', ticker:r[3]||'', side:r[4]||'',
-    entry:parseFloat(r[6])||0, qty:parseFloat((r[7]||'').replace(/,/g,''))||0,
-    lev:parseFloat(r[8])||1, exit:parseFloat(r[14])||0,
-    pnl:parseFloat((r[16]||'').replace(/,/g,''))||0,
-    hold:parseFloat(r[20])||0, sl:parseFloat(r[21])||null, tp:parseFloat(r[22])||null,
-    result:r[31]||'',
+  const clean = v => parseFloat((v||'0').toString().replace(/[,$%\s]/g,'').replace(/[()]/g,'')) || 0;
+  return rows.slice(hi+1).filter(r=>r[0]&&!isNaN(parseInt(r[0]))&&r[2]).map(r=>({
+    id:      parseInt(r[0]),
+    status:  r[1]||'',
+    cls:     r[2]||'',
+    ticker:  r[3]||'',
+    side:    r[4]||'',
+    entry:   clean(r[6]),
+    qty:     clean(r[7]),
+    lev:     clean(r[8]),
+    exit:    clean(r[14]),
+    pnl:     (() => {
+      const v = (r[16]||'0').toString().trim();
+      const neg = v.startsWith('(') && v.endsWith(')');
+      const n = parseFloat(v.replace(/[$()\s,]/g,'')) || 0;
+      return neg ? -n : n;
+    })(),
+    hold:    clean(r[20]),
+    sl:      r[21] ? clean(r[21]) : null,
+    tp:      r[22] ? clean(r[22]) : null,
+    result:  r[31]||'',
   }));
 }
 
 function parseInvestors(rows) {
   let hi = rows.findIndex(r=>r[0]==='#');
   if(hi<0) return [];
+  const clean = v => parseFloat((v||'0').toString().replace(/[,$%\s()]/g,'')) || 0;
+  const pct = v => {
+    const s = (v||'0').toString().trim();
+    if (s.endsWith('%')) return parseFloat(s.replace('%','')) / 100;
+    const n = clean(v);
+    return Math.abs(n) > 1 ? n / 100 : n;
+  };
   return rows.slice(hi+1).filter(r=>r[1]&&r[1].trim()).map(r=>({
-    name:r[1], depositDate:r[2]||'', lockDays:parseFloat(r[3])||0,
-    daysToUnlock:parseFloat(r[5])||0, status:r[6]||'',
-    deposited:parseFloat((r[7]||'').replace(/,/g,''))||0,
-    withdrawn:parseFloat((r[8]||'').replace(/,/g,''))||0,
-    balance:parseFloat((r[9]||'').replace(/,/g,''))||0,
-    pct:parseFloat(r[10])||0, pnlShare:parseFloat((r[12]||'').replace(/,/g,''))||0,
-    netPayout:parseFloat((r[17]||'').replace(/,/g,''))||null,
+    name:         r[1],
+    depositDate:  r[2]||'',
+    lockDays:     clean(r[3]),
+    daysToUnlock: clean(r[5]),
+    status:       r[6]||'',
+    deposited:    clean(r[7]),
+    withdrawn:    clean(r[8]),
+    balance:      clean(r[9]),
+    pct:          pct(r[10]),
+    pnlShare:     clean(r[12]),
+    netPayout:    r[17] ? clean(r[17]) : null,
   }));
 }
 
