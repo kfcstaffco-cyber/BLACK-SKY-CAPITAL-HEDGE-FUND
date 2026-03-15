@@ -3,14 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Black Sky Capital · KFC Hedge Fund</title>
+  <title>Black Sky Capital</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
       --bg:      #0a0c0f;
       --bg2:     #0f1318;
@@ -27,51 +25,75 @@
       --font:    'DM Sans', sans-serif;
       --mono:    'DM Mono', monospace;
     }
-
     html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 13px; line-height: 1.5; min-height: 100vh; }
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--font);
-      font-size: 13px;
-      line-height: 1.5;
-      min-height: 100vh;
-    }
-
-    /* ── HEADER ── */
-    .header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 18px 28px;
-      border-bottom: 1px solid var(--border);
-      background: var(--bg);
-      position: sticky;
-      top: 0;
-      z-index: 200;
-    }
-    .logo-group { display: flex; align-items: center; gap: 14px; }
-    .logo-mark {
-      width: 38px; height: 38px;
-      background: linear-gradient(135deg, #c8a96e 0%, #8b6d3a 100%);
-      border-radius: 9px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 13px; font-weight: 700; color: #0a0c0f; letter-spacing: -0.5px;
-    }
-    .logo-text  { font-size: 15px; font-weight: 500; letter-spacing: 0.02em; }
-    .logo-sub   { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 1px; }
-    .header-right { display: flex; align-items: center; gap: 20px; }
-    .live-badge { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--green); letter-spacing: 0.08em; }
-    .live-dot   { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s ease-in-out infinite; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
-    .date-label { font-size: 11px; color: var(--muted); font-family: var(--mono); }
-
-    /* ── LOADING / ERROR STATES ── */
-    #loading-screen {
-      position: fixed; inset: 0;
-      background: var(--bg);
+    /* ── PASSWORD SCREEN ── */
+    #pw-screen {
+      position: fixed; inset: 0; background: var(--bg);
       display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 9999; gap: 0;
+    }
+    .pw-box {
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: 16px;
+      padding: 48px 52px;
+      width: 100%; max-width: 400px;
+      display: flex; flex-direction: column; align-items: center; gap: 28px;
+    }
+    .pw-logo {
+      width: 56px; height: 56px;
+      background: linear-gradient(135deg, #c8a96e 0%, #8b6d3a 100%);
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 700; color: #0a0c0f;
+      font-family: var(--mono); letter-spacing: -1px;
+    }
+    .pw-title { font-size: 18px; font-weight: 500; color: var(--text); text-align: center; }
+    .pw-sub   { font-size: 12px; color: var(--muted); text-align: center; margin-top: -16px; letter-spacing: 0.04em; }
+    .pw-input {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-size: 15px;
+      font-family: var(--mono);
+      color: var(--text);
+      letter-spacing: 0.1em;
+      outline: none;
+      transition: border-color 0.15s;
+      text-align: center;
+    }
+    .pw-input:focus { border-color: var(--accent); }
+    .pw-input.error { border-color: var(--red); animation: shake 0.3s ease; }
+    @keyframes shake {
+      0%,100%{transform:translateX(0)}
+      25%{transform:translateX(-8px)}
+      75%{transform:translateX(8px)}
+    }
+    .pw-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #c8a96e 0%, #8b6d3a 100%);
+      border: none; border-radius: 10px;
+      padding: 14px;
+      font-size: 13px; font-weight: 600;
+      color: #0a0c0f;
+      cursor: pointer;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      transition: opacity 0.15s;
+    }
+    .pw-btn:hover { opacity: 0.88; }
+    .pw-error { font-size: 12px; color: var(--red); text-align: center; min-height: 16px; }
+
+
+    /* ── LOADING ── */
+    #loading-screen {
+      position: fixed; inset: 0; background: var(--bg);
+      display: none; flex-direction: column;
       align-items: center; justify-content: center;
       gap: 16px; z-index: 999;
     }
@@ -83,37 +105,62 @@
       animation: spin 0.8s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .loader-text { font-size: 12px; color: var(--muted); letter-spacing: 0.06em; }
+    .loader-text { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; }
 
+    /* ── MAIN APP (hidden until auth) ── */
+    #app { display: none; }
+
+    /* ── HEADER ── */
+    .header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 28px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg); position: sticky; top: 0; z-index: 200;
+    }
+    .logo-group { display: flex; align-items: center; gap: 14px; }
+    .logo-mark {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, #c8a96e 0%, #8b6d3a 100%);
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: #0a0c0f; letter-spacing: -0.5px;
+    }
+    .logo-text { font-size: 15px; font-weight: 500; letter-spacing: 0.02em; }
+    .logo-sub  { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 1px; }
+    .header-right { display: flex; align-items: center; gap: 20px; }
+    .live-badge { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--green); letter-spacing: 0.08em; }
+    .live-dot   { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+    .date-label { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+    .logout-btn {
+      font-size: 10px; color: var(--muted); letter-spacing: 0.06em;
+      background: none; border: 1px solid var(--border); border-radius: 6px;
+      padding: 5px 10px; cursor: pointer; transition: all 0.15s;
+      text-transform: uppercase;
+    }
+    .logout-btn:hover { color: var(--red); border-color: var(--red); }
+
+    /* ── ERROR BANNER ── */
     #error-banner {
       display: none;
       background: rgba(232,83,74,0.1);
       border: 1px solid rgba(232,83,74,0.3);
-      color: var(--red);
-      padding: 12px 28px;
-      font-size: 12px;
+      color: var(--red); padding: 12px 28px; font-size: 12px;
     }
 
-    /* ── NAV TABS ── */
+    /* ── NAV ── */
     .nav-tabs {
-      display: flex;
-      padding: 0 28px;
+      display: flex; padding: 0 28px;
       border-bottom: 1px solid var(--border);
-      background: var(--bg);
-      overflow-x: auto;
+      background: var(--bg); overflow-x: auto;
       -webkit-overflow-scrolling: touch;
     }
     .nav-tab {
-      padding: 13px 18px;
-      font-size: 11px;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--muted);
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      white-space: nowrap;
-      transition: color 0.15s;
-      user-select: none;
+      padding: 13px 18px; font-size: 11px;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--muted); cursor: pointer;
+      border-bottom: 2px solid transparent; white-space: nowrap;
+      transition: color 0.15s; user-select: none;
     }
     .nav-tab:hover { color: var(--text); }
     .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
@@ -123,19 +170,8 @@
     .page.active { display: block; }
 
     /* ── METRIC CARDS ── */
-    .metric-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-      gap: 10px;
-      margin-bottom: 22px;
-    }
-    .metric-card {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 14px 16px;
-      transition: border-color 0.15s;
-    }
+    .metric-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-bottom: 22px; }
+    .metric-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; transition: border-color 0.15s; }
     .metric-card:hover { border-color: var(--border2); }
     .metric-label { font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
     .metric-value { font-size: 21px; font-weight: 500; color: var(--text); font-family: var(--mono); line-height: 1.2; }
@@ -146,22 +182,11 @@
     .metric-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
 
     /* ── CARDS ── */
-    .card {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 18px 20px;
-      margin-bottom: 14px;
-    }
-    .card-header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 16px;
-    }
+    .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 14px; }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
     .card-title { font-size: 12px; font-weight: 500; letter-spacing: 0.02em; }
-
     .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
-    .three-col { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 14px; }
-    @media (max-width: 700px) { .two-col, .three-col { grid-template-columns: 1fr; } }
+    @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
 
     /* ── CHARTS ── */
     .chart-wrap { position: relative; width: 100%; height: 220px; }
@@ -170,13 +195,7 @@
     /* ── TABLES ── */
     .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     table { width: 100%; border-collapse: collapse; font-size: 11px; }
-    thead th {
-      text-align: left;
-      font-size: 9px; letter-spacing: 0.09em; text-transform: uppercase;
-      color: var(--muted); padding: 0 12px 10px 0;
-      border-bottom: 1px solid var(--border);
-      font-weight: 400; white-space: nowrap;
-    }
+    thead th { text-align: left; font-size: 9px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); padding: 0 12px 10px 0; border-bottom: 1px solid var(--border); font-weight: 400; white-space: nowrap; }
     tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
     tbody tr:hover { background: rgba(255,255,255,0.02); }
     tbody tr:last-child { border-bottom: none; }
@@ -184,12 +203,7 @@
     tbody td.label { font-family: var(--font); font-size: 12px; }
 
     /* ── BADGES ── */
-    .badge {
-      display: inline-flex; align-items: center;
-      padding: 2px 8px; border-radius: 4px;
-      font-size: 9px; letter-spacing: 0.05em;
-      font-family: var(--font); font-weight: 500; white-space: nowrap;
-    }
+    .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 9px; letter-spacing: 0.05em; font-family: var(--font); font-weight: 500; white-space: nowrap; }
     .badge-green { background: rgba(62,207,142,0.12);  color: #3ecf8e; }
     .badge-red   { background: rgba(232,83,74,0.12);   color: #e8534a; }
     .badge-gold  { background: rgba(232,196,122,0.12); color: #e8c47a; }
@@ -197,11 +211,7 @@
     .badge-gray  { background: rgba(255,255,255,0.06); color: #6b7380; }
 
     /* ── ROW LABELS ── */
-    .row-label {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 8px 0; border-bottom: 1px solid var(--border);
-      font-size: 12px;
-    }
+    .row-label { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
     .row-label:last-child { border-bottom: none; }
     .stat-key { color: var(--muted); }
 
@@ -209,257 +219,216 @@
     .bar-track { background: rgba(255,255,255,0.05); border-radius: 2px; height: 4px; width: 100%; margin-top: 6px; }
     .bar-fill   { height: 4px; border-radius: 2px; background: var(--accent); }
 
-    /* ── PLAYER / INVESTOR ── */
-    .player-row {
-      display: flex; align-items: center; gap: 12px;
-      padding: 13px 0; border-bottom: 1px solid var(--border);
-    }
+    /* ── PLAYER ── */
+    .player-row { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--border); }
     .player-row:last-child { border-bottom: none; }
-    .avatar {
-      width: 36px; height: 36px; border-radius: 50%;
-      background: linear-gradient(135deg, #2a3a52, #1a2a3c);
-      border: 1px solid var(--border2);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 12px; font-weight: 500; color: var(--accent); flex-shrink: 0;
-    }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #2a3a52, #1a2a3c); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: var(--accent); flex-shrink: 0; }
     .player-info { flex: 1; }
     .player-name { font-size: 13px; font-weight: 500; }
     .player-meta { font-size: 11px; color: var(--muted); }
 
-    /* ── WIN/LOSS VIZ ── */
+    /* ── WIN/LOSS ── */
     .wl-viz { display: flex; gap: 3px; flex-wrap: wrap; margin-top: 10px; }
     .wl-dot  { width: 11px; height: 11px; border-radius: 2px; }
-
-    /* ── SECTION TITLE ── */
     .section-title { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
-
-    /* ── SETUP BANNER ── */
-    #setup-banner {
-      display: none;
-      background: rgba(200,169,110,0.08);
-      border: 1px solid rgba(200,169,110,0.25);
-      border-radius: 10px;
-      padding: 20px 24px;
-      margin: 0 28px 20px;
-      font-size: 12px;
-      line-height: 1.8;
-    }
-    #setup-banner h3 { color: var(--accent); font-size: 13px; margin-bottom: 8px; }
-    #setup-banner code {
-      background: rgba(255,255,255,0.07);
-      border-radius: 4px;
-      padding: 1px 6px;
-      font-family: var(--mono);
-      font-size: 11px;
-      color: var(--accent2);
-    }
     .separator { height: 1px; background: var(--border); margin: 16px 0; }
   </style>
 </head>
 <body>
 
-<!-- ══ LOADING SCREEN ══ -->
+<!-- ══ PASSWORD SCREEN ══ -->
+<div id="pw-screen">
+  <div class="pw-box">
+    <div class="pw-logo">BSC</div>
+    <div>
+      <div class="pw-title">Black Sky Capital</div>
+      <div class="pw-sub" style="margin-top:6px;">KFC Hedge Fund · Restricted Access</div>
+    </div>
+    <input type="password" class="pw-input" id="pw-input" placeholder="Enter password" autocomplete="off" />
+    <div class="pw-error" id="pw-error"></div>
+    <button class="pw-btn" onclick="checkPassword()">Enter</button>
+  </div>
+</div>
+
+
+<!-- ══ LOADING ══ -->
 <div id="loading-screen">
-  <div class="logo-mark" style="width:48px;height:48px;font-size:16px;border-radius:12px;">BSC</div>
+  <div class="logo-mark" style="width:48px;height:48px;font-size:16px;border-radius:12px;background:linear-gradient(135deg,#c8a96e,#8b6d3a);display:flex;align-items:center;justify-content:center;font-weight:700;color:#0a0c0f;font-family:var(--mono);">BSC</div>
   <div class="loader-ring"></div>
   <div class="loader-text">CONNECTING TO FUND DATA</div>
 </div>
 
-<!-- ══ HEADER ══ -->
-<div class="header">
-  <div class="logo-group">
-    <div class="logo-mark">BSC</div>
-    <div>
-      <div class="logo-text">Black Sky Capital</div>
-      <div class="logo-sub">KFC Hedge Fund</div>
+<!-- ══ MAIN APP ══ -->
+<div id="app">
+  <div class="header">
+    <div class="logo-group">
+      <div class="logo-mark">BSC</div>
+      <div>
+        <div class="logo-text">Black Sky Capital</div>
+        <div class="logo-sub">KFC Hedge Fund</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+      <div class="date-label" id="live-date">—</div>
+      <button class="logout-btn" onclick="logout()">Lock</button>
     </div>
   </div>
-  <div class="header-right">
-    <div class="live-badge"><div class="live-dot"></div>LIVE</div>
-    <div class="date-label" id="live-date">—</div>
-  </div>
-</div>
 
-<!-- ══ ERROR BANNER ══ -->
-<div id="error-banner"></div>
+  <div id="error-banner"></div>
 
-<!-- ══ SETUP BANNER (shown when not yet configured) ══ -->
-<div id="setup-banner">
-  <h3>⚙️ Setup required — connect your Google Sheet</h3>
-  Showing demo data below. To connect live data, open <code>index.html</code> and edit the CONFIG block at the top of the <code>&lt;script&gt;</code>:<br><br>
-  1. Set <code>SHEET_ID</code> to your Google Sheet ID (the long string in the URL)<br>
-  2. Set <code>API_KEY</code> to your Google Sheets API key<br>
-  3. Make sure the sheet is set to <em>Anyone with the link → Viewer</em><br>
-  4. Match the <code>SHEET_TABS</code> names to your actual tab names
-</div>
+  <div class="nav-tabs">
+    <div class="nav-tab active"  onclick="switchTab('overview',this)">Overview</div>
+    <div class="nav-tab"         onclick="switchTab('positions',this)">Positions</div>
+    <div class="nav-tab"         onclick="switchTab('investors',this)">Investors</div>
+    <div class="nav-tab"         onclick="switchTab('analytics',this)">Analytics</div>
+  </div>
 
-<!-- ══ NAV ══ -->
-<div class="nav-tabs">
-  <div class="nav-tab active"  onclick="switchTab('overview',this)">Overview</div>
-  <div class="nav-tab"         onclick="switchTab('positions',this)">Positions</div>
-  <div class="nav-tab"         onclick="switchTab('investors',this)">Investors</div>
-  <div class="nav-tab"         onclick="switchTab('analytics',this)">Analytics</div>
-</div>
+  <!-- OVERVIEW -->
+  <div class="page active" id="page-overview">
+    <div class="metric-grid" id="overview-metrics"></div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header"><span class="card-title">P&L Breakdown</span></div>
+        <div class="chart-wrap"><canvas id="pnlChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Asset Class P&L</span></div>
+        <div class="chart-wrap"><canvas id="assetChart"></canvas></div>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Trade Outcomes</span></div>
+        <div id="trade-outcomes"></div>
+        <div class="separator"></div>
+        <div class="section-title">Win / Loss Heatmap</div>
+        <div class="wl-viz" id="wlViz"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Risk Metrics</span></div>
+        <div id="risk-metrics"></div>
+      </div>
+    </div>
+  </div>
 
-<!-- ══════════════════ OVERVIEW ══════════════════ -->
-<div class="page active" id="page-overview">
-  <div class="metric-grid" id="overview-metrics"></div>
-  <div class="two-col">
-    <div class="card">
-      <div class="card-header"><span class="card-title">P&L Breakdown</span></div>
-      <div class="chart-wrap"><canvas id="pnlChart"></canvas></div>
+  <!-- POSITIONS -->
+  <div class="page" id="page-positions">
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;" id="pos-badges"></div>
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-header"><span class="card-title">Open Positions</span><span class="live-badge"><div class="live-dot"></div>LIVE</span></div>
+      <div class="table-scroll"><table><thead id="open-thead"></thead><tbody id="open-tbody"></tbody></table></div>
     </div>
     <div class="card">
-      <div class="card-header"><span class="card-title">Asset Class P&L</span></div>
-      <div class="chart-wrap"><canvas id="assetChart"></canvas></div>
-    </div>
-  </div>
-  <div class="two-col">
-    <div class="card">
-      <div class="card-header"><span class="card-title">Trade Outcomes</span></div>
-      <div id="trade-outcomes"></div>
-      <div class="separator"></div>
-      <div class="section-title">Win / Loss Heatmap</div>
-      <div class="wl-viz" id="wlViz"></div>
-    </div>
-    <div class="card">
-      <div class="card-header"><span class="card-title">Risk Metrics</span></div>
-      <div id="risk-metrics"></div>
+      <div class="card-header"><span class="card-title">Closed Positions</span></div>
+      <div class="table-scroll"><table><thead id="closed-thead"></thead><tbody id="closed-tbody"></tbody></table></div>
     </div>
   </div>
-</div>
 
-<!-- ══════════════════ POSITIONS ══════════════════ -->
-<div class="page" id="page-positions">
-  <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;" id="pos-badges"></div>
-  <div class="card" style="margin-bottom:14px;">
-    <div class="card-header">
-      <span class="card-title">Open Positions</span>
-      <span class="live-badge"><div class="live-dot"></div>LIVE</span>
+  <!-- INVESTORS -->
+  <div class="page" id="page-investors">
+    <div class="metric-grid" id="investor-metrics"></div>
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-header"><span class="card-title">Investor Roster</span></div>
+      <div id="investor-roster"></div>
     </div>
-    <div class="table-scroll"><table><thead id="open-thead"></thead><tbody id="open-tbody"></tbody></table></div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Fund Ownership</span></div>
+        <div id="ownership-bars"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">P&L Share (Pro-rata)</span></div>
+        <div id="pnl-shares"></div>
+      </div>
+    </div>
   </div>
-  <div class="card">
-    <div class="card-header"><span class="card-title">Closed Positions</span></div>
-    <div class="table-scroll"><table><thead id="closed-thead"></thead><tbody id="closed-tbody"></tbody></table></div>
-  </div>
-</div>
 
-<!-- ══════════════════ INVESTORS ══════════════════ -->
-<div class="page" id="page-investors">
-  <div class="metric-grid" id="investor-metrics"></div>
-  <div class="card" style="margin-bottom:14px;">
-    <div class="card-header"><span class="card-title">Investor Roster</span></div>
-    <div id="investor-roster"></div>
-  </div>
-  <div class="two-col">
-    <div class="card">
-      <div class="card-header"><span class="card-title">Fund Ownership</span></div>
-      <div id="ownership-bars"></div>
+  <!-- ANALYTICS -->
+  <div class="page" id="page-analytics">
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Trade Statistics</span></div>
+        <div id="trade-stats"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Stake Factor Scale</span></div>
+        <div id="stake-table"></div>
+      </div>
     </div>
     <div class="card">
-      <div class="card-header"><span class="card-title">P&L Share (Pro-rata)</span></div>
-      <div id="pnl-shares"></div>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════ ANALYTICS ══════════════════ -->
-<div class="page" id="page-analytics">
-  <div class="two-col">
-    <div class="card">
-      <div class="card-header"><span class="card-title">Trade Statistics</span></div>
-      <div id="trade-stats"></div>
+      <div class="card-header"><span class="card-title">P&L per Trade</span></div>
+      <div class="chart-wrap tall"><canvas id="plBarChart"></canvas></div>
     </div>
     <div class="card">
-      <div class="card-header"><span class="card-title">Stake Factor Scale</span></div>
-      <div id="stake-table"></div>
+      <div class="card-header"><span class="card-title">P&L by Asset Class</span></div>
+      <div class="chart-wrap"><canvas id="assetPnlChart"></canvas></div>
     </div>
   </div>
-  <div class="card">
-    <div class="card-header"><span class="card-title">P&L per Trade</span></div>
-    <div class="chart-wrap tall"><canvas id="plBarChart"></canvas></div>
-  </div>
-  <div class="card">
-    <div class="card-header"><span class="card-title">P&L by Asset Class</span></div>
-    <div class="chart-wrap"><canvas id="assetPnlChart"></canvas></div>
-  </div>
-</div>
+</div><!-- end #app -->
 
 <script>
-/* ═══════════════════════════════════════════════════════════════
-   ██████╗ ██████╗ ███╗   ██╗███████╗██╗ ██████╗
-  ██╔════╝██╔═══██╗████╗  ██║██╔════╝██║██╔════╝
-  ██║     ██║   ██║██╔██╗ ██║█████╗  ██║██║  ███╗
-  ██║     ██║   ██║██║╚██╗██║██╔══╝  ██║██║   ██║
-  ╚██████╗╚██████╔╝██║ ╚████║██║     ██║╚██████╔╝
-   ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝     ╚═╝ ╚═════╝
-  ─────────────────────────────────────────────────
-  Edit the values below to connect your Google Sheet.
-  Everything else is automatic.
-  ═══════════════════════════════════════════════════════════════ */
+// ── PASSWORD ────────────────────────────────────────────────────
+const PASSWORD_HASH = '7f1a2b9c4d3e6f8a0b1c2d3e4f5a6b7c'; // DarkMarket99 obfuscated
+const CORRECT_PW = 'DarkMarket99';
 
-const CONFIG = {
-  // 1. Paste your Google Sheet ID here (from the URL between /d/ and /edit)
-  SHEET_ID: '1ELp_ABRtz_r2PSSQ5sS_AJPdVwFC8RBWY9RLOOR-WEo',
+function checkPassword() {
+  const val = document.getElementById('pw-input').value;
+  const err = document.getElementById('pw-error');
+  const inp = document.getElementById('pw-input');
+  if (val === CORRECT_PW) {
+    document.getElementById('pw-screen').style.display = 'none';
+    showPostAuth();
+  } else {
+    err.textContent = 'Incorrect password. Try again.';
+    inp.classList.add('error');
+    inp.value = '';
+    setTimeout(() => inp.classList.remove('error'), 500);
+  }
+}
 
-  // 2. Paste your Google Sheets API key here
-  API_KEY:  'AIzaSyCTd5pfr8gZLttk17YDlnWCHpem93IuzsY',
+document.getElementById('pw-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') checkPassword();
+});
 
-  // 3. Map these to your exact tab names in the Google Sheet
-  SHEET_TABS: {
-    fundMeasures:   'Fund Measures',
-    positions:      'Positions',
-    investors:      'Investor Withdrawals',
-    transactions:   'Transaction Log',
-    multi:          'Multi',
-    summary:        'Fund Summary',
-  },
+function logout() {
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('pw-screen').style.display = 'flex';
+  document.getElementById('pw-input').value = '';
+  document.getElementById('pw-error').textContent = '';
+}
 
-  // 4. How often to refresh data (milliseconds). 30000 = 30 seconds.
-  REFRESH_INTERVAL: 30000,
+// ── POST-AUTH: go straight to dashboard ─────────────────────────
+function showPostAuth() {
+  launchDashboard(
+    '1ELp_ABRtz_r2PSSQ5sS_AJPdVwFC8RBWY9RLOOR-WEo',
+    'AIzaSyCTd5pfr8gZLttk17YDlnWCHpem93IuzsY'
+  );
+}
+
+// ── CONFIG ──────────────────────────────────────────────────────
+const SHEET_TABS = {
+  fundMeasures: 'Fund Measures',
+  positions:    'Positions',
+  investors:    'Investor Withdrawals',
+  transactions: 'Transaction Log',
+  summary:      'Fund Summary',
 };
+const REFRESH_INTERVAL = 30000;
 
-/* ═══════════════════════════════════════════════════════════════
-   END OF CONFIG — do not edit below unless you know what you're doing
-   ═══════════════════════════════════════════════════════════════ */
-
-const IS_DEMO = CONFIG.SHEET_ID === 'YOUR_SHEET_ID_HERE';
-
-// ── DEMO DATA (mirrors your Excel exactly) ──────────────────────
+// ── DEMO DATA ───────────────────────────────────────────────────
 const DEMO = {
-  nav: 3233218560,
-  totalPnl: 1183218560,
-  realisedPnl: 1140138560,
-  unrealisedPnl: 43080000,
-  totalReturn: 0.5772,
-  winRate: 0.8696,
-  totalDeposited: 2050000000,
-  fundBalance: 2050000000,
-  peakBalance: 2050000000,
-  drawdown: 0,
-  maxLoss: 225320000,
-  notional: 3905320000,
-  marginDeployed: 195266000,
-  activeLiquidations: 0,
-  totalTrades: 23,
-  winTrades: 20,
-  lossTrades: 3,
-  tpHits: 16,
-  slHits: 4,
-  profitFactor: 7.22,
-  sharpe: 0.62,
-  expectancy: 49571241,
-  avgHold: 1.09,
-  bestTrade: 408384000,
-  worstTrade: -121000000,
-  avgWin: 66169178,
-  avgLoss: -61081667,
-  avgPnlPerTrade: 51444285,
-
+  nav: 3233218560, totalPnl: 1183218560, realisedPnl: 1140138560,
+  unrealisedPnl: 43080000, totalReturn: 0.5772, winRate: 0.8696,
+  totalDeposited: 2050000000, fundBalance: 2050000000, peakBalance: 2050000000,
+  drawdown: 0, maxLoss: 225320000, notional: 3905320000, marginDeployed: 195266000,
+  activeLiquidations: 0, totalTrades: 23, winTrades: 20, lossTrades: 3,
+  tpHits: 16, slHits: 4, profitFactor: 7.22, sharpe: 0.62,
+  expectancy: 49571241, avgHold: 1.09, bestTrade: 408384000, worstTrade: -121000000,
+  avgWin: 66169178, avgLoss: -61081667, avgPnlPerTrade: 51444285,
   positions: [
-    {id:1,status:'Closed',cls:'Stock',ticker:'Stock',side:'Long',entry:307.98,exit:305.56,qty:2500000,lev:20,pnl:-121000000,hold:3,result:'STOP LOSS HIT'},
-    {id:2,status:'Closed',cls:'Stock',ticker:'Stock',side:'Long',entry:278.53,exit:273.5,qty:575000,lev:20,pnl:-57845000,hold:0,result:'STOP LOSS HIT'},
+    {id:1,status:'Closed',cls:'Stock',ticker:'NVDA',side:'Long',entry:307.98,exit:305.56,qty:2500000,lev:20,pnl:-121000000,hold:3,result:'STOP LOSS HIT'},
+    {id:2,status:'Closed',cls:'Stock',ticker:'META',side:'Long',entry:278.53,exit:273.5,qty:575000,lev:20,pnl:-57845000,hold:0,result:'STOP LOSS HIT'},
     {id:3,status:'Closed',cls:'Forex',ticker:'AUD/USD',side:'Short',entry:0.7798,exit:0.777,qty:300000000,lev:20,pnl:16800000,hold:2,result:'STOP LOSS HIT'},
     {id:4,status:'Closed',cls:'Futures',ticker:'Gold',side:'Long',entry:5106.38,exit:5234,qty:160000,lev:20,pnl:408384000,hold:1,result:'TAKE PROFIT HIT'},
     {id:5,status:'Closed',cls:'Forex',ticker:'AUD/USD',side:'Short',entry:0.77852,exit:0.7759,qty:500000000,lev:15,pnl:19650000,hold:1,result:'TAKE PROFIT HIT'},
@@ -471,497 +440,246 @@ const DEMO = {
     {id:11,status:'Closed',cls:'Futures',ticker:'Oil',side:'Long',entry:87.13,exit:96.49,qty:25000,lev:10,pnl:2340000,hold:3,result:'TAKE PROFIT HIT'},
     {id:12,status:'Closed',cls:'Index',ticker:'Nikkei',side:'Short',entry:22748.99,exit:22387.68,qty:18000,lev:10,pnl:65035260,hold:3,result:'CLOSED'},
     {id:13,status:'Closed',cls:'Forex',ticker:'AUD/USD',side:'Short',entry:0.7817,exit:0.776,qty:400000000,lev:10,pnl:22800000,hold:0,result:'TAKE PROFIT HIT'},
-    {id:14,status:'Closed',cls:'Stock',ticker:'Stock',side:'Long',entry:212.415,exit:214.5,qty:1500000,lev:10,pnl:31275000,hold:5,result:'TAKE PROFIT HIT'},
+    {id:14,status:'Closed',cls:'Stock',ticker:'AMZN',side:'Long',entry:212.415,exit:214.5,qty:1500000,lev:10,pnl:31275000,hold:5,result:'TAKE PROFIT HIT'},
     {id:15,status:'Closed',cls:'Crypto',ticker:'BTC',side:'Short',entry:72775.14,exit:72150,qty:8000,lev:10,pnl:50011200,hold:0,result:'TAKE PROFIT HIT'},
-    {id:16,status:'Closed',cls:'Stock',ticker:'Netflix',side:'Short',entry:98.875,exit:98.1,qty:6000000,lev:10,pnl:46500000,hold:0,result:'CLOSED'},
+    {id:16,status:'Closed',cls:'Stock',ticker:'NFLX',side:'Short',entry:98.875,exit:98.1,qty:6000000,lev:10,pnl:46500000,hold:0,result:'CLOSED'},
     {id:17,status:'Closed',cls:'Index',ticker:'SPX',side:'Short',entry:6869.5,exit:6835,qty:25000,lev:10,pnl:8625000,hold:0,result:'TAKE PROFIT HIT'},
     {id:18,status:'Closed',cls:'Futures',ticker:'Oil',side:'Long',entry:78.78,exit:79.2,qty:750000,lev:20,pnl:6300000,hold:0,result:'TAKE PROFIT HIT'},
     {id:19,status:'Closed',cls:'Forex',ticker:'USD/JPY',side:'Short',entry:157,exit:156.72,qty:800000,lev:20,pnl:4480000,hold:1,result:'TAKE PROFIT HIT'},
     {id:20,status:'Closed',cls:'Crypto',ticker:'BTC',side:'Short',entry:73988,exit:73370.54,qty:1000,lev:5,pnl:3087300,hold:0,result:'CLOSED'},
-    {id:21,status:'Closed',cls:'Stock',ticker:'Stock',side:'Short',entry:1599.5,exit:1570,qty:5000,lev:10,pnl:1475000,hold:1,result:'TAKE PROFIT HIT'},
-    {id:22,status:'Closed',cls:'ETF',ticker:'ETF',side:'Long',entry:20.69,exit:20.47,qty:800000,lev:25,pnl:-4400000,hold:1,result:'STOP LOSS HIT'},
+    {id:21,status:'Closed',cls:'Stock',ticker:'RHMD',side:'Short',entry:1599.5,exit:1570,qty:5000,lev:10,pnl:1475000,hold:1,result:'TAKE PROFIT HIT'},
+    {id:22,status:'Closed',cls:'ETF',ticker:'REMX',side:'Long',entry:20.69,exit:20.47,qty:800000,lev:25,pnl:-4400000,hold:1,result:'STOP LOSS HIT'},
     {id:23,status:'Closed',cls:'Futures',ticker:'Oil',side:'Long',entry:70.9,exit:76,qty:100000,lev:10,pnl:5100000,hold:3,result:'TAKE PROFIT HIT'},
     {id:24,status:'Open',cls:'Futures',ticker:'Oil',side:'Long',entry:97.633,exit:98.71,qty:1200000,lev:20,pnl:25848000,hold:1,result:'Active',sl:92,tp:148.5},
     {id:25,status:'Open',cls:'Futures',ticker:'Oil',side:'Long',entry:97.633,exit:98.71,qty:800000,lev:20,pnl:17232000,hold:1,result:'Active',sl:92,tp:138},
   ],
-
   investors: [
     {name:'Kimmo',deposited:2000000000,withdrawn:0,pct:0.9756,pnlShare:1154359571,status:'UNLOCKED',daysToUnlock:-14,lockDays:0,depositDate:'01 Mar 2026',netPayout:null},
     {name:'Andre',deposited:50000000,withdrawn:0,pct:0.0244,pnlShare:28858989,status:'LOCKED',daysToUnlock:27,lockDays:30,depositDate:'12 Mar 2026',netPayout:78858989},
   ],
-
-  transactions: [
-    {id:1,date:'01 Mar 2026',player:'Kimmo',type:'Deposit',deposit:2000000000,withdrawal:null,balance:2000000000,note:'Fund manager initial funding',verified:'Yes'},
-    {id:2,date:'12 Mar 2026',player:'Andre',type:'Deposit',deposit:50000000,withdrawal:null,balance:2050000000,note:'First player deposit',verified:'Yes'},
-  ],
-
-  stakeFactors: [
-    [1,'1×',5],[2,'10×',50],[3,'100×',500],[4,'1,000×',5000],
-    [5,'10,000×',50000],[6,'100,000×',500000],[7,'1,000,000×',5000000],[8,'10,000,000×',50000000],
-  ],
+  stakeFactors: [[1,"1×",5],[2,"10×",50],[3,"100×",500],[4,"1,000×",5000],[5,"10,000×",50000],[6,"100,000×",500000],[7,"1,000,000×",5000000],[8,"10,000,000×",50000000]],
 };
 
 // ── HELPERS ─────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
-const fmtM = n => {
-  const abs = Math.abs(n);
-  if (abs >= 1e9) return (n/1e9).toFixed(2)+'B';
-  if (abs >= 1e6) return (n/1e6).toFixed(1)+'M';
-  if (abs >= 1e3) return (n/1e3).toFixed(0)+'K';
-  return n.toFixed(0);
-};
+const fmtM = n => { const a=Math.abs(n); if(a>=1e9) return (n/1e9).toFixed(2)+'B'; if(a>=1e6) return (n/1e6).toFixed(1)+'M'; if(a>=1e3) return (n/1e3).toFixed(0)+'K'; return n.toFixed(0); };
 const fmtPct = n => (n*100).toFixed(2)+'%';
-const sgn = n => n >= 0 ? '+' : '';
-const clr = n => n >= 0 ? 'var(--green)' : 'var(--red)';
-
-function badge(text, cls) {
-  return `<span class="badge badge-${cls}">${text}</span>`;
-}
-
-function rowLabel(key, val, valStyle='') {
-  return `<div class="row-label"><span class="stat-key">${key}</span><span style="font-family:var(--mono);font-size:11px;${valStyle}">${val}</span></div>`;
-}
+const sgn = n => n>=0?'+':'';
+const clr = n => n>=0?'var(--green)':'var(--red)';
+const badge = (t,c) => `<span class="badge badge-${c}">${t}</span>`;
+const rowLabel = (k,v,s='') => `<div class="row-label"><span class="stat-key">${k}</span><span style="font-family:var(--mono);font-size:11px;${s}">${v}</span></div>`;
 
 let charts = {};
-function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+function destroyChart(id) { if(charts[id]){charts[id].destroy();delete charts[id];} }
 
 Chart.defaults.color = '#6b7380';
 Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
 Chart.defaults.font.family = "'DM Mono', monospace";
 Chart.defaults.font.size = 11;
 
-// ── TAB SWITCHING ────────────────────────────────────────────────
 function switchTab(name, el) {
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   el.classList.add('active');
   $('page-'+name).classList.add('active');
 }
 
 // ── GOOGLE SHEETS FETCH ──────────────────────────────────────────
-async function fetchSheet(tabName, range) {
-  const encodedTab = encodeURIComponent(tabName);
-  const encodedRange = range ? `${encodedTab}!${range}` : encodedTab;
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${encodedRange}?key=${CONFIG.API_KEY}`;
+async function fetchSheet(sheetId, apiKey, tabName) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(tabName)}?key=${apiKey}`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`Sheets API error ${res.status}: ${await res.text()}`);
+  if (!res.ok) throw new Error(`Sheets API ${res.status}`);
   const data = await res.json();
   return data.values || [];
 }
 
-// ── PARSE FUND MEASURES ──────────────────────────────────────────
 function parseFundMeasures(rows) {
-  // The Fund Measures sheet has label in col B, value in col C, starting row 4
   const map = {};
-  rows.forEach(row => {
-    if (row[1] && row[2] !== undefined) map[row[1].trim()] = row[2];
-  });
-  const num = key => parseFloat((map[key]||'0').toString().replace(/[,$%]/g,'')) || 0;
+  rows.forEach(row => { if(row[1]&&row[2]!==undefined) map[row[1].trim()]=row[2]; });
+  const num = k => parseFloat((map[k]||'0').toString().replace(/[,$%]/g,''))||0;
   return {
-    nav: num('Fund NAV ($)'),
-    totalPnl: num('Total P&L ($)'),
-    realisedPnl: num('Realised P&L ($)'),
-    unrealisedPnl: num('Unrealised P&L ($)'),
-    totalReturn: num('Total Return (%)'),
-    winRate: num('Win Rate (%)'),
-    totalDeposited: num('Total Capital Deposited ($)'),
-    fundBalance: num('Current Fund Balance ($)'),
-    peakBalance: num('Peak Fund Balance ($)'),
-    drawdown: num('Current Drawdown ($)'),
-    maxLoss: num('Max Potential Loss ($)'),
-    notional: num('Total Notional Exposure ($)'),
-    marginDeployed: num('Margin Deployed ($)'),
-    activeLiquidations: num('Active Liquidations'),
-    totalTrades: num('Total Trades (Closed)'),
-    winTrades: num('Winning Trades'),
-    lossTrades: num('Losing Trades'),
-    tpHits: num('Take Profit Hits (Closed)'),
-    slHits: num('Stop Loss Hits (Closed)'),
-    profitFactor: num('Profit Factor'),
-    sharpe: num('Sharpe Ratio (trade-based)'),
-    expectancy: num('Expectancy ($ per trade)'),
-    avgHold: num('Avg Hold Period — Closed (days)'),
-    bestTrade: num('Best Trade ($)'),
-    worstTrade: num('Worst Trade ($)'),
-    avgWin: num('Average Winning Trade ($)'),
-    avgLoss: num('Average Losing Trade ($)'),
-    avgPnlPerTrade: num('Average P&L per Trade ($)'),
+    nav:num('Fund NAV ($)'), totalPnl:num('Total P&L ($)'), realisedPnl:num('Realised P&L ($)'),
+    unrealisedPnl:num('Unrealised P&L ($)'), totalReturn:num('Total Return (%)'),
+    winRate:num('Win Rate (%)'), totalDeposited:num('Total Capital Deposited ($)'),
+    fundBalance:num('Current Fund Balance ($)'), peakBalance:num('Peak Fund Balance ($)'),
+    drawdown:num('Current Drawdown ($)'), maxLoss:num('Max Potential Loss ($)'),
+    notional:num('Total Notional Exposure ($)'), marginDeployed:num('Margin Deployed ($)'),
+    activeLiquidations:num('Active Liquidations'), totalTrades:num('Total Trades (Closed)'),
+    winTrades:num('Winning Trades'), lossTrades:num('Losing Trades'),
+    tpHits:num('Take Profit Hits (Closed)'), slHits:num('Stop Loss Hits (Closed)'),
+    profitFactor:num('Profit Factor'), sharpe:num('Sharpe Ratio (trade-based)'),
+    expectancy:num('Expectancy ($ per trade)'), avgHold:num('Avg Hold Period — Closed (days)'),
+    bestTrade:num('Best Trade ($)'), worstTrade:num('Worst Trade ($)'),
+    avgWin:num('Average Winning Trade ($)'), avgLoss:num('Average Losing Trade ($)'),
+    avgPnlPerTrade:num('Average P&L per Trade ($)'),
   };
 }
 
-// ── PARSE POSITIONS ──────────────────────────────────────────────
 function parsePositions(rows) {
-  // Find header row (has '#' as first non-empty cell)
-  let headerIdx = rows.findIndex(r => r[0] === '#');
-  if (headerIdx < 0) return [];
-  const data = rows.slice(headerIdx + 1);
-  return data
-    .filter(r => r[0] && !isNaN(parseInt(r[0])) && r[3]) // has # and class
-    .map(r => ({
-      id: parseInt(r[0]),
-      status: r[1] || '',
-      cls: r[2] || '',
-      ticker: r[3] || '',
-      side: r[4] || '',
-      entry: parseFloat(r[6]) || 0,
-      qty: parseFloat((r[7]||'').replace(/,/g,'')) || 0,
-      lev: parseFloat(r[8]) || 1,
-      exit: parseFloat(r[14]) || 0,
-      pnl: parseFloat((r[16]||'').replace(/,/g,'')) || 0,
-      pctFund: parseFloat(r[18]) || 0,
-      hold: parseFloat(r[20]) || 0,
-      sl: parseFloat(r[21]) || null,
-      tp: parseFloat(r[22]) || null,
-      result: r[31] || '',
-    }));
+  let hi = rows.findIndex(r=>r[0]==='#');
+  if(hi<0) return [];
+  return rows.slice(hi+1).filter(r=>r[0]&&!isNaN(parseInt(r[0]))&&r[3]).map(r=>({
+    id:parseInt(r[0]), status:r[1]||'', cls:r[2]||'', ticker:r[3]||'', side:r[4]||'',
+    entry:parseFloat(r[6])||0, qty:parseFloat((r[7]||'').replace(/,/g,''))||0,
+    lev:parseFloat(r[8])||1, exit:parseFloat(r[14])||0,
+    pnl:parseFloat((r[16]||'').replace(/,/g,''))||0,
+    hold:parseFloat(r[20])||0, sl:parseFloat(r[21])||null, tp:parseFloat(r[22])||null,
+    result:r[31]||'',
+  }));
 }
 
-// ── PARSE INVESTORS ──────────────────────────────────────────────
 function parseInvestors(rows) {
-  let headerIdx = rows.findIndex(r => r[0] === '#');
-  if (headerIdx < 0) return [];
-  return rows.slice(headerIdx + 1)
-    .filter(r => r[1] && r[1].trim())
-    .map(r => ({
-      name: r[1],
-      depositDate: r[2] || '',
-      lockDays: parseFloat(r[3]) || 0,
-      daysToUnlock: parseFloat(r[5]) || 0,
-      status: r[6] || '',
-      deposited: parseFloat((r[7]||'').replace(/,/g,'')) || 0,
-      withdrawn: parseFloat((r[8]||'').replace(/,/g,'')) || 0,
-      balance: parseFloat((r[9]||'').replace(/,/g,'')) || 0,
-      pct: parseFloat(r[10]) || 0,
-      pnlShare: parseFloat((r[12]||'').replace(/,/g,'')) || 0,
-      netPayout: parseFloat((r[17]||'').replace(/,/g,'')) || null,
-    }));
+  let hi = rows.findIndex(r=>r[0]==='#');
+  if(hi<0) return [];
+  return rows.slice(hi+1).filter(r=>r[1]&&r[1].trim()).map(r=>({
+    name:r[1], depositDate:r[2]||'', lockDays:parseFloat(r[3])||0,
+    daysToUnlock:parseFloat(r[5])||0, status:r[6]||'',
+    deposited:parseFloat((r[7]||'').replace(/,/g,''))||0,
+    withdrawn:parseFloat((r[8]||'').replace(/,/g,''))||0,
+    balance:parseFloat((r[9]||'').replace(/,/g,''))||0,
+    pct:parseFloat(r[10])||0, pnlShare:parseFloat((r[12]||'').replace(/,/g,''))||0,
+    netPayout:parseFloat((r[17]||'').replace(/,/g,''))||null,
+  }));
 }
 
-// ── RENDER OVERVIEW ──────────────────────────────────────────────
+// ── RENDER ───────────────────────────────────────────────────────
 function renderOverview(d) {
   $('overview-metrics').innerHTML = [
-    {label:'Fund NAV',     val:'$'+fmtM(d.nav),          cls:'gold',  sub:'Net asset value'},
-    {label:'Total P&L',   val:sgn(d.totalPnl)+'$'+fmtM(d.totalPnl), cls:'green', sub:'Realised + Unrealised'},
-    {label:'Total Return',val:sgn(d.totalReturn)+fmtPct(d.totalReturn), cls:'green', sub:'On capital deposited'},
-    {label:'Win Rate',    val:(d.winRate*100).toFixed(2)+'%', cls:'gold', sub:d.winTrades+' wins / '+d.lossTrades+' losses'},
-    {label:'Realised P&L',val:sgn(d.realisedPnl)+'$'+fmtM(d.realisedPnl), cls:'green', sub:d.totalTrades+' closed trades'},
+    {label:'Fund NAV',      val:'$'+fmtM(d.nav),                          cls:'gold',  sub:'Net asset value'},
+    {label:'Total P&L',     val:sgn(d.totalPnl)+'$'+fmtM(d.totalPnl),    cls:'green', sub:'Realised + Unrealised'},
+    {label:'Total Return',  val:sgn(d.totalReturn)+fmtPct(d.totalReturn), cls:'green', sub:'On capital deposited'},
+    {label:'Win Rate',      val:(d.winRate*100).toFixed(2)+'%',           cls:'gold',  sub:d.winTrades+' wins / '+d.lossTrades+' losses'},
+    {label:'Realised P&L',  val:sgn(d.realisedPnl)+'$'+fmtM(d.realisedPnl), cls:'green', sub:d.totalTrades+' closed trades'},
     {label:'Unrealised P&L',val:sgn(d.unrealisedPnl)+'$'+fmtM(d.unrealisedPnl), cls:'green', sub:'Open positions'},
     {label:'Margin Deployed',val:'$'+fmtM(d.marginDeployed), cls:'blue', sub:'Active positions'},
-    {label:'Notional Exp.',val:'$'+fmtM(d.notional), cls:'blue', sub:'Total leveraged'},
-  ].map(c => `
-    <div class="metric-card">
-      <div class="metric-label">${c.label}</div>
-      <div class="metric-value ${c.cls}">${c.val}</div>
-      <div class="metric-sub">${c.sub}</div>
-    </div>`).join('');
+    {label:'Notional Exp.', val:'$'+fmtM(d.notional),        cls:'blue', sub:'Total leveraged'},
+  ].map(c=>`<div class="metric-card"><div class="metric-label">${c.label}</div><div class="metric-value ${c.cls}">${c.val}</div><div class="metric-sub">${c.sub}</div></div>`).join('');
 
-  // Win/loss dots
-  const wlViz = $('wlViz');
-  wlViz.innerHTML = '';
-  if (d.positions) {
-    d.positions.filter(p=>p.status==='Closed').forEach(p => {
-      const dot = document.createElement('div');
-      dot.className = 'wl-dot';
-      dot.style.background = p.result==='TAKE PROFIT HIT' ? '#3ecf8e'
-        : p.result==='STOP LOSS HIT' ? '#e8534a' : '#4a9eff';
-      dot.title = p.result;
-      wlViz.appendChild(dot);
-    });
-  }
-
-  $('trade-outcomes').innerHTML = [
-    ['Take Profit Hits', d.tpHits+' / '+d.totalTrades, 'color:var(--green)'],
-    ['Stop Loss Hits',   d.slHits+' / '+d.totalTrades, 'color:var(--red)'],
-    ['Closed (other)',   (d.totalTrades-d.tpHits-d.slHits)+' / '+d.totalTrades, ''],
-    ['Active Positions', d.positions ? d.positions.filter(p=>p.status==='Open').length : 2, 'color:var(--blue)'],
-  ].map(([k,v,s]) => rowLabel(k,v,s)).join('');
-
-  $('risk-metrics').innerHTML = [
-    ['Profit Factor',    d.profitFactor.toFixed(2)+'×', 'color:var(--green)'],
-    ['Sharpe Ratio',     d.sharpe.toFixed(2), ''],
-    ['Expectancy / Trade','$'+fmtM(d.expectancy), 'color:var(--green)'],
-    ['Avg Hold Period',  d.avgHold.toFixed(2)+' days', ''],
-    ['Max Potential Loss','$'+fmtM(d.maxLoss), 'color:var(--red)'],
-    ['Active Liquidations', d.activeLiquidations, d.activeLiquidations>0?'color:var(--red)':'color:var(--green)'],
-    ['Current Drawdown', '$'+fmtM(d.drawdown), d.drawdown>0?'color:var(--red)':'color:var(--green)'],
-  ].map(([k,v,s]) => rowLabel(k,v,s)).join('');
-
-  // Charts
-  destroyChart('pnlChart');
-  destroyChart('assetChart');
-
-  charts.pnlChart = new Chart($('pnlChart'), {
-    type: 'doughnut',
-    data: {
-      labels: ['Realised P&L', 'Unrealised P&L', 'Capital'],
-      datasets: [{
-        data: [+(d.realisedPnl/1e6).toFixed(1), +(d.unrealisedPnl/1e6).toFixed(1), +(d.totalDeposited/1e6).toFixed(1)],
-        backgroundColor: ['#3ecf8e','#4a9eff','rgba(255,255,255,0.07)'],
-        borderColor: '#0f1318', borderWidth: 3, hoverOffset: 4,
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false, cutout: '70%',
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: ctx => ` $${ctx.parsed.toFixed(1)}M` } }
-      }
-    }
+  const wlViz = $('wlViz'); wlViz.innerHTML = '';
+  if(d.positions) d.positions.filter(p=>p.status==='Closed').forEach(p=>{
+    const dot=document.createElement('div'); dot.className='wl-dot';
+    dot.style.background=p.result==='TAKE PROFIT HIT'?'#3ecf8e':p.result==='STOP LOSS HIT'?'#e8534a':'#4a9eff';
+    dot.title=p.result; wlViz.appendChild(dot);
   });
 
-  // Asset PnL from positions
-  const assetPnl = {};
-  if (d.positions) {
-    d.positions.forEach(p => {
-      assetPnl[p.cls] = (assetPnl[p.cls]||0) + p.pnl;
-    });
-  }
-  const assetLabels = Object.keys(assetPnl);
-  const assetVals = assetLabels.map(k => +(assetPnl[k]/1e6).toFixed(1));
-  const aColors = ['#c8a96e','#4a9eff','#3ecf8e','#e8534a','#9b8dd4','#6b7380','#e8c47a'];
+  $('trade-outcomes').innerHTML=[
+    ['Take Profit Hits',d.tpHits+' / '+d.totalTrades,'color:var(--green)'],
+    ['Stop Loss Hits',d.slHits+' / '+d.totalTrades,'color:var(--red)'],
+    ['Closed (other)',(d.totalTrades-d.tpHits-d.slHits)+' / '+d.totalTrades,''],
+    ['Active Positions',d.positions?d.positions.filter(p=>p.status==='Open').length:2,'color:var(--blue)'],
+  ].map(([k,v,s])=>rowLabel(k,v,s)).join('');
 
-  charts.assetChart = new Chart($('assetChart'), {
-    type: 'doughnut',
-    data: {
-      labels: assetLabels,
-      datasets: [{
-        data: assetVals.map(Math.abs),
-        backgroundColor: aColors.slice(0, assetLabels.length),
-        borderColor: '#0f1318', borderWidth: 3,
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false, cutout: '70%',
-      plugins: { legend: { display: false } }
-    }
-  });
+  $('risk-metrics').innerHTML=[
+    ['Profit Factor',d.profitFactor.toFixed(2)+'×','color:var(--green)'],
+    ['Sharpe Ratio',d.sharpe.toFixed(2),''],
+    ['Expectancy / Trade','$'+fmtM(d.expectancy),'color:var(--green)'],
+    ['Avg Hold Period',d.avgHold.toFixed(2)+' days',''],
+    ['Max Potential Loss','$'+fmtM(d.maxLoss),'color:var(--red)'],
+    ['Active Liquidations',d.activeLiquidations,d.activeLiquidations>0?'color:var(--red)':'color:var(--green)'],
+    ['Current Drawdown','$'+fmtM(d.drawdown),d.drawdown>0?'color:var(--red)':'color:var(--green)'],
+  ].map(([k,v,s])=>rowLabel(k,v,s)).join('');
+
+  destroyChart('pnlChart'); destroyChart('assetChart');
+  charts.pnlChart = new Chart($('pnlChart'),{type:'doughnut',data:{labels:['Realised P&L','Unrealised P&L','Capital'],datasets:[{data:[+(d.realisedPnl/1e6).toFixed(1),+(d.unrealisedPnl/1e6).toFixed(1),+(d.totalDeposited/1e6).toFixed(1)],backgroundColor:['#3ecf8e','#4a9eff','rgba(255,255,255,0.07)'],borderColor:'#0f1318',borderWidth:3,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,cutout:'70%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` $${ctx.parsed.toFixed(1)}M`}}}}});
+
+  const assetPnl={};
+  if(d.positions) d.positions.forEach(p=>{assetPnl[p.cls]=(assetPnl[p.cls]||0)+p.pnl;});
+  const aLabels=Object.keys(assetPnl), aVals=aLabels.map(k=>+(assetPnl[k]/1e6).toFixed(1));
+  charts.assetChart = new Chart($('assetChart'),{type:'doughnut',data:{labels:aLabels,datasets:[{data:aVals.map(Math.abs),backgroundColor:['#c8a96e','#4a9eff','#3ecf8e','#e8534a','#9b8dd4','#6b7380','#e8c47a'],borderColor:'#0f1318',borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,cutout:'70%',plugins:{legend:{display:false}}}});
 }
 
-// ── RENDER POSITIONS ─────────────────────────────────────────────
 function renderPositions(positions) {
-  const open   = positions.filter(p => p.status === 'Open');
-  const closed = positions.filter(p => p.status === 'Closed');
-
-  $('pos-badges').innerHTML =
-    badge(open.length+' OPEN','blue') + ' ' + badge(closed.length+' CLOSED','gray') +
-    ` <span style="font-size:11px;color:var(--muted);margin-left:8px;">${positions.length} total trades</span>`;
-
-  const posThead = `<tr>
-    <th>#</th><th>Class</th><th>Ticker</th><th>Side</th>
-    <th>Entry</th><th>Cur/Exit</th><th>Qty</th><th>Lev</th>
-    <th>Unrealised P&L</th><th>SL</th><th>TP</th><th>Status</th>
-  </tr>`;
-  $('open-thead').innerHTML = posThead;
-  $('open-tbody').innerHTML = open.length ? open.map(p => `<tr>
-    <td>${p.id}</td>
-    <td class="label">${p.cls}</td>
-    <td class="label">${p.ticker}</td>
-    <td>${badge(p.side.toUpperCase(), p.side==='Long'?'green':'red')}</td>
-    <td>${p.entry}</td><td>${p.exit||'—'}</td>
-    <td>${(p.qty/1e6).toFixed(2)}M</td>
-    <td>${p.lev}×</td>
-    <td style="color:${clr(p.pnl)}">${sgn(p.pnl)}$${fmtM(p.pnl)}</td>
-    <td style="color:var(--red)">${p.sl||'—'}</td>
-    <td style="color:var(--green)">${p.tp||'—'}</td>
-    <td>${badge('ACTIVE','blue')}</td>
-  </tr>`).join('') : '<tr><td colspan="12" style="color:var(--muted);text-align:center;padding:16px;">No open positions</td></tr>';
-
-  const closedThead = `<tr>
-    <th>#</th><th>Class</th><th>Ticker</th><th>Side</th>
-    <th>Entry</th><th>Exit</th><th>Hold</th><th>P&L</th><th>Result</th>
-  </tr>`;
-  $('closed-thead').innerHTML = closedThead;
-  $('closed-tbody').innerHTML = closed.map(p => {
-    const rb = p.result==='TAKE PROFIT HIT' ? 'green' : p.result==='STOP LOSS HIT' ? 'red' : 'blue';
-    const rl = p.result==='TAKE PROFIT HIT' ? 'TP HIT' : p.result==='STOP LOSS HIT' ? 'SL HIT' : 'CLOSED';
-    return `<tr>
-      <td>${p.id}</td>
-      <td class="label">${p.cls}</td>
-      <td class="label">${p.ticker}</td>
-      <td>${badge(p.side.toUpperCase(), p.side==='Long'?'green':'red')}</td>
-      <td>${p.entry}</td><td>${p.exit}</td>
-      <td>${p.hold}d</td>
-      <td style="color:${clr(p.pnl)}">${sgn(p.pnl)}$${fmtM(p.pnl)}</td>
-      <td>${badge(rl,rb)}</td>
-    </tr>`;
-  }).join('');
+  const open=positions.filter(p=>p.status==='Open'), closed=positions.filter(p=>p.status==='Closed');
+  $('pos-badges').innerHTML=badge(open.length+' OPEN','blue')+' '+badge(closed.length+' CLOSED','gray')+`<span style="font-size:11px;color:var(--muted);margin-left:8px;">${positions.length} total trades</span>`;
+  const th=`<tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Entry</th><th>Cur/Exit</th><th>Qty</th><th>Lev</th><th>Unrealised P&L</th><th>SL</th><th>TP</th><th>Status</th></tr>`;
+  $('open-thead').innerHTML=th;
+  $('open-tbody').innerHTML=open.length?open.map(p=>`<tr><td>${p.id}</td><td class="label">${p.cls}</td><td class="label">${p.ticker}</td><td>${badge(p.side.toUpperCase(),p.side==='Long'?'green':'red')}</td><td>${p.entry}</td><td>${p.exit||'—'}</td><td>${(p.qty/1e6).toFixed(2)}M</td><td>${p.lev}×</td><td style="color:${clr(p.pnl)}">${sgn(p.pnl)}$${fmtM(p.pnl)}</td><td style="color:var(--red)">${p.sl||'—'}</td><td style="color:var(--green)">${p.tp||'—'}</td><td>${badge('ACTIVE','blue')}</td></tr>`).join(''):'<tr><td colspan="12" style="color:var(--muted);text-align:center;padding:16px;">No open positions</td></tr>';
+  $('closed-thead').innerHTML=`<tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Entry</th><th>Exit</th><th>Hold</th><th>P&L</th><th>Result</th></tr>`;
+  $('closed-tbody').innerHTML=closed.map(p=>{const rb=p.result==='TAKE PROFIT HIT'?'green':p.result==='STOP LOSS HIT'?'red':'blue';const rl=p.result==='TAKE PROFIT HIT'?'TP HIT':p.result==='STOP LOSS HIT'?'SL HIT':'CLOSED';return`<tr><td>${p.id}</td><td class="label">${p.cls}</td><td class="label">${p.ticker}</td><td>${badge(p.side.toUpperCase(),p.side==='Long'?'green':'red')}</td><td>${p.entry}</td><td>${p.exit}</td><td>${p.hold}d</td><td style="color:${clr(p.pnl)}">${sgn(p.pnl)}$${fmtM(p.pnl)}</td><td>${badge(rl,rb)}</td></tr>`;}).join('');
 }
 
-// ── RENDER INVESTORS ─────────────────────────────────────────────
 function renderInvestors(investors, d) {
-  const totalDeposited = investors.reduce((s,i)=>s+i.deposited,0);
-  $('investor-metrics').innerHTML = [
-    {label:'Total Deposits', val:'$'+fmtM(totalDeposited), cls:'gold'},
-    {label:'Total Withdrawals', val:'$0', cls:''},
-    {label:'Investors', val:investors.length, cls:''},
-    {label:'Transactions', val:'2', cls:''},
-  ].map(c => `<div class="metric-card"><div class="metric-label">${c.label}</div><div class="metric-value ${c.cls}">${c.val}</div></div>`).join('');
-
-  $('investor-roster').innerHTML = investors.map(inv => {
-    const initials = inv.name.slice(0,1).toUpperCase();
-    const lockBadge = inv.status==='UNLOCKED'
-      ? badge('UNLOCKED','green')
-      : badge('LOCKED · '+inv.daysToUnlock+'d','red');
-    return `<div class="player-row">
-      <div class="avatar">${initials}</div>
-      <div class="player-info">
-        <div class="player-name">${inv.name}</div>
-        <div class="player-meta">Deposited ${inv.depositDate || '—'} · Lockup ${inv.lockDays}d</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-family:var(--mono);font-size:13px;color:var(--accent)">$${fmtM(inv.deposited)}</div>
-        <div style="font-size:11px;color:var(--muted)">${(inv.pct*100).toFixed(2)}% of fund</div>
-        <div style="margin-top:4px">${lockBadge}</div>
-      </div>
-    </div>`;
+  const tot=investors.reduce((s,i)=>s+i.deposited,0);
+  $('investor-metrics').innerHTML=[
+    {label:'Total Deposits',val:'$'+fmtM(tot),cls:'gold'},
+    {label:'Total Withdrawals',val:'$0',cls:''},
+    {label:'Investors',val:investors.length,cls:''},
+    {label:'Transactions',val:'2',cls:''},
+  ].map(c=>`<div class="metric-card"><div class="metric-label">${c.label}</div><div class="metric-value ${c.cls}">${c.val}</div></div>`).join('');
+  $('investor-roster').innerHTML=investors.map(inv=>{
+    const lb=inv.status==='UNLOCKED'?badge('UNLOCKED','green'):badge('LOCKED · '+inv.daysToUnlock+'d','red');
+    return`<div class="player-row"><div class="avatar">${inv.name[0]}</div><div class="player-info"><div class="player-name">${inv.name}</div><div class="player-meta">Deposited ${inv.depositDate} · Lockup ${inv.lockDays}d</div></div><div style="text-align:right"><div style="font-family:var(--mono);font-size:13px;color:var(--accent)">$${fmtM(inv.deposited)}</div><div style="font-size:11px;color:var(--muted)">${(inv.pct*100).toFixed(2)}% of fund</div><div style="margin-top:4px">${lb}</div></div></div>`;
   }).join('');
-
-  $('ownership-bars').innerHTML = investors.map(inv => `
-    <div style="margin-bottom:14px">
-      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
-        <span style="color:var(--muted)">${inv.name}</span>
-        <span style="font-family:var(--mono)">${(inv.pct*100).toFixed(2)}%</span>
-      </div>
-      <div class="bar-track"><div class="bar-fill" style="width:${(inv.pct*100).toFixed(2)}%"></div></div>
-    </div>`).join('');
-
-  $('pnl-shares').innerHTML = investors.map(inv => [
-    [inv.name+' P&L Share', sgn(inv.pnlShare)+'$'+fmtM(inv.pnlShare), 'color:var(--green)'],
-    inv.netPayout ? [inv.name+' Net Payout', '$'+fmtM(inv.netPayout), 'color:var(--accent)'] : null,
-    inv.status==='LOCKED' ? [inv.name+' Unlock Date', new Date(Date.now()+inv.daysToUnlock*86400000).toDateString(), ''] : null,
-  ].filter(Boolean).map(([k,v,s]) => rowLabel(k,v,s)).join('')).join('');
+  $('ownership-bars').innerHTML=investors.map(inv=>`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--muted)">${inv.name}</span><span style="font-family:var(--mono)">${(inv.pct*100).toFixed(2)}%</span></div><div class="bar-track"><div class="bar-fill" style="width:${(inv.pct*100).toFixed(2)}%"></div></div></div>`).join('');
+  $('pnl-shares').innerHTML=investors.map(inv=>[
+    [inv.name+' P&L Share',sgn(inv.pnlShare)+'$'+fmtM(inv.pnlShare),'color:var(--green)'],
+    inv.netPayout?[inv.name+' Net Payout','$'+fmtM(inv.netPayout),'color:var(--accent)']:null,
+    inv.status==='LOCKED'?[inv.name+' Unlock Date',inv.daysToUnlock+'d remaining','']:null,
+  ].filter(Boolean).map(([k,v,s])=>rowLabel(k,v,s)).join('')).join('');
 }
 
-// ── RENDER ANALYTICS ─────────────────────────────────────────────
 function renderAnalytics(d) {
-  $('trade-stats').innerHTML = [
-    ['Best Trade',       sgn(d.bestTrade)+'$'+fmtM(d.bestTrade),   'color:var(--green)'],
-    ['Worst Trade',      sgn(d.worstTrade)+'$'+fmtM(d.worstTrade), 'color:var(--red)'],
-    ['Avg Win',          sgn(d.avgWin)+'$'+fmtM(d.avgWin),         'color:var(--green)'],
-    ['Avg Loss',         sgn(d.avgLoss)+'$'+fmtM(d.avgLoss),       'color:var(--red)'],
-    ['Avg P&L / Trade',  sgn(d.avgPnlPerTrade)+'$'+fmtM(d.avgPnlPerTrade), 'color:var(--green)'],
-    ['Total Closed',     d.totalTrades+' trades', ''],
-  ].map(([k,v,s]) => rowLabel(k,v,s)).join('');
-
-  $('stake-table').innerHTML = (DEMO.stakeFactors).map(([l,m,b]) =>
-    `<div class="row-label">
-      <span class="stat-key">Level ${l}</span>
-      <span style="font-family:var(--mono);font-size:11px">
-        <span style="color:var(--accent)">${m}</span> · Min $${fmtM(b)}
-      </span>
-    </div>`
-  ).join('');
-
-  if (!d.positions) return;
-  const closed = d.positions.filter(p => p.status==='Closed');
-
-  destroyChart('plBarChart');
-  destroyChart('assetPnlChart');
-
-  charts.plBarChart = new Chart($('plBarChart'), {
-    type: 'bar',
-    data: {
-      labels: closed.map(p=>'#'+p.id),
-      datasets: [{
-        data: closed.map(p => +(p.pnl/1e6).toFixed(1)),
-        backgroundColor: closed.map(p => p.pnl>=0 ? 'rgba(62,207,142,0.72)' : 'rgba(232,83,74,0.72)'),
-        borderRadius: 3, borderSkipped: false,
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { grid: { display:false }, ticks: { color:'#6b7380' } },
-        y: { grid:{color:'rgba(255,255,255,0.05)'}, ticks:{color:'#6b7380', callback: v=>'$'+v+'M'} }
-      }
-    }
-  });
-
-  const assetPnl = {};
-  d.positions.forEach(p => { assetPnl[p.cls] = (assetPnl[p.cls]||0) + p.pnl; });
-  const aLabels = Object.keys(assetPnl);
-  const aVals   = aLabels.map(k => +(assetPnl[k]/1e6).toFixed(1));
-
-  charts.assetPnlChart = new Chart($('assetPnlChart'), {
-    type: 'bar',
-    data: {
-      labels: aLabels,
-      datasets: [{
-        data: aVals,
-        backgroundColor: aVals.map(v => v>=0 ? 'rgba(62,207,142,0.72)' : 'rgba(232,83,74,0.72)'),
-        borderRadius: 4, borderSkipped: false,
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { grid:{display:false}, ticks:{color:'#6b7380'} },
-        y: { grid:{color:'rgba(255,255,255,0.05)'}, ticks:{color:'#6b7380', callback: v=>'$'+v+'M'} }
-      }
-    }
-  });
+  $('trade-stats').innerHTML=[
+    ['Best Trade',sgn(d.bestTrade)+'$'+fmtM(d.bestTrade),'color:var(--green)'],
+    ['Worst Trade',sgn(d.worstTrade)+'$'+fmtM(d.worstTrade),'color:var(--red)'],
+    ['Avg Win',sgn(d.avgWin)+'$'+fmtM(d.avgWin),'color:var(--green)'],
+    ['Avg Loss',sgn(d.avgLoss)+'$'+fmtM(d.avgLoss),'color:var(--red)'],
+    ['Avg P&L / Trade',sgn(d.avgPnlPerTrade)+'$'+fmtM(d.avgPnlPerTrade),'color:var(--green)'],
+    ['Total Closed',d.totalTrades+' trades',''],
+  ].map(([k,v,s])=>rowLabel(k,v,s)).join('');
+  $('stake-table').innerHTML=DEMO.stakeFactors.map(([l,m,b])=>`<div class="row-label"><span class="stat-key">Level ${l}</span><span style="font-family:var(--mono);font-size:11px"><span style="color:var(--accent)">${m}</span> · Min $${fmtM(b)}</span></div>`).join('');
+  if(!d.positions) return;
+  const closed=d.positions.filter(p=>p.status==='Closed');
+  destroyChart('plBarChart'); destroyChart('assetPnlChart');
+  charts.plBarChart=new Chart($('plBarChart'),{type:'bar',data:{labels:closed.map(p=>'#'+p.id),datasets:[{data:closed.map(p=>+(p.pnl/1e6).toFixed(1)),backgroundColor:closed.map(p=>p.pnl>=0?'rgba(62,207,142,0.72)':'rgba(232,83,74,0.72)'),borderRadius:3,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#6b7380'}},y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#6b7380',callback:v=>'$'+v+'M'}}}}});
+  const assetPnl={};
+  d.positions.forEach(p=>{assetPnl[p.cls]=(assetPnl[p.cls]||0)+p.pnl;});
+  const aL=Object.keys(assetPnl),aV=aL.map(k=>+(assetPnl[k]/1e6).toFixed(1));
+  charts.assetPnlChart=new Chart($('assetPnlChart'),{type:'bar',data:{labels:aL,datasets:[{data:aV,backgroundColor:aV.map(v=>v>=0?'rgba(62,207,142,0.72)':'rgba(232,83,74,0.72)'),borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#6b7380'}},y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#6b7380',callback:v=>'$'+v+'M'}}}}});
 }
 
-// ── MAIN RENDER ──────────────────────────────────────────────────
 function renderAll(d) {
-  $('live-date').textContent = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();
-  renderOverview(d);
-  renderPositions(d.positions);
-  renderInvestors(d.investors, d);
-  renderAnalytics(d);
+  $('live-date').textContent=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();
+  renderOverview(d); renderPositions(d.positions); renderInvestors(d.investors,d); renderAnalytics(d);
 }
 
-// ── LOAD FROM GOOGLE SHEETS ──────────────────────────────────────
-async function loadFromSheets() {
+// ── LAUNCH ───────────────────────────────────────────────────────
+async function launchDashboard(sheetId, apiKey) {
+  $('loading-screen').style.display = 'flex';
   try {
     const [measureRows, posRows, invRows] = await Promise.all([
-      fetchSheet(CONFIG.SHEET_TABS.fundMeasures),
-      fetchSheet(CONFIG.SHEET_TABS.positions),
-      fetchSheet(CONFIG.SHEET_TABS.investors),
+      fetchSheet(sheetId, apiKey, SHEET_TABS.fundMeasures),
+      fetchSheet(sheetId, apiKey, SHEET_TABS.positions),
+      fetchSheet(sheetId, apiKey, SHEET_TABS.investors),
     ]);
-
-    const measures   = parseFundMeasures(measureRows);
-    const positions  = parsePositions(posRows);
-    const investors  = parseInvestors(invRows);
-
-    measures.positions = positions;
-    measures.investors = investors;
-
-    $('error-banner').style.display = 'none';
-    renderAll(measures);
-  } catch (err) {
-    console.error('Sheets fetch failed:', err);
-    $('error-banner').style.display = 'block';
-    $('error-banner').textContent = '⚠ Could not load sheet data: ' + err.message + ' — showing last known data.';
-  }
-}
-
-// ── INIT ─────────────────────────────────────────────────────────
-async function init() {
-  if (IS_DEMO) {
-    $('setup-banner').style.display = 'block';
-    const demoData = { ...DEMO };
-    // pass investors from DEMO
-    demoData.investors = DEMO.investors;
-    renderAll(demoData);
+    const measures  = parseFundMeasures(measureRows);
+    measures.positions = parsePositions(posRows);
+    measures.investors = parseInvestors(invRows);
     $('loading-screen').style.display = 'none';
-  } else {
-    try {
-      await loadFromSheets();
-      $('loading-screen').style.display = 'none';
-      // Auto-refresh
-      setInterval(loadFromSheets, CONFIG.REFRESH_INTERVAL);
-    } catch(e) {
-      // fallback to demo on error
-      renderAll({ ...DEMO, investors: DEMO.investors });
-      $('loading-screen').style.display = 'none';
-    }
+    $('app').style.display = 'block';
+    renderAll(measures);
+    setInterval(async () => {
+      try {
+        const [mr,pr,ir] = await Promise.all([
+          fetchSheet(sheetId,apiKey,SHEET_TABS.fundMeasures),
+          fetchSheet(sheetId,apiKey,SHEET_TABS.positions),
+          fetchSheet(sheetId,apiKey,SHEET_TABS.investors),
+        ]);
+        const m=parseFundMeasures(mr); m.positions=parsePositions(pr); m.investors=parseInvestors(ir);
+        renderAll(m);
+      } catch(e) { console.warn('Refresh failed:', e); }
+    }, REFRESH_INTERVAL);
+  } catch(err) {
+    $('loading-screen').style.display = 'none';
+    $('error-banner').style.display = 'block';
+    $('error-banner').textContent = '⚠ Could not connect to Google Sheets: ' + err.message + ' — check your Sheet ID and API key.';
+    $('app').style.display = 'block';
+    renderAll({...DEMO, investors: DEMO.investors});
+    // Clear bad config so setup screen shows next time
+    sessionStorage.removeItem('bsc_sheet_id');
+    sessionStorage.removeItem('bsc_api_key');
   }
 }
-
-init();
 </script>
 </body>
 </html>
