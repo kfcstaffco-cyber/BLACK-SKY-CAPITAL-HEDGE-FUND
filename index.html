@@ -853,7 +853,7 @@ function renderInvestors(investors, d) {
     {label:'Total Deposits',val:'$'+fmtM(tot),cls:'gold'},
     {label:'Total Withdrawals',val:'$0',cls:''},
     {label:'Investors',val:investors.length,cls:''},
-    {label:'Transactions',val:'3',cls:''},
+    {label:'Transactions',val:'4',cls:''},
   ].map(c=>`<div class="metric-card"><div class="metric-label">${c.label}</div><div class="metric-value ${c.cls}">${c.val}</div></div>`).join('');
   $('investor-roster').innerHTML=investors.map(inv=>{
     const lb=inv.status==='UNLOCKED'?badge('UNLOCKED','green'):badge('LOCKED · '+inv.daysToUnlock+'d','red');
