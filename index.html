@@ -1097,75 +1097,59 @@ async function launchDashboard(sheetId, apiKey) {
 
   // Initial clock run
   updateClock();
-/*async function syncTickerWithSheet() {
-  const tickerContainer = document.getElementById('ticker-content');
-  
-  // Replace these with your actual ID and Key if they aren't already defined globally
-  const SHEET_ID = '1ELp_ABRtz_r2PSSQ5sS_AJPdVwFC8RBWY9RLOOR-WEo'; 
-  const API_KEY = 'AIzaSyCTd5pfr8gZLttk17YDlnWCHpem93IuzsY';
-  const TAB_NAME = 'TickerData'; // The name of your new tab
+  async function syncTickerWithSheet() {
+    const tickerContainer = document.getElementById('ticker-content');
+    if (!tickerContainer) return;
 
-  try {
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(TAB_NAME)}?key=${API_KEY}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    const rows = data.values; 
+    // Credentials
+    const SHEET_ID = '1ELp_ABRtz_r2PSSQ5sS_AJPdVwFC8RBWY9RLOOR-WEo'; 
+    const API_KEY = 'AIzaSyCTd5pfr8gZLttk17YDlnWCHpem93IuzsY';
+    const TAB_NAME = 'TickerData';
 
-    if (!rows || rows.length === 0) return;
+    try {
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(TAB_NAME)}?key=${API_KEY}&t=${Date.now()}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        
+        if (!data.values || data.values.length === 0) return;
 
-    // This creates the HTML for each item in your list
-    const itemsHTML = rows.map(row => {
-    const symbol = row[0] || '---';
-    const price = row[1] || '0.00';
-    const change = row[2] ? row[2].toString().trim() : ''; // Get the change or empty string
-    
-    let colorClass = 'neutral'; // Default to blue
-    let displayChange = '';
+        // One clean map function to handle colors and formatting
+        const itemsHTML = data.values.map(row => {
+            const symbol = row[0] || '---';
+            const price = row[1] || '0.00';
+            const change = row[2] ? row[2].toString().trim() : '';
+            
+            let colorClass = 'neutral'; // Default Blue
+            let displayChange = '';
 
-    // Logic: If change is empty or a hyphen, keep it blue.
-    // Otherwise, check if it's positive or negative.
-    if (change === '' || change === '-') {
-        colorClass = 'neutral'; 
-        displayChange = ''; // Don't show (%) if there's no data
-    } else {
-        const isNegative = change.includes('-');
-        colorClass = isNegative ? 'down' : 'up';
-        const prefix = isNegative ? '' : '+';
-        displayChange = `(${prefix}${change}%)`;
+            // Handle logic for colors: Green, Red, or Blue (Neutral)
+            if (change === '' || change === '-' || change === '0') {
+                colorClass = 'neutral';
+                displayChange = ''; // No percent shown if empty or hyphen
+            } else {
+                const isNegative = change.includes('-');
+                colorClass = isNegative ? 'down' : 'up';
+                const prefix = isNegative ? '' : '+';
+                displayChange = `(${prefix}${change}%)`;
+            }
+
+            return `
+                <div class="ticker-item">
+                    ${symbol} 
+                    <span class="${colorClass}">
+                        ${price} ${displayChange}
+                    </span>
+                </div>`;
+        }).join(''); // Close map and join once
+
+        // Inject twice for the infinite loop effect
+        tickerContainer.innerHTML = itemsHTML + itemsHTML;
+
+    } catch (err) {
+        console.error("Ticker Sync Error:", err);
+        tickerContainer.innerHTML = '<div class="ticker-item">Market Feed Offline</div>';
     }
-    
-    return `
-    <div class="ticker-item">
-        ${symbol} 
-        <span class="${colorClass}">
-            ${price} ${displayChange}
-        </span>
-    </div>`;
-}).join('');
-      
-      // Determine if the price is up or down based on the change value
-      const isUp = !change.toString().includes('-');
-      const prefix = isUp ? '+' : '';
-      
-      return `
-        <div class="ticker-item">
-          ${symbol} 
-          <span class="${isUp ? 'up' : 'down'}">
-            ${price} (${prefix}${change}%)
-          </span>
-        </div>`;
-    }).join('');
-
-    // The "Magic Trick": Inject the list TWICE. 
-    // This allows the CSS animation to loop seamlessly.
-    tickerContainer.innerHTML = itemsHTML + itemsHTML;
-
-  } catch (err) {
-    console.error("Ticker Sync Error:", err);
-    tickerContainer.innerHTML = '<div class="ticker-item">Market Feed Offline</div>';
-  }
 }
-*/
 // Start the ticker sync
 syncTickerWithSheet();
 
