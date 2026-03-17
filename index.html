@@ -979,9 +979,25 @@ function renderAnalytics(d) {
 }
 
 function renderAll(d) {
-  $('live-date').textContent=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();
-  renderOverview(d); renderPositions(d.positions); renderInvestors(d.investors,d); renderAnalytics(d);
+  $('live-date').textContent = new Date().toLocaleDateString('en-GB', {
+    day: '2-digit', month: 'short', year: 'numeric'
+  }).toUpperCase();
+
+  renderOverview(d);
+  renderPositions(d.positions);
+  renderInvestors(d.investors, d);
+  renderAnalytics(d);
+  
+  // Initialize the baseline for random movements
   seedFluctuations(d);
+
+  // Trigger animations for each open position row in the table
+  if (d.positions) {
+    d.positions.filter(p => p.status === 'Open').forEach(p => {
+      updateValueWithAnimation(`pnl-${p.id}`, sgn(p.pnl) + '$' + fmtM(p.pnl));
+    });
+  }
+
   if (!fluctTimer) startMicroFluctuations();
 }
 
@@ -1175,6 +1191,39 @@ syncTickerWithSheet();
 
 // Refresh the data every 60 seconds so it stays "Live"
 setInterval(syncTickerWithSheet, 60000);
+// Function to handle the starting baseline for fluctuations
+function seedFluctuations(d) {
+  fluctBase['active_margin'] = d.active_margin;
+  fluctBase['notional_exposure'] = d.notional_exposure;
+  // Add other metrics here as needed
+}
+
+// Function to handle the visual "tick" animations (green/red flash and slide)
+function updateValueWithAnimation(id, newValue) {
+  const el = document.getElementById(id);
+  if (!el) return;
+
+  const oldValue = el.textContent;
+  if (oldValue === newValue) return;
+
+  // Clean old animation classes
+  el.classList.remove('tick-up', 'tick-down');
+
+  // Determine direction based on number comparison
+  const oldNum = parseFloat(String(oldValue).replace(/[^0-9.\-]/g, '')) || 0;
+  const newNum = parseFloat(String(newValue).replace(/[^0-9.\-]/g, '')) || 0;
+
+  if (newNum > oldNum) {
+    el.classList.add('tick-up');
+  } else if (newNum < oldNum) {
+    el.classList.add('tick-down');
+  }
+
+  el.textContent = newValue;
+
+  // Optional: remove class after animation finishes
+  setTimeout(() => el.classList.remove('tick-up', 'tick-down'), 600);
+}
 </script>
 </body>
 </html>
