@@ -631,7 +631,7 @@ const FLUCT_RANGES = {
   nav:            { scale: 0.0003, fmt: v => '$'+fmtM(v), cls: 'gold'  },
   totalPnl:       { scale: 0.0004, fmt: v => (v>=0?'+':'')+' $'+fmtM(Math.abs(v)), cls: 'green' },
   unrealisedPnl:  { scale: 0.0006, fmt: v => (v>=0?'+':'')+' $'+fmtM(Math.abs(v)), cls: 'green' },
-  totalReturn:  { scale: 0.0006, fmt: v => (v>=0?'+':'')+' $'+fmtM(Math.abs(v)), cls: 'green' },
+  totalReturn:    { scale: 0.0005, fmt: v => (v >= 0 ? '+' : '') + v.toFixed(2) + '%', cls: 'green' },
 };
 let fluctBase = {};   // stores base values for fluctuation
 let fluctTimer = null;
