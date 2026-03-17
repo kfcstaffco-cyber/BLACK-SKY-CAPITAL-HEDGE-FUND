@@ -956,17 +956,27 @@ function renderAnalytics(d) {
 }
 
 function renderAll(d) {
-  $('live-date').textContent=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();
-  renderOverview(d); renderPositions(d.positions); renderInvestors(d.investors,d); renderAnalytics(d);
+  $('live-date').textContent = new Date().toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  }).toUpperCase();
+
+  renderOverview(d);
+  renderPositions(d.positions);
+  renderInvestors(d.investors, d);
+  renderAnalytics(d);
   seedFluctuations(d);
+
   if (!fluctTimer) startMicroFluctuations();
-  
+
   // Loop through only open positions and trigger the tick animation for each row
   if (d.positions) {
     d.positions.filter(p => p.status === 'Open').forEach(p => {
-        updateValueWithAnimation(`pnl-${p.id}`, sgn(p.pnl) + '$' + fmtM(p.pnl));
+      updateValueWithAnimation(`pnl-${p.id}`, sgn(p.pnl) + '$' + fmtM(p.pnl));
     });
-}
+  } // Closes the if (d.positions)
+} // Closes the function renderAll
 // ── LAUNCH ───────────────────────────────────────────────────────
 async function launchDashboard(sheetId, apiKey) {
   $('loading-screen').style.display = 'flex';
