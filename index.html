@@ -406,16 +406,6 @@
   </div>
 
   <!-- INVESTORS -->
-  <main id="investors" class="page">
-  <div class="metric-grid">
-    </div>
-
-  <div class="card">
-    <div class="card-title">Fund Ownership & Deposit History</div>
-    <div id="investor-roster-container">
-      </div>
-  </div>
-</main>
   <div class="page" id="page-investors">
     <div class="metric-grid" id="investor-metrics"></div>
     <div class="card" style="margin-bottom:14px;">
@@ -1007,72 +997,6 @@ async function launchDashboard(sheetId, apiKey) {
     });
   }
   setInterval(simulateLivePrices, 3000);
-/**
- * Call this function with the data you get from Google Sheets.
- * dataArray should be an array of objects or rows.
- */
-function renderGroupedInvestors(dataArray) {
-    const grouped = {};
-
-    // 1. Grouping Logic
-    dataArray.forEach(row => {
-        // Replace 'InvestorName', 'Amount', and 'Date' with your actual column keys from the API
-        const name = row.InvestorName; 
-        const amount = parseFloat(row.Amount) || 0;
-        const date = row.Date;
-
-        if (!grouped[name]) {
-            grouped[name] = {
-                name: name,
-                totalOwnership: 0,
-                deposits: []
-            };
-        }
-
-        grouped[name].totalOwnership += amount;
-        grouped[name].deposits.push({ amount, date });
-    });
-
-    // 2. Convert to Array and Sort
-    // Sort by Total Ownership (Biggest to Smallest)
-    const sortedRoster = Object.values(grouped).sort((a, b) => b.totalOwnership - a.totalOwnership);
-
-    // 3. Generate the HTML
-    const container = document.getElementById('investor-roster-container');
-    container.innerHTML = sortedRoster.map(investor => {
-        // Sort individual deposits (Most recent first)
-        investor.deposits.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-        return `
-            <div class="player-row" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid var(--border); padding: 15px 0;">
-                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <div class="avatar">${investor.name.charAt(0)}</div>
-                        <div class="player-name">${investor.name}</div>
-                    </div>
-                    <div class="metric-value gold" style="font-size: 16px;">
-                        ${formatFinance(investor.totalOwnership)}
-                    </div>
-                </div>
-                
-                <div class="deposit-history" style="margin-left: 48px; width: calc(100% - 48px);">
-                    <div style="font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px;">Deposit History</div>
-                    ${investor.deposits.map(d => `
-                        <div style="display: flex; justify-content: space-between; font-size: 11px; font-family: var(--mono); color: var(--text); opacity: 0.8; margin-bottom: 2px;">
-                            <span>${d.date}</span>
-                            <span>${formatFinance(d.amount)}</span>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-// Utility to format 73000 -> 73'000.00
-function formatFinance(num) {
-    return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/,/g, "’");
-}
 </script>
 </body>
 </html>
