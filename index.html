@@ -282,36 +282,29 @@
         box-shadow: 0 0 10px rgba(200, 169, 110, 0.1);
     }
     .ticker-wrap {
-  background: var(--bg2);
-  border-bottom: 1px solid var(--border);
-  overflow: hidden;
-  padding: 12px 0;
-  display: flex;
-}
-
-.ticker-move {
-  display: flex;
-  white-space: nowrap;
-  /* Adjust 60s to make it faster (lower number) or slower (higher number) */
-  animation: ticker-loop 60s linear infinite;
-}
-
-.ticker-item {
-  display: inline-block;
-  padding: 0 40px;
-  font-family: var(--mono);
-  font-size: 12px;
-  color: var(--text);
-  border-right: 1px solid rgba(255,255,255,0.1);
-}
-
-.ticker-item span.up { color: #00ff88; margin-left: 8px; }
-.ticker-item span.down { color: #ff4444; margin-left: 8px; }
-
-@keyframes ticker-loop {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      overflow: hidden;
+      white-space: nowrap;
+      padding: 8px 0;
+      z-index: 300;
+      position: relative;
+    }
+    .ticker-move {
+      display: inline-block;
+      white-space: nowrap;
+      animation: ticker 40s linear infinite;
+    }
+    .ticker-item {
+      display: inline-block;
+      margin-right: 50px;
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+    @keyframes ticker {
+      0% { transform: translateX(100%); }
+      100% { transform: translateX(-100%); }
+    }
   </style>
 </head>
 <body>
@@ -414,20 +407,7 @@
 
   <!-- INVESTORS -->
   <div class="page" id="page-investors">
-    <div class="metric-grid">
-  <div class="metric-card">
-    <div class="metric-label">Total Deposits</div>
-    <div class="metric-value gold" id="total-deposits-val">$0</div>
-  </div>
-  <div class="metric-card">
-    <div class="metric-label">Investors</div>
-    <div class="metric-value" id="total-investors-count">0</div>
-  </div>
-  <div class="metric-card">
-    <div class="metric-label">Transactions</div>
-    <div class="metric-value" id="total-transactions-count">0</div>
-  </div>
-</div>
+    <div class="metric-grid" id="investor-metrics"></div>
     <div class="card" style="margin-bottom:14px;">
       <div class="card-header"><span class="card-title">Investor Roster</span></div>
       <div id="investor-roster"></div>
@@ -715,10 +695,6 @@ async function fetchSheet(sheetId, apiKey, tabName) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Sheets API ${res.status}`);
   const data = await res.json();
-  // This tells the app to use the data we just fetched
-if (tabName === 'Investors') {
-  renderInvestors(data.values);
-}
   return data.values || [];
 }
 
@@ -1090,52 +1066,6 @@ async function launchDashboard(sheetId, apiKey) {
 
   // Initial clock run
   updateClock();
-function renderInvestors(apiData) {
-  const rosterContainer = document.getElementById('investor-roster');
-  if (!rosterContainer || !apiData) return;
-
-  const grouped = {};
-  let globalTotal = 0;
-
-  // Process the rows
-  apiData.forEach(row => {
-    const name = row[0];
-    const amount = parseFloat(row[1]) || 0;
-    const date = row[2];
-    globalTotal += amount;
-
-    if (!grouped[name]) {
-      grouped[name] = { name: name, total: 0, history: [] };
-    }
-    grouped[name].total += amount;
-    grouped[name].history.push({ amount, date });
-  });
-
-  const investorList = Object.values(grouped);
-
-  // Update the top numbers
-  document.getElementById('total-investors-count').innerText = investorList.length;
-  document.getElementById('total-transactions-count').innerText = apiData.length;
-  document.getElementById('total-deposits-val').innerText = '$' + (globalTotal / 1e9).toFixed(2) + 'B';
-
-  // Draw the roster
-  rosterContainer.innerHTML = investorList.map(inv => `
-    <div class="player-row" style="flex-direction: column; align-items: flex-start; padding: 15px 0; border-bottom: 1px solid var(--border);">
-      <div style="display: flex; justify-content: space-between; width: 100%;">
-        <div class="player-name">${inv.name}</div>
-        <div class="metric-value gold" style="font-size: 14px;">$${inv.total.toLocaleString()}</div>
-      </div>
-      <div style="width: 100%; margin-top: 8px; background: rgba(255,255,255,0.03); padding: 8px; border-radius: 4px;">
-        ${inv.history.map(h => `
-          <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--muted);">
-            <span>${h.date}</span>
-            <span>$${h.amount.toLocaleString()}</span>
-          </div>
-        `).join('')}
-      </div>
-    </div>
-  `).join('');
-}
 </script>
 </body>
 </html>
