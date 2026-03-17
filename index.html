@@ -677,8 +677,8 @@ function startMicroFluctuations() {
   fluctTimer = setTimeout(tick, 2500 + Math.random() * 1000);
 }
   // --- PART B: TABLE P&L FLUCTUATIONS ---
-if (typeof lastData !== 'undefined' && lastData.positions) {
-  lastData.positions.filter(p => p.status === 'Open').forEach(p => {
+if (window.lastData && window.lastData.positions) {
+  window.lastData.positions.filter(p => p.status === 'Open').forEach(p => {
     const el = document.getElementById(`pnl-${p.id}`);
     if (!el) return;
 
