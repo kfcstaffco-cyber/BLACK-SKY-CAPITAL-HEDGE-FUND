@@ -685,8 +685,8 @@ function startMicroFluctuations() {
           const el = document.getElementById(`pnl-${p.id}`);
           if (!el) return;
 
-          // Calculate nudge (0.02% of position size)
-          const nudge = (p.qty * 0.0002) * (Math.random() * 2 - 1);
+          // Calculate nudge (0.02% of position size) // Moves the P&L by +/- 1% of its current value
+          const nudge = (p.pnl * 0.01) * (Math.random() * 2 - 1);
           const simVal = (p.pnl || 0) + nudge;
           const formatted = sgn(simVal) + '$' + fmtM(simVal);
           
