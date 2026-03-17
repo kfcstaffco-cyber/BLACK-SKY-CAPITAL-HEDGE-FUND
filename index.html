@@ -997,6 +997,33 @@ async function launchDashboard(sheetId, apiKey) {
     });
   }
   setInterval(simulateLivePrices, 3000);
+// 3. General Price Fluctuation Simulation
+  function simulateLivePrices() {
+    document.querySelectorAll('.live-price').forEach(el => {
+      // If data-base isn't set yet, grab the current number from the text
+      if (!el.getAttribute('data-base')) {
+        // Remove ' and other non-numeric chars to get a clean number
+        let cleanNum = el.innerText.replace(/[^0-9.]/g, '');
+        el.setAttribute('data-base', cleanNum);
+      }
+
+      let base = parseFloat(el.getAttribute('data-base'));
+      
+      // Calculate a small random move (0.04%)
+      let change = (Math.random() - 0.5) * (base * 0.0004); 
+      let newVal = base + change;
+      
+      // Update the base for the next "tick" and update the display
+      el.setAttribute('data-base', newVal);
+      el.innerText = formatFinance(newVal);
+
+      // Add the green/red animation classes
+      el.classList.remove('tick-up', 'tick-down');
+      void el.offsetWidth; // trigger reflow
+      el.classList.add(change > 0 ? 'tick-up' : 'tick-down');
+    });
+  }
+  setInterval(simulateLivePrices, 3000);
 </script>
 </body>
 </html>
