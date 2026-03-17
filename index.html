@@ -407,24 +407,7 @@
 
   <!-- INVESTORS -->
   <div class="page" id="page-investors">
-    <div class="metric-grid">
-  <div class="metric-card">
-    <div class="metric-label">Total Deposits</div>
-    <div class="metric-value gold" id="total-deposits-val">$0</div>
-  </div>
-  <div class="metric-card">
-    <div class="metric-label">Total Withdrawals</div>
-    <div class="metric-value">$0</div>
-  </div>
-  <div class="metric-card">
-    <div class="metric-label">Investors</div>
-    <div class="metric-value" id="total-investors-count">0</div>
-  </div>
-  <div class="metric-card">
-    <div class="metric-label">Transactions</div>
-    <div class="metric-value" id="total-transactions-count">0</div>
-  </div>
-</div>
+    <div class="metric-grid" id="investor-metrics"></div>
     <div class="card" style="margin-bottom:14px;">
       <div class="card-header"><span class="card-title">Investor Roster</span></div>
       <div id="investor-roster"></div>
@@ -905,79 +888,23 @@ function renderPositions(positions) {
 }
 
 function renderInvestors(investors, d) {
-  const rosterContainer = document.getElementById('investor-roster');
-    const investorCountEl = document.getElementById('total-investors-count'); // Ensure your metric card has this ID
-    const transactionCountEl = document.getElementById('total-transactions-count'); // Ensure your metric card has this ID
-    
-    if (!rosterContainer || !apiData) return;
-
-    // 1. Calculations & Grouping
-    const grouped = {};
-    let totalDeposits = 0;
-
-    apiData.forEach(row => {
-        // Adjust indices [0, 1, 2] based on your actual Sheet columns (Name, Amount, Date)
-        const name = row[0];
-        const amount = parseFloat(row[1]) || 0;
-        const date = row[2];
-        const lockup = row[3] || "30d"; // Example if you have a lockup column
-
-        totalDeposits += amount;
-
-        if (!grouped[name]) {
-            grouped[name] = {
-                name: name,
-                totalBalance: 0,
-                transactions: []
-            };
-        }
-        grouped[name].totalBalance += amount;
-        grouped[name].transactions.push({ amount, date, lockup });
-    });
-
-    const investorList = Object.values(grouped);
-
-    // 2. Update Top Metrics
-    if (investorCountEl) investorCountEl.innerText = investorList.length; // Will show 4
-    if (transactionCountEl) transactionCountEl.innerText = apiData.length; // Will show 6
-
-    // 3. Render HTML
-    rosterContainer.innerHTML = investorList.map(investor => {
-        const percentage = ((investor.totalBalance / totalDeposits) * 100).toFixed(2);
-        
-        return `
-            <div class="player-row" style="flex-direction: column; align-items: flex-start; padding: 20px 0; border-bottom: 1px solid var(--border);">
-                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                        <div class="avatar">${investor.name.charAt(0)}</div>
-                        <div class="player-name" style="font-size: 15px;">${investor.name}</div>
-                    </div>
-                    <div style="text-align: right;">
-                        <div class="metric-value gold" style="font-size: 16px;">$${formatFinance(investor.totalBalance)}</div>
-                        <div style="font-size: 10px; color: var(--muted);">${percentage}% of fund</div>
-                    </div>
-                </div>
-
-                <div style="margin-left: 48px; margin-top: 10px; width: calc(100% - 48px); background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px;">
-                    <div style="font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 4px;">Transaction History</div>
-                    ${investor.transactions.map(t => `
-                        <div style="display: flex; justify-content: space-between; font-size: 11px; font-family: var(--mono); margin-bottom: 4px;">
-                            <span style="color: var(--muted);">Deposited ${t.date} • Lockup ${t.lockup}</span>
-                            <span style="color: var(--text);">$${formatFinance(t.amount)}</span>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-// Ensure you have this helper function defined
-function formatFinance(num) {
-    if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
-    if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
-    if (num >= 1e3) return (num / 1e3).toFixed(2) + 'K';
-    return num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, "’");
+  const tot=investors.reduce((s,i)=>s+i.deposited,0);
+  $('investor-metrics').innerHTML=[
+    {label:'Total Deposits',val:'$'+fmtM(tot),cls:'gold'},
+    {label:'Total Withdrawals',val:'$0',cls:''},
+    {label:'Investors',val:investors.length,cls:''},
+    {label:'Transactions',val:'4',cls:''},
+  ].map(c=>`<div class="metric-card"><div class="metric-label">${c.label}</div><div class="metric-value ${c.cls}">${c.val}</div></div>`).join('');
+  $('investor-roster').innerHTML=investors.map(inv=>{
+    const lb=inv.status==='UNLOCKED'?badge('UNLOCKED','green'):badge('LOCKED · '+inv.daysToUnlock+'d','red');
+    return`<div class="player-row"><div class="avatar">${inv.name[0]}</div><div class="player-info"><div class="player-name">${inv.name}</div><div class="player-meta">Deposited ${inv.depositDate} · Lockup ${inv.lockDays}d</div></div><div style="text-align:right"><div style="font-family:var(--mono);font-size:13px;color:var(--accent)">$${fmtM(inv.deposited)}</div><div style="font-size:11px;color:var(--muted)">${(inv.pct*100).toFixed(2)}% of fund</div><div style="margin-top:4px">${lb}</div></div></div>`;
+  }).join('');
+  $('ownership-bars').innerHTML=investors.map(inv=>`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--muted)">${inv.name}</span><span style="font-family:var(--mono)">${(inv.pct*100).toFixed(2)}%</span></div><div class="bar-track"><div class="bar-fill" style="width:${(inv.pct*100).toFixed(2)}%"></div></div></div>`).join('');
+  $('pnl-shares').innerHTML=investors.map(inv=>[
+    [inv.name+' P&L Share',sgn(inv.pnlShare)+'$'+fmtM(inv.pnlShare),'color:var(--green)'],
+    inv.netPayout?[inv.name+' Net Payout','$'+fmtM(inv.netPayout),'color:var(--accent)']:null,
+    inv.status==='LOCKED'?[inv.name+' Unlock Date',inv.daysToUnlock+'d remaining','']:null,
+  ].filter(Boolean).map(([k,v,s])=>rowLabel(k,v,s)).join('')).join('');
 }
 
 function renderAnalytics(d) {
