@@ -634,7 +634,7 @@ const FLUCT_RANGES = {
   totalReturn:    { scale: 0.03, fmt: v => (v >= 0 ? '+' : '') + v.toFixed(2) + '%', cls: 'green'  },
 let fluctBase = {};   // stores base values for fluctuation
 let fluctTimer = null;
-
+}
 function startMicroFluctuations() {
   if (fluctTimer) clearInterval(fluctTimer);
   function tick() {
