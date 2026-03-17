@@ -274,6 +274,37 @@
       .metric-value { font-size: 17px; }
       .pw-box { padding: 32px 24px; }
     }
+    /* ── NEW REFINEMENTS ── */
+    .header-logo-img, .pw-logo-img, .footer-logo-img { 
+        border: 1px solid var(--accent); 
+        border-radius: 12px; 
+        padding: 2px;
+        box-shadow: 0 0 10px rgba(200, 169, 110, 0.1);
+    }
+    .ticker-wrap {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      overflow: hidden;
+      white-space: nowrap;
+      padding: 8px 0;
+      z-index: 300;
+      position: relative;
+    }
+    .ticker-move {
+      display: inline-block;
+      white-space: nowrap;
+      animation: ticker 40s linear infinite;
+    }
+    .ticker-item {
+      display: inline-block;
+      margin-right: 50px;
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+    @keyframes ticker {
+      0% { transform: translateX(100%); }
+      100% { transform: translateX(-100%); }
+    }
   </style>
 </head>
 <body>
@@ -299,6 +330,15 @@
 </div>
 
 <!-- ══ MAIN APP ══ -->
+<div class="ticker-wrap">
+  <div class="ticker-move">
+    <span class="ticker-item">S&P 500: <span style="color:var(--green)">5,137.08 (+0.12%)</span></span>
+    <span class="ticker-item">NASDAQ: <span style="color:var(--green)">16,274.94 (+0.41%)</span></span>
+    <span class="ticker-item">DXY: <span style="color:var(--red)">103.82 (-0.05%)</span></span>
+    <span class="ticker-item">GOLD: <span style="color:var(--green)">2,162.30 (+0.82%)</span></span>
+    <span class="ticker-item">BTC/USD: <span style="color:var(--green)">73’412 (+1.2%)</span></span>
+  </div>
+</div>
 <div id="app">
   <div class="header">
     <div class="logo-group">
@@ -930,6 +970,33 @@ async function launchDashboard(sheetId, apiKey) {
     sessionStorage.removeItem('bsc_api_key');
   }
 }
+// 3. General Price Fluctuation Simulation
+  function simulateLivePrices() {
+    document.querySelectorAll('.live-price').forEach(el => {
+      // If data-base isn't set yet, grab the current number from the text
+      if (!el.getAttribute('data-base')) {
+        // Remove ' and other non-numeric chars to get a clean number
+        let cleanNum = el.innerText.replace(/[^0-9.]/g, '');
+        el.setAttribute('data-base', cleanNum);
+      }
+
+      let base = parseFloat(el.getAttribute('data-base'));
+      
+      // Calculate a small random move (0.04%)
+      let change = (Math.random() - 0.5) * (base * 0.0004); 
+      let newVal = base + change;
+      
+      // Update the base for the next "tick" and update the display
+      el.setAttribute('data-base', newVal);
+      el.innerText = formatFinance(newVal);
+
+      // Add the green/red animation classes
+      el.classList.remove('tick-up', 'tick-down');
+      void el.offsetWidth; // trigger reflow
+      el.classList.add(change > 0 ? 'tick-up' : 'tick-down');
+    });
+  }
+  setInterval(simulateLivePrices, 3000);
 </script>
 </body>
 </html>
