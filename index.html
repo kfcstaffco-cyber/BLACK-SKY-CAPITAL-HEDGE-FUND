@@ -281,30 +281,54 @@
         padding: 2px;
         box-shadow: 0 0 10px rgba(200, 169, 110, 0.1);
     }
-    .ticker-wrap {
-      background: var(--bg2);
-      border-bottom: 1px solid var(--border);
-      overflow: hidden;
-      white-space: nowrap;
-      padding: 8px 0;
-      z-index: 300;
-      position: relative;
-    }
-    .ticker-move {
-      display: inline-block;
-      white-space: nowrap;
-      animation: ticker 40s linear infinite;
-    }
-    .ticker-item {
-      display: inline-block;
-      margin-right: 50px;
-      font-family: var(--mono);
-      font-size: 11px;
-    }
-    @keyframes ticker {
-      0% { transform: translateX(100%); }
-      100% { transform: translateX(-100%); }
-    }
+    /* ── INFINITE TICKER CSS ── */
+.ticker-wrap {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  padding: 12px 0;
+  display: flex;
+  width: 100%;
+}
+
+.ticker-move {
+  display: flex;
+  white-space: nowrap;
+  /* Adjust 60s to make it faster (40s) or slower (90s) */
+  animation: ticker-loop 60s linear infinite;
+}
+
+.ticker-item {
+  display: inline-block;
+  padding: 0 40px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text);
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* Color classes for the Price/Change */
+.ticker-item span.up { 
+  color: var(--green); 
+  margin-left: 6px;
+}
+
+.ticker-item span.down { 
+  color: var(--red); 
+  margin-left: 6px;
+}
+
+/* The Magic Loop: Moves exactly half the width (Group A + Group B) */
+@keyframes ticker-loop {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* Optional: Pause on hover so you can read specific prices */
+.ticker-wrap:hover .ticker-move {
+  animation-play-state: paused;
+}
   </style>
 </head>
 <body>
