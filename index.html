@@ -672,30 +672,35 @@ function startMicroFluctuations() {
       setTimeout(() => valEl.classList.remove('tick-up','tick-down'), 500);
     });
 
-    // --- PART B: TABLE ROWS ---
-    if (window.lastData && window.lastData.positions) {
-      window.lastData.positions.filter(p => p.status === 'Open').forEach(p => {
-        const el = document.getElementById(`pnl-${p.id}`);
-        if (!el) return;
+   // --- PART B: TABLE ROWS (STAGGERED) ---
+if (window.lastData && window.lastData.positions) {
+  // Only animate Open positions
+  const openPositions = window.lastData.positions.filter(p => p.status === 'Open');
+  
+  openPositions.forEach((p, index) => {
+    // Add a staggered delay (e.g., Row 1: 0ms, Row 2: 150ms, Row 3: 300ms)
+    setTimeout(() => {
+      const el = document.getElementById(`pnl-${p.id}`);
+      if (!el) return;
 
-        // Small random movement (0.02% of quantity)
-        const nudge = (p.qty * 0.0002) * (Math.random() * 2 - 1);
-        const simVal = p.pnl + nudge;
-        const formatted = sgn(simVal) + '$' + fmtM(simVal);
-        
-        const oldNum = parseFloat(String(el.textContent).replace(/[^0-9.\-]/g,'')) || 0;
+      // Small random movement
+      const nudge = (p.qty * 0.0002) * (Math.random() * 2 - 1);
+      const simVal = p.pnl + nudge;
+      const formatted = sgn(simVal) + '$' + fmtM(simVal);
+      
+      const oldNum = parseFloat(String(el.textContent).replace(/[^0-9.\-]/g,'')) || 0;
 
-        el.classList.remove('tick-up','tick-down');
-        void el.offsetWidth; 
-        el.classList.add(simVal >= oldNum ? 'tick-up' : 'tick-down');
-        el.textContent = formatted;
-        setTimeout(() => el.classList.remove('tick-up','tick-down'), 500);
-      });
-    }
+      // Reset and trigger animation
+      el.classList.remove('tick-up', 'tick-down');
+      void el.offsetWidth; 
+      el.classList.add(simVal >= oldNum ? 'tick-up' : 'tick-down');
+      el.textContent = formatted;
 
-    fluctTimer = setTimeout(tick, 2000 + Math.random() * 1000);
-  }
-  fluctTimer = setTimeout(tick, 2500 + Math.random() * 1000);
+      // Cleanup
+      setTimeout(() => el.classList.remove('tick-up', 'tick-down'), 500);
+      
+    }, index * 150); // <--- This 150ms delay creates the staggered interval
+  });
 }
 
 function seedFluctuations(d) {
