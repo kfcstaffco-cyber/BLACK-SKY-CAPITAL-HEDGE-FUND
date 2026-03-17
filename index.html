@@ -626,11 +626,12 @@ let prevMetrics = {};
 // ── MICRO-FLUCTUATION ─────────────────────────────────────────────
 // Applies small random nudges to metric card displays every 2–3s
 // to simulate live market data movement. Does NOT alter real data.
-const FLUCT_CARDS = ['nav','totalPnl','unrealisedPnl'];
+const FLUCT_CARDS = ['nav','totalPnl','unrealisedPnl','Total Return'];
 const FLUCT_RANGES = {
   nav:            { scale: 0.0003, fmt: v => '$'+fmtM(v), cls: 'gold'  },
   totalPnl:       { scale: 0.0004, fmt: v => (v>=0?'+':'')+' $'+fmtM(Math.abs(v)), cls: 'green' },
   unrealisedPnl:  { scale: 0.0006, fmt: v => (v>=0?'+':'')+' $'+fmtM(Math.abs(v)), cls: 'green' },
+  totalReturn:  { scale: 0.0006, fmt: v => (v>=0?'+':'')+' $'+fmtM(Math.abs(v)), cls: 'green' },
 };
 let fluctBase = {};   // stores base values for fluctuation
 let fluctTimer = null;
