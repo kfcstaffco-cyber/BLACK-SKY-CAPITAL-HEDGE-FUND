@@ -647,58 +647,55 @@ let fluctBase = {};   // stores base values for fluctuation
 let fluctTimer = null; 
 // <--- Removed the extra '}' that was here
 function startMicroFluctuations() {
-  if (fluctTimer) clearInterval(fluctTimer);
+  if (fluctTimer) clearTimeout(fluctTimer);
+
   function tick() {
-    // pick 1–2 random cards to nudge
+    // --- PART A: TOP CARDS ---
     const keys = [...FLUCT_CARDS].sort(() => Math.random()-0.5).slice(0, 1 + Math.floor(Math.random()*2));
     keys.forEach(key => {
       const card = document.getElementById('mc-'+key);
       if (!card) return;
-      const cfg = FLUCT_RANGES[key];
-      const base = fluctBase[key];
+      const cfg = FLUCT_RANGES[key], base = fluctBase[key];
       if (base == null) return;
-      const delta = base * cfg.scale * (Math.random() * 2 - 1);  // ± small %
-      const newVal = base + delta;
+      
+      const newVal = base + (base * cfg.scale * (Math.random() * 2 - 1));
       const valEl = card.querySelector('.metric-value');
       if (!valEl) return;
+
       const oldNum = parseFloat(String(valEl.textContent).replace(/[^0-9.\-]/g,'')) || 0;
       const newNum = parseFloat(String(cfg.fmt(newVal)).replace(/[^0-9.\-]/g,'')) || 0;
-      // tick-up / tick-down flash
-      const dir = newNum >= oldNum ? 'tick-up' : 'tick-down';
+      
       valEl.classList.remove('tick-up','tick-down');
-      void valEl.offsetWidth;
-      valEl.classList.add(dir);
+      void valEl.offsetWidth; 
+      valEl.classList.add(newNum >= oldNum ? 'tick-up' : 'tick-down');
       valEl.textContent = cfg.fmt(newVal);
       setTimeout(() => valEl.classList.remove('tick-up','tick-down'), 500);
     });
-    // schedule next tick in 2–3 seconds
+
+    // --- PART B: TABLE ROWS ---
+    if (window.lastData && window.lastData.positions) {
+      window.lastData.positions.filter(p => p.status === 'Open').forEach(p => {
+        const el = document.getElementById(`pnl-${p.id}`);
+        if (!el) return;
+
+        // Small random movement (0.02% of quantity)
+        const nudge = (p.qty * 0.0002) * (Math.random() * 2 - 1);
+        const simVal = p.pnl + nudge;
+        const formatted = sgn(simVal) + '$' + fmtM(simVal);
+        
+        const oldNum = parseFloat(String(el.textContent).replace(/[^0-9.\-]/g,'')) || 0;
+
+        el.classList.remove('tick-up','tick-down');
+        void el.offsetWidth; 
+        el.classList.add(simVal >= oldNum ? 'tick-up' : 'tick-down');
+        el.textContent = formatted;
+        setTimeout(() => el.classList.remove('tick-up','tick-down'), 500);
+      });
+    }
+
     fluctTimer = setTimeout(tick, 2000 + Math.random() * 1000);
   }
   fluctTimer = setTimeout(tick, 2500 + Math.random() * 1000);
-}
-  // --- PART B: TABLE P&L FLUCTUATIONS ---
-if (window.lastData && window.lastData.positions) {
-  window.lastData.positions.filter(p => p.status === 'Open').forEach(p => {
-    const el = document.getElementById(`pnl-${p.id}`);
-    if (!el) return;
-
-    // Generate a tiny random nudge (+/- 0.05% of position size)
-    const nudge = (p.qty * 0.0005) * (Math.random() * 2 - 1);
-    const simulatedVal = p.pnl + nudge;
-    
-    // Formatting: keep it consistent with your table style
-    const formattedVal = sgn(simulatedVal) + '$' + fmtM(simulatedVal);
-    const oldNum = parseFloat(String(el.textContent).replace(/[^0-9.\-]/g,'')) || 0;
-
-    // Trigger the exact same animation as the cards
-    el.classList.remove('tick-up', 'tick-down');
-    void el.offsetWidth; // This "reset" is the secret to the animation working
-    el.classList.add(simulatedVal >= oldNum ? 'tick-up' : 'tick-down');
-    el.textContent = formattedVal;
-
-    // Cleanup the class after 500ms
-    setTimeout(() => el.classList.remove('tick-up', 'tick-down'), 500);
-  });
 }
 
 function seedFluctuations(d) {
