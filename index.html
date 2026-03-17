@@ -910,7 +910,7 @@ function renderPositions(positions) {
   $('pos-badges').innerHTML=badge(open.length+' OPEN','blue')+' '+badge(closed.length+' CLOSED','gray')+`<span style="font-size:11px;color:var(--muted);margin-left:8px;">${positions.length} total trades</span>`;
   const th=`<tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Entry</th><th>Cur/Exit</th><th>Qty</th><th>Lev</th><th>Unrealised P&L</th><th>SL</th><th>TP</th><th>Status</th></tr>`;
   $('open-thead').innerHTML=th;
-  $('open-tbody').innerHTML=open.length?open.map(p=>`<tr><td>${p.id}</td><td class="label">${p.cls}</td><td class="label">${p.ticker}</td><td>${badge(p.side.toUpperCase(),p.side==='Long'?'green':'red')}</td><td>${p.entry}</td><td>${p.exit||'—'}</td><td>${(p.qty/1e6).toFixed(2)}M</td><td>${p.lev}×</td><td style="color:${clr(p.pnl)}">${sgn(p.pnl)}$${fmtM(p.pnl)}</td><td style="color:var(--red)">${p.sl||'—'}</td><td style="color:var(--green)">${p.tp||'—'}</td><td>${badge('ACTIVE','blue')}</td></tr>`).join(''):'<tr><td colspan="12" style="color:var(--muted);text-align:center;padding:16px;">No open positions</td></tr>';
+  $('open-tbody').innerHTML=open.length?open.map(p=>`<tr><td>${p.id}</td><td class="label">${p.cls}</td><td class="label">${p.ticker}</td><td>${badge(p.side.toUpperCase(),p.side==='Long'?'green':'red')}</td><td>${p.entry}</td><td>${p.exit||'—'}</td><td>${(p.qty/1e6).toFixed(2)}M</td><td>${p.lev}×</td><td id="pnl-${p.id}" style="color:${clr(p.pnl)}">${sgn(p.pnl)}$${fmtM(p.pnl)}</td><td style="color:var(--red)">${p.sl||'—'}</td><td style="color:var(--green)">${p.tp||'—'}</td><td>${badge('ACTIVE','blue')}</td></tr>`).join(''):'<tr><td colspan="12" style="color:var(--muted);text-align:center;padding:16px;">No open positions</td></tr>';
   $('closed-thead').innerHTML=`<tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Entry</th><th>Exit</th><th>Hold</th><th>P&L</th><th>Result</th></tr>`;
   $('closed-tbody').innerHTML=closed.map(p=>{const rb=p.result==='TAKE PROFIT HIT'?'green':p.result==='STOP LOSS HIT'?'red':'blue';const rl=p.result==='TAKE PROFIT HIT'?'TP HIT':p.result==='STOP LOSS HIT'?'SL HIT':'CLOSED';return`<tr><td>${p.id}</td><td class="label">${p.cls}</td><td class="label">${p.ticker}</td><td>${badge(p.side.toUpperCase(),p.side==='Long'?'green':'red')}</td><td>${p.entry}</td><td>${p.exit}</td><td>${p.hold}d</td><td style="color:${clr(p.pnl)}">${sgn(p.pnl)}$${fmtM(p.pnl)}</td><td>${badge(rl,rb)}</td></tr>`;}).join('');
 }
@@ -960,8 +960,13 @@ function renderAll(d) {
   renderOverview(d); renderPositions(d.positions); renderInvestors(d.investors,d); renderAnalytics(d);
   seedFluctuations(d);
   if (!fluctTimer) startMicroFluctuations();
+  
+  // Loop through only open positions and trigger the tick animation for each row
+  if (d.positions) {
+    d.positions.filter(p => p.status === 'Open').forEach(p => {
+        updateValueWithAnimation(`pnl-${p.id}`, sgn(p.pnl) + '$' + fmtM(p.pnl));
+    });
 }
-
 // ── LAUNCH ───────────────────────────────────────────────────────
 async function launchDashboard(sheetId, apiKey) {
   $('loading-screen').style.display = 'flex';
