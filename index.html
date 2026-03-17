@@ -887,24 +887,31 @@ function renderPositions(positions) {
   $('closed-tbody').innerHTML=closed.map(p=>{const rb=p.result==='TAKE PROFIT HIT'?'green':p.result==='STOP LOSS HIT'?'red':'blue';const rl=p.result==='TAKE PROFIT HIT'?'TP HIT':p.result==='STOP LOSS HIT'?'SL HIT':'CLOSED';return`<tr><td>${p.id}</td><td class="label">${p.cls}</td><td class="label">${p.ticker}</td><td>${badge(p.side.toUpperCase(),p.side==='Long'?'green':'red')}</td><td>${p.entry}</td><td>${p.exit}</td><td>${p.hold}d</td><td style="color:${clr(p.pnl)}">${sgn(p.pnl)}$${fmtM(p.pnl)}</td><td>${badge(rl,rb)}</td></tr>`;}).join('');
 }
 
-function renderInvestors(investors, d) {
-  const tot=investors.reduce((s,i)=>s+i.deposited,0);
-  $('investor-metrics').innerHTML=[
-    {label:'Total Deposits',val:'$'+fmtM(tot),cls:'gold'},
-    {label:'Total Withdrawals',val:'$0',cls:''},
-    {label:'Investors',val:investors.length,cls:''},
-    {label:'Transactions',val:'4',cls:''},
-  ].map(c=>`<div class="metric-card"><div class="metric-label">${c.label}</div><div class="metric-value ${c.cls}">${c.val}</div></div>`).join('');
-  $('investor-roster').innerHTML=investors.map(inv=>{
-    const lb=inv.status==='UNLOCKED'?badge('UNLOCKED','green'):badge('LOCKED · '+inv.daysToUnlock+'d','red');
-    return`<div class="player-row"><div class="avatar">${inv.name[0]}</div><div class="player-info"><div class="player-name">${inv.name}</div><div class="player-meta">Deposited ${inv.depositDate} · Lockup ${inv.lockDays}d</div></div><div style="text-align:right"><div style="font-family:var(--mono);font-size:13px;color:var(--accent)">$${fmtM(inv.deposited)}</div><div style="font-size:11px;color:var(--muted)">${(inv.pct*100).toFixed(2)}% of fund</div><div style="margin-top:4px">${lb}</div></div></div>`;
-  }).join('');
-  $('ownership-bars').innerHTML=investors.map(inv=>`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--muted)">${inv.name}</span><span style="font-family:var(--mono)">${(inv.pct*100).toFixed(2)}%</span></div><div class="bar-track"><div class="bar-fill" style="width:${(inv.pct*100).toFixed(2)}%"></div></div></div>`).join('');
-  $('pnl-shares').innerHTML=investors.map(inv=>[
-    [inv.name+' P&L Share',sgn(inv.pnlShare)+'$'+fmtM(inv.pnlShare),'color:var(--green)'],
-    inv.netPayout?[inv.name+' Net Payout','$'+fmtM(inv.netPayout),'color:var(--accent)']:null,
-    inv.status==='LOCKED'?[inv.name+' Unlock Date',inv.daysToUnlock+'d remaining','']:null,
-  ].filter(Boolean).map(([k,v,s])=>rowLabel(k,v,s)).join('')).join('');
+function processInvestorData(rawApiRows) {
+    const grouped = {};
+
+    rawApiRows.forEach(row => {
+        // Assuming row structure: [Name, Amount, Date]
+        const [name, amount, date] = row; 
+        if (!grouped[name]) {
+            grouped[name] = { name: name, total: 0, deposits: [] };
+        }
+        grouped[name].total += parseFloat(amount);
+        grouped[name].deposits.push({ amt: parseFloat(amount), date: date });
+    });
+
+    // Convert object to array
+    let roster = Object.values(grouped);
+
+    // Sort Roster: Biggest total fund first
+    roster.sort((a, b) => b.total - a.total);
+
+    // Sort individual deposits inside each person: Newest date first
+    roster.forEach(inv => {
+        inv.deposits.sort((a, b) => new Date(b.date) - new Date(a.date));
+    });
+
+    return roster;
 }
 
 function renderAnalytics(d) {
