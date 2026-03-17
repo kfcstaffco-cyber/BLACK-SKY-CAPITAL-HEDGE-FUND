@@ -1104,9 +1104,33 @@ async function syncTickerWithSheet() {
 
     // This creates the HTML for each item in your list
     const itemsHTML = rows.map(row => {
-      const symbol = row[0];
-      const price = row[1];
-      const change = row[2] || "0.00";
+    const symbol = row[0] || '---';
+    const price = row[1] || '0.00';
+    const change = row[2] ? row[2].toString().trim() : ''; // Get the change or empty string
+    
+    let colorClass = 'neutral'; // Default to blue
+    let displayChange = '';
+
+    // Logic: If change is empty or a hyphen, keep it blue.
+    // Otherwise, check if it's positive or negative.
+    if (change === '' || change === '-') {
+        colorClass = 'neutral'; 
+        displayChange = ''; // Don't show (%) if there's no data
+    } else {
+        const isNegative = change.includes('-');
+        colorClass = isNegative ? 'down' : 'up';
+        const prefix = isNegative ? '' : '+';
+        displayChange = `(${prefix}${change}%)`;
+    }
+    
+    return `
+    <div class="ticker-item">
+        ${symbol} 
+        <span class="${colorClass}">
+            ${price} ${displayChange}
+        </span>
+    </div>`;
+}).join('');
       
       // Determine if the price is up or down based on the change value
       const isUp = !change.toString().includes('-');
