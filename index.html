@@ -1095,7 +1095,7 @@ async function syncTickerWithSheet() {
   const TAB_NAME = 'TickerData'; // The name of your new tab
 
   try {
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${1ELp_ABRtz_r2PSSQ5sS_AJPdVwFC8RBWY9RLOOR-WEo}/values/${encodeURIComponent("TickerData")}?key=${"AIzaSyCTd5pfr8gZLttk17YDlnWCHpem93IuzsY"}`;
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(TAB_NAME)}?key=${API_KEY}`;
     const res = await fetch(url);
     const data = await res.json();
     const rows = data.values; 
