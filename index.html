@@ -8,6 +8,17 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
   <style>
+    /* Green for Up */
+.ticker-item span.up { color: var(--green); }
+
+/* Red for Down */
+.ticker-item span.down { color: var(--red); }
+
+/* Blue for Neutral/No Data */
+.ticker-item span.neutral { 
+    color: #00d4ff; /* A bright, clean tech-blue */
+    text-shadow: 0 0 5px rgba(0, 212, 255, 0.3);
+}
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --bg:      #0a0c0f;
