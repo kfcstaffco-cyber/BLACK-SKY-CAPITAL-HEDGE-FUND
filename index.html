@@ -1066,6 +1066,56 @@ async function launchDashboard(sheetId, apiKey) {
 
   // Initial clock run
   updateClock();
+async function syncTickerWithSheet() {
+  const tickerContainer = document.getElementById('ticker-content');
+  
+  // Replace these with your actual ID and Key if they aren't already defined globally
+  const SHEET_ID = 'YOUR_SPREADSHEET_ID'; 
+  const API_KEY = 'YOUR_API_KEY';
+  const TAB_NAME = 'TickerData'; // The name of your new tab
+
+  try {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(TAB_NAME)}?key=${API_KEY}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const rows = data.values; 
+
+    if (!rows || rows.length === 0) return;
+
+    // This creates the HTML for each item in your list
+    const itemsHTML = rows.map(row => {
+      const symbol = row[0];
+      const price = row[1];
+      const change = row[2] || "0.00";
+      
+      // Determine if the price is up or down based on the change value
+      const isUp = !change.toString().includes('-');
+      const prefix = isUp ? '+' : '';
+      
+      return `
+        <div class="ticker-item">
+          ${symbol} 
+          <span class="${isUp ? 'up' : 'down'}">
+            ${price} (${prefix}${change}%)
+          </span>
+        </div>`;
+    }).join('');
+
+    // The "Magic Trick": Inject the list TWICE. 
+    // This allows the CSS animation to loop seamlessly.
+    tickerContainer.innerHTML = itemsHTML + itemsHTML;
+
+  } catch (err) {
+    console.error("Ticker Sync Error:", err);
+    tickerContainer.innerHTML = '<div class="ticker-item">Market Feed Offline</div>';
+  }
+}
+
+// Start the ticker sync
+syncTickerWithSheet();
+
+// Refresh the data every 60 seconds so it stays "Live"
+setInterval(syncTickerWithSheet, 60000);
 </script>
 </body>
 </html>
