@@ -9,6 +9,15 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
   <style>
+/* This ensures the table cells can handle the sliding animation */
+td[id^="pnl-"] {
+    display: table-cell; 
+    transition: all 0.2s ease;
+}
+
+/* Ensure the flash is visible against the table background */
+.tick-up { color: var(--green) !important; filter: brightness(1.2); }
+.tick-down { color: var(--red) !important; filter: brightness(1.2); }
     /* Green for Up */
 .ticker-item span.up { color: var(--green); }
 
