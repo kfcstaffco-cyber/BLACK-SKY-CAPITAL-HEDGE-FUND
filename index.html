@@ -1822,7 +1822,9 @@ function positionHeatTip(e) {
 }
 document.addEventListener('mousemove', function(e) {
   const tip = document.getElementById('heatmap-tooltip');
-  if (tip && tip.classList.contains('visible')) po
+  if (tip && tip.classList.contains('visible')) positionHeatTip(e);
+});
+
 // ── STREAK TRACKER ────────────────────────────────────────────────
 function calcStreaks(positions) {
   const closed = positions.filter(p=>p.status==='Closed');
@@ -2024,4 +2026,6 @@ function exportPDF() {
   win.document.close();
 }
 
-s
+</script>
+</body>
+</html>
