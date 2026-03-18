@@ -535,23 +535,6 @@
     #page-overview { position: relative; z-index: 1; }
 
 
-    /* ── COLLAPSIBLE SECTIONS ── */
-    .section-toggle {
-      display: flex; align-items: center; justify-content: space-between;
-      cursor: pointer; user-select: none; padding: 2px 0;
-    }
-    .section-toggle:hover .card-title { color: var(--accent); }
-    .section-toggle .toggle-icon {
-      width: 20px; height: 20px; border-radius: 50%;
-      background: var(--bg3); border: 1px solid var(--border2);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 10px; color: var(--muted); transition: transform 0.25s, background 0.15s;
-      flex-shrink: 0;
-    }
-    .section-toggle.collapsed .toggle-icon { transform: rotate(-90deg); }
-    .collapsible-body { overflow: hidden; transition: max-height 0.3s ease, opacity 0.25s ease; }
-    .collapsible-body.collapsed { max-height: 0 !important; opacity: 0; }
-
     /* TICKER */
     .ticker-wrap { background: var(--bg2); border-bottom: 1px solid var(--border); overflow: hidden; padding: 12px 0; display: flex; width: 100%; }
     .ticker-move { display: flex; white-space: nowrap; animation: ticker-loop 60s linear infinite; }
@@ -1373,7 +1356,7 @@ function renderOverview(d) {
   if (isFirstRender) {
     // Render cards with 0 first, then count up to real values
     grid.innerHTML = metrics.map((c,i)=>`
-      <div class="metric-card" id="mc-${c.key}" style="opacity:0;transform:translateY(12px);transition:opacity 0.4s ease ${i*0.07}s, transform 0.4s ease ${i*0.07}s">
+      <div class="metric-card" id="mc-${c.key}" data-raw="${d[c.key]||0}" style="opacity:0;transform:translateY(12px);transition:opacity 0.4s ease ${i*0.07}s, transform 0.4s ease ${i*0.07}s">
         <div class="metric-label">${c.label}</div>
         <div class="metric-value ${c.cls}">—</div>
         <div class="metric-sub">${c.sub}</div>
@@ -1769,11 +1752,12 @@ function renderAnalytics(d) {
   const parseDate = s => { const [dd,mm,yyyy]=s.split('/'); return new Date(+yyyy,+mm-1,+dd); };
   const sortedTxns = [...txns].sort((a,b)=>parseDate(a.date)-parseDate(b.date));
   const investorNames = [...new Set(sortedTxns.map(t=>t.name))];
+  const investorLabels = investorNames.map(n => getDisplayName(n));
   const PALETTE = ['#c8a96e','#4a9eff','#e8534a','#3ecf8e','#9b8dd4','#e8c47a'];
   const capitalDatasets = investorNames.map((name,i)=>{
     let running=0;
     const data = sortedTxns.map(t=>{ if(t.name===name){ running+=(t.deposit||0)-(t.withdrawal||0); } return +(running/1e9).toFixed(3); });
-    return { label:name, data, borderColor:PALETTE[i%PALETTE.length], backgroundColor:'transparent', borderWidth:2, pointRadius:2, tension:0.3 };
+    return { label:getDisplayName(name), data, borderColor:PALETTE[i%PALETTE.length], backgroundColor:'transparent', borderWidth:2, pointRadius:2, tension:0.3 };
   });
   if (sortedTxns.length > 0) {
     charts.investorCapitalChart = new Chart($('investorCapitalChart'),{
@@ -1853,7 +1837,6 @@ function renderAnalytics(d) {
 
   renderNewAnalytics(d.positions);
   renderStreaks(d.positions||[]);
-  setTimeout(initCollapsibles, 100);
 }
 
 
@@ -2077,56 +2060,6 @@ function renderAvatars() {
 }
 
 
-// ── COLLAPSIBLE ANALYTICS SECTIONS ───────────────────────────────
-function initCollapsibles() {
-  // Make all cards in analytics tab collapsible
-  const analyticsPage = document.getElementById('page-analytics');
-  if (!analyticsPage) return;
-  analyticsPage.querySelectorAll('.card').forEach((card, i) => {
-    const header = card.querySelector('.card-header');
-    const body   = card.querySelector('.chart-wrap, table, canvas, #trade-stats, #stake-table, #heatmap-container, #streak-display, #recent-trades-tbody');
-    if (!header) return;
-
-    // Find the actual content (everything after card-header)
-    const children = Array.from(card.children);
-    const headerIdx = children.indexOf(header);
-    const contentEls = children.slice(headerIdx + 1);
-    if (!contentEls.length) return;
-
-    // Wrap content in collapsible div
-    const wrapper = document.createElement('div');
-    wrapper.className = 'collapsible-body';
-    wrapper.id = 'analytics-section-' + i;
-    wrapper.style.maxHeight = wrapper.scrollHeight + 'px';
-    contentEls.forEach(el => wrapper.appendChild(el));
-    card.appendChild(wrapper);
-
-    // Add toggle icon to header
-    const icon = document.createElement('div');
-    icon.className = 'toggle-icon';
-    icon.innerHTML = '&#9660;';
-    header.classList.add('section-toggle');
-    header.appendChild(icon);
-
-    // Set max-height after append
-    setTimeout(() => { wrapper.style.maxHeight = wrapper.scrollHeight + 'px'; }, 50);
-
-    header.addEventListener('click', () => {
-      const isCollapsed = wrapper.classList.contains('collapsed');
-      if (isCollapsed) {
-        wrapper.classList.remove('collapsed');
-        wrapper.style.maxHeight = wrapper.scrollHeight + 'px';
-        header.classList.remove('collapsed');
-      } else {
-        wrapper.style.maxHeight = wrapper.scrollHeight + 'px';
-        requestAnimationFrame(() => {
-          wrapper.classList.add('collapsed');
-          header.classList.add('collapsed');
-        });
-      }
-    });
-  });
-}
 
 // ── PARTICLE BACKGROUND ──────────────────────────────────────────
 let particleAnimFrame = null;
@@ -2205,15 +2138,25 @@ function animateMetricRefresh(key, newVal, formatter) {
   if (!card) return;
   const valEl = card.querySelector('.metric-value');
   if (!valEl) return;
-  const oldNum = parseFloat(String(valEl.textContent).replace(/[^0-9.\-]/g,'')) || 0;
-  const newNum = parseFloat(String(formatter(newVal)).replace(/[^0-9.\-]/g,'')) || 0;
-  if (Math.abs(newNum - oldNum) < 0.01) return;
-  const dir = newNum > oldNum ? 'tick-up' : 'tick-down';
-  valEl.classList.remove('tick-up','tick-down'); void valEl.offsetWidth; valEl.classList.add(dir);
-  card.classList.remove('flash-green','flash-red'); void card.offsetWidth;
-  card.classList.add(newNum > oldNum ? 'flash-green' : 'flash-red');
-  animateCounter(valEl, oldNum, newNum, () => formatter(newVal), 800);
-  setTimeout(() => { valEl.classList.remove('tick-up','tick-down'); card.classList.remove('flash-green','flash-red'); }, 900);
+  // Store raw numeric on the element to avoid parsing formatted strings
+  const oldNum = parseFloat(card.getAttribute('data-raw') || '0') || 0;
+  const newNum = typeof newVal === 'number' ? newVal : parseFloat(String(newVal).replace(/[^0-9.\-]/g,'')) || 0;
+  card.setAttribute('data-raw', newNum);
+  if (Math.abs(newNum - oldNum) < 0.001) { valEl.textContent = formatter(newVal); return; }
+  const isUp = newNum > oldNum;
+  const dir  = isUp ? 'tick-up' : 'tick-down';
+  // Clear any existing animation state first
+  valEl.classList.remove('tick-up','tick-down','flash-green','flash-red');
+  card.classList.remove('flash-green','flash-red');
+  void valEl.offsetWidth; // force reflow
+  valEl.classList.add(dir);
+  card.classList.add(isUp ? 'flash-green' : 'flash-red');
+  // Update text immediately to final value (no counter on refresh — avoids flicker)
+  valEl.textContent = formatter(newVal);
+  setTimeout(() => {
+    valEl.classList.remove('tick-up','tick-down');
+    card.classList.remove('flash-green','flash-red');
+  }, 600);
 }
 
 // ── RENDER ALL ───────────────────────────────────────────────────
