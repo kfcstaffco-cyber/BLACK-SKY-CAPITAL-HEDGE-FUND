@@ -504,6 +504,22 @@
     .privacy-toggle .pt-icon { font-size:13px; }
     /* privacy handled via JS encryption */
 
+
+    /* ── INVESTOR SELECT ── */
+    .inv-select-btn {
+      width:100%; background:var(--bg3); border:1px solid var(--border2);
+      border-radius:10px; padding:14px 16px; cursor:pointer;
+      display:flex; align-items:center; gap:14px; transition:all 0.15s; text-align:left;
+    }
+    .inv-select-btn:hover { border-color:var(--accent); background:rgba(200,169,110,0.06); }
+    .inv-select-name  { font-size:14px; font-weight:600; color:var(--text); }
+    .inv-select-meta  { font-size:11px; color:var(--muted); margin-top:2px; }
+
+    /* ── LOCKUP BAR ── */
+    .lockup-bar-wrap { padding:8px 0; }
+    .lockup-progress { height:10px; background:rgba(255,255,255,0.06); border-radius:5px; margin:8px 0; overflow:hidden; }
+    .lockup-fill     { height:100%; border-radius:5px; transition:width 0.6s ease; }
+
     /* TICKER */
     .ticker-wrap { background: var(--bg2); border-bottom: 1px solid var(--border); overflow: hidden; padding: 12px 0; display: flex; width: 100%; }
     .ticker-move { display: flex; white-space: nowrap; animation: ticker-loop 60s linear infinite; }
@@ -557,6 +573,19 @@
   </div>
 </div>
 
+
+<!-- ── INVESTOR SELECTION SCREEN ── -->
+<div id="inv-select-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:8888;align-items:center;justify-content:center;flex-direction:column;gap:0;">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:40px 48px;width:100%;max-width:420px;display:flex;flex-direction:column;align-items:center;gap:24px;">
+    <div style="text-align:center;">
+      <div style="font-size:16px;font-weight:600;margin-bottom:6px;">Welcome to Black-Sky Capital</div>
+      <div style="font-size:12px;color:var(--muted);">Select your investor profile to continue</div>
+    </div>
+    <div id="inv-select-list" style="width:100%;display:flex;flex-direction:column;gap:8px;"></div>
+    <div style="font-size:10px;color:var(--muted);text-align:center;letter-spacing:0.04em;">Your data is private and encrypted</div>
+  </div>
+</div>
+
 <!-- LOADING -->
 <div id="loading-screen">
   <div class="loader-ring"></div>
@@ -597,6 +626,7 @@
     <div class="nav-tab"        onclick="switchTab('positions',this)">Positions</div>
     <div class="nav-tab"        onclick="switchTab('investors',this)">Investors</div>
     <div class="nav-tab"        onclick="switchTab('analytics',this)">Analytics</div>
+    <div class="nav-tab" id="my-portfolio-tab" onclick="switchTab('myportfolio',this)" style="display:none;">My Portfolio</div>
     <div class="nav-tab" onclick="exportPDF()" style="color:var(--accent);">&#8681; Export PDF</div>
   </div>
 
@@ -748,7 +778,49 @@
     </div>
   </div>
 
-    <!-- ── PAYOUT CALCULATOR MODAL ── -->
+  
+  <!-- MY PORTFOLIO -->
+  <div class="page" id="page-myportfolio">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:22px;">
+      <div id="mp-avatar" class="avatar-lg" style="width:52px;height:52px;font-size:18px;font-weight:700;"></div>
+      <div>
+        <div style="font-size:20px;font-weight:600;" id="mp-welcome">Welcome</div>
+        <div style="font-size:12px;color:var(--muted);" id="mp-sub">Your personal fund overview</div>
+      </div>
+    </div>
+
+    <!-- Key metrics -->
+    <div class="metric-grid" id="mp-metrics"></div>
+
+    <!-- Lockup status card -->
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-header"><span class="card-title">Lockup Status</span></div>
+      <div id="mp-lockup"></div>
+    </div>
+
+    <!-- Deposit history -->
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-header"><span class="card-title">Your Deposit History</span></div>
+      <div id="mp-deposits"></div>
+    </div>
+
+    <!-- Projections -->
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-header">
+        <span class="card-title">Your Projected Returns</span>
+        <span style="font-size:10px;color:var(--muted);">At current annualised rate</span>
+      </div>
+      <div id="mp-projections"></div>
+    </div>
+
+    <!-- Fund overview (read-only) -->
+    <div class="card">
+      <div class="card-header"><span class="card-title">Fund Overview</span><span style="font-size:10px;color:var(--muted);">Read only</span></div>
+      <div id="mp-fund-overview"></div>
+    </div>
+  </div>
+
+  <!-- ── PAYOUT CALCULATOR MODAL ── -->
   <div class="modal-overlay" id="payout-modal" onclick="closePayoutModal(event)">
     <div class="modal-box" style="position:relative;">
       <button class="modal-close" onclick="closePayoutModal(null,true)">&#x2715;</button>
@@ -850,6 +922,64 @@
   </button>
   <div class="dw-float-tooltip">Deposit / Withdrawal</div>
 
+  
+  <!-- MY PORTFOLIO -->
+  <div class="page" id="page-myportfolio">
+    <!-- Investor selector -->
+    <div id="mp-selector" style="margin-bottom:20px;">
+      <div class="card" style="max-width:480px;margin:0 auto;">
+        <div class="card-header"><span class="card-title">Who are you?</span></div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">Select your name to view your personal portfolio summary.</div>
+        <div id="mp-investor-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+    </div>
+    <!-- Personal dashboard (hidden until investor selected) -->
+    <div id="mp-dashboard" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div class="avatar-lg" id="mp-avatar" style="width:52px;height:52px;font-size:18px;"></div>
+          <div>
+            <div style="font-size:18px;font-weight:600;" id="mp-name"></div>
+            <div style="font-size:11px;color:var(--muted);">Personal Portfolio View</div>
+          </div>
+        </div>
+        <button class="dw-back-btn" onclick="resetMPSelector()">&#8592; Switch Investor</button>
+      </div>
+
+      <!-- Key metric cards -->
+      <div class="metric-grid" id="mp-metrics" style="margin-bottom:20px;"></div>
+
+      <!-- Two col: deposits + lockup -->
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Capital Summary</span></div>
+          <div id="mp-capital"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Lockup Status</span></div>
+          <div id="mp-lockup"></div>
+        </div>
+      </div>
+
+      <!-- P&L + Projections -->
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header"><span class="card-title">P&L Share</span></div>
+          <div id="mp-pnl"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Projected Returns</span><span style="font-size:10px;color:var(--muted);">At current annualised rate</span></div>
+          <div id="mp-projections"></div>
+        </div>
+      </div>
+
+      <!-- Deposit history -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">Your Deposit History</span></div>
+        <div id="mp-deposits"></div>
+      </div>
+    </div>
+  </div>
   <footer class="site-footer">
     <div class="footer-inner">
       <!-- LEFT: KFC affiliation -->
@@ -910,7 +1040,7 @@ async function checkPassword() {
   } else if (hash === _h2) {
     isMasterAccess = false;
     document.getElementById('pw-screen').style.display = 'none';
-    showPostAuth();
+    showInvestorSelect();
   } else {
     err.textContent = 'Incorrect password. Try again.';
     inp.classList.add('error'); inp.value = '';
@@ -1947,6 +2077,174 @@ function renderAvatars() {
   });
 }
 
+
+// ── MY PORTFOLIO ──────────────────────────────────────────────────
+let mpSelectedInvestor = null;
+
+function initMyPortfolio() {
+  // Show tab only for standard users
+  const tab = document.getElementById('my-portfolio-tab');
+  if (tab) tab.style.display = isMasterAccess ? 'none' : 'block';
+}
+
+function renderMyPortfolioSelector() {
+  const d = window.lastData;
+  if (!d || !d.investors) return;
+  const list = document.getElementById('mp-investor-list');
+  if (!list) return;
+
+  // Build txn map for capital totals
+  const txMap = {};
+  (d.transactions||[]).forEach(t => {
+    if (!txMap[t.name]) txMap[t.name] = 0;
+    if (t.type==='Deposit')    txMap[t.name] += t.deposit;
+    if (t.type==='Withdrawal') txMap[t.name] -= t.withdrawal;
+  });
+
+  list.innerHTML = d.investors.map(inv => {
+    const avStyle = getAvatarStyle(inv.name);
+    return `<div onclick="selectMPInvestor('${inv.name}')" style="
+      display:flex;align-items:center;gap:14px;padding:14px 16px;
+      background:var(--bg3);border:1px solid var(--border);border-radius:10px;
+      cursor:pointer;transition:all 0.15s;"
+      onmouseover="this.style.borderColor='var(--accent)'"
+      onmouseout="this.style.borderColor='var(--border)'">
+      <div class="avatar-lg" style="${avStyle};width:40px;height:40px;font-size:14px;">${inv.name[0]}</div>
+      <div>
+        <div style="font-size:13px;font-weight:600;">${inv.name}</div>
+        <div style="font-size:11px;color:var(--muted);">$${fmtM(txMap[inv.name]||inv.deposited)} deposited</div>
+      </div>
+      <div style="margin-left:auto;color:var(--muted);">&#8594;</div>
+    </div>`;
+  }).join('');
+}
+
+function selectMPInvestor(name) {
+  const d = window.lastData;
+  if (!d) return;
+  mpSelectedInvestor = name;
+  const inv = (d.investors||[]).find(i => i.name === name);
+  if (!inv) return;
+
+  // Build txn map
+  const txMap = {};
+  (d.transactions||[]).forEach(t => {
+    if (!txMap[t.name]) txMap[t.name] = {deposits:[], totalDeposit:0, totalWithdrawal:0};
+    if (t.type==='Deposit')    { txMap[t.name].deposits.push(t); txMap[t.name].totalDeposit += t.deposit; }
+    if (t.type==='Withdrawal') { txMap[t.name].totalWithdrawal += t.withdrawal; }
+  });
+  const invTxns   = txMap[name] || {deposits:[], totalDeposit:0, totalWithdrawal:0};
+  const totalCap  = Object.values(txMap).reduce((s,v) => s+v.totalDeposit, 0);
+  const dep       = invTxns.totalDeposit || inv.deposited;
+  const wdr       = invTxns.totalWithdrawal || inv.withdrawn;
+  const net       = dep - wdr;
+  const ownerPct  = totalCap > 0 ? (dep/totalCap)*100 : inv.pct*100;
+  const pnl       = inv.pnlShare;
+
+  // Fund age for projections
+  const allDeps = (d.transactions||[]).filter(t=>t.type==='Deposit');
+  let fundAgeDays = 30;
+  if (allDeps.length > 0) {
+    const parseD = s => { const [dd,mm,yy]=s.split('/'); return new Date(+yy,+mm-1,+dd); };
+    const first  = allDeps.reduce((a,b) => parseD(a.date)<parseD(b.date)?a:b);
+    fundAgeDays  = Math.max(1, Math.round((Date.now()-parseD(first.date))/(1000*60*60*24)));
+  }
+  const annRate = d.totalReturn / (fundAgeDays/365);
+  const proj    = m => { const gain = dep * annRate * (m/12) * (dep/totalCap); return (gain>=0?'+':'')+fmtM(gain); };
+
+  // ── Render avatar ──
+  const avEl = document.getElementById('mp-avatar');
+  const avStyle = getAvatarStyle(name);
+  avEl.style.cssText += ';' + avStyle.replace('background:','background:').replace('color:','color:');
+  Object.assign(avEl.style, {
+    background: getInvestorColor(name).bg,
+    color: getInvestorColor(name).fg,
+  });
+  avEl.textContent = name[0];
+  document.getElementById('mp-name').textContent = name;
+
+  // ── Metric cards ──
+  document.getElementById('mp-metrics').innerHTML = [
+    {label:'Total Deposited', val:'$'+fmtM(dep),        cls:'gold',  sub:'Your capital in the fund'},
+    {label:'Net Capital',     val:'$'+fmtM(net),         cls:'text',  sub:'Deposited minus withdrawals'},
+    {label:'P&L Share',       val:sgn(pnl)+'$'+fmtM(pnl),cls:'green', sub:'Your pro-rata earnings'},
+    {label:'Ownership',       val:ownerPct.toFixed(4)+'%',cls:'blue',  sub:'Of total fund capital'},
+  ].map(c=>`
+    <div class="metric-card">
+      <div class="metric-label">${c.label}</div>
+      <div class="metric-value ${c.cls}">${c.val}</div>
+      <div class="metric-sub">${c.sub}</div>
+    </div>`).join('');
+
+  // ── Capital summary ──
+  document.getElementById('mp-capital').innerHTML = [
+    ['Total Deposited',  '$'+fmtM(dep),  'color:var(--accent2)'],
+    ['Total Withdrawn',  '$'+fmtM(wdr),  'color:var(--red)'],
+    ['Net Capital',      '$'+fmtM(net),  'color:var(--text)'],
+    ['Fund Ownership',   ownerPct.toFixed(4)+'%', 'color:var(--blue)'],
+  ].map(([k,v,s]) => rowLabel(k,v,s)).join('');
+
+  // ── Lockup status ──
+  const isLocked = inv.status === 'LOCKED';
+  const lockHTML = isLocked
+    ? `<div style="text-align:center;padding:20px 0;">
+        <div style="font-size:36px;font-weight:700;color:var(--red);font-family:var(--mono);">${inv.daysToUnlock}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px;">days until funds unlock</div>
+        <div style="margin-top:16px;">${badge('LOCKED','red')}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:10px;">Lockup period: ${inv.lockDays} days from deposit date</div>
+      </div>`
+    : `<div style="text-align:center;padding:20px 0;">
+        <div style="font-size:36px;">✓</div>
+        <div style="font-size:13px;font-weight:500;color:var(--green);margin-top:8px;">Funds Unlocked</div>
+        <div style="margin-top:12px;">${badge('UNLOCKED','green')}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:10px;">You may request a withdrawal</div>
+      </div>`;
+  document.getElementById('mp-lockup').innerHTML = lockHTML;
+
+  // ── P&L share ──
+  const returnPct = dep > 0 ? (pnl/dep)*100 : 0;
+  document.getElementById('mp-pnl').innerHTML = [
+    ['Total P&L Share',    sgn(pnl)+'$'+fmtM(pnl),           'color:var(--green)'],
+    ['Return on Capital',  sgn(returnPct)+returnPct.toFixed(2)+'%', 'color:var(--green)'],
+    ['Realised P&L',       sgn(d.realisedPnl)+'$'+fmtM(d.realisedPnl*(dep/totalCap)), 'color:var(--green)'],
+    ['Unrealised P&L',     sgn(d.unrealisedPnl)+'$'+fmtM(d.unrealisedPnl*(dep/totalCap)), 'color:var(--blue)'],
+  ].map(([k,v,s]) => rowLabel(k,v,s)).join('');
+
+  // ── Projections ──
+  document.getElementById('mp-projections').innerHTML =
+    `<div style="font-size:10px;color:var(--muted);margin-bottom:12px;">Annualised rate: <span style="color:var(--accent2);font-family:var(--mono);">${(annRate*100).toFixed(1)}%</span></div>`
+    + `<div class="proj-grid" style="grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <div class="proj-cell"><div class="proj-period">3 months</div><div class="proj-val">${proj(3)}</div></div>
+        <div class="proj-cell"><div class="proj-period">6 months</div><div class="proj-val">${proj(6)}</div></div>
+        <div class="proj-cell"><div class="proj-period">12 months</div><div class="proj-val">${proj(12)}</div></div>
+      </div>`;
+
+  // ── Deposit history ──
+  let running = 0;
+  document.getElementById('mp-deposits').innerHTML = invTxns.deposits.length > 0
+    ? invTxns.deposits.map(t => {
+        running += t.deposit;
+        return `<div class="deposit-row">
+          <div class="deposit-date">${t.date}</div>
+          <div class="deposit-amount" style="color:var(--green)">+$${fmtM(t.deposit)}</div>
+          <div class="deposit-note">${t.note}</div>
+          <div>${t.verified ? badge('VERIFIED','green') : badge('PENDING','gold')}</div>
+          <div style="color:var(--muted);font-size:10px;">Running: $${fmtM(running)}</div>
+        </div>`;
+      }).join('')
+    : `<div style="color:var(--muted);font-size:12px;padding:12px 0;">No deposit records found</div>`;
+
+  // Show dashboard, hide selector
+  document.getElementById('mp-selector').style.display  = 'none';
+  document.getElementById('mp-dashboard').style.display = 'block';
+}
+
+function resetMPSelector() {
+  mpSelectedInvestor = null;
+  document.getElementById('mp-selector').style.display  = 'block';
+  document.getElementById('mp-dashboard').style.display = 'none';
+}
+
 // ── RENDER ALL ───────────────────────────────────────────────────
 function renderAll(d) {
   window.lastData = d;
@@ -1963,10 +2261,12 @@ function renderAll(d) {
   renderProjections(d);
   renderRiskMeter(d.positions||[]);
   renderRecentTrades(d.positions||[]);
+  if (currentInvestor) renderMyPortfolio(d);
+  renderMyPortfolioSelector();
 }
 
 // ── LAUNCH ───────────────────────────────────────────────────────
-async function launchDashboard(sheetId, apiKey) {
+async function launchDashboard(sheetId, apiKey, investorMode=false) {
   $('loading-screen').style.display = 'flex';
   try {
     const [measureRows, posRows, invRows, txnRows] = await Promise.all([
@@ -1981,8 +2281,12 @@ async function launchDashboard(sheetId, apiKey) {
     measures.transactions = parseTransactionLog(txnRows);
     $('loading-screen').style.display = 'none';
     $('app').style.display = 'block';
-    renderAll(measures);
-    applyAccessLevel();
+    if (investorMode) {
+      renderInvestorSelectScreen(measures.investors||[], measures.transactions||[]);
+    } else {
+      renderAll(measures);
+      applyAccessLevel();
+    }
     setInterval(async () => {
       try {
         const [mr,pr,ir,tr] = await Promise.all([
@@ -2003,7 +2307,11 @@ async function launchDashboard(sheetId, apiKey) {
     $('error-banner').style.display = 'block';
     $('error-banner').textContent = '⚠ Could not connect to Google Sheets: '+err.message+' — using demo data.';
     $('app').style.display = 'block';
-    renderAll({...DEMO});
+    if (investorMode) {
+      renderInvestorSelectScreen(DEMO.investors||[], DEMO.transactions||[]);
+    } else {
+      renderAll({...DEMO});
+    }
   }
   applyAccessLevel();
 }
@@ -2233,6 +2541,7 @@ function getDisplayInitial(name) {
 
 // ── ACCESS LEVEL ─────────────────────────────────────────────────
 function applyAccessLevel() {
+  initMyPortfolio();
   if (isMasterAccess) {
     // Master: names visible, show master badge, hide privacy toggle
     document.body.classList.remove('privacy-on');
@@ -2268,6 +2577,187 @@ function togglePrivacy() {
 document.addEventListener('DOMContentLoaded', () => {
   document.body.classList.add('privacy-on');
 });
+
+
+// ── INVESTOR SELECTION ────────────────────────────────────────────
+let currentInvestor = null;
+
+function showInvestorSelect() {
+  // Load data first, then show selector
+  launchDashboard('1ELp_ABRtz_r2PSSQ5sS_AJPdVwFC8RBWY9RLOOR-WEo','AIzaSyCTd5pfr8gZLttk17YDlnWCHpem93IuzsY', true);
+}
+
+function renderInvestorSelectScreen(investors, transactions) {
+  const screen = document.getElementById('inv-select-screen');
+  const list   = document.getElementById('inv-select-list');
+  if (!screen || !list) return;
+
+  // Build txn map for deposit totals
+  const txMap = {};
+  (transactions||[]).forEach(t => {
+    if (!txMap[t.name]) txMap[t.name] = 0;
+    if (t.type==='Deposit') txMap[t.name] += t.deposit;
+  });
+
+  list.innerHTML = investors.map(inv => {
+    const dep = txMap[inv.name] || inv.deposited;
+    const avStyle = getAvatarStyle(inv.name);
+    const isLocked = inv.status === 'LOCKED';
+    const lockText = isLocked ? inv.daysToUnlock+'d to unlock' : 'Available';
+    const lockColor = isLocked ? 'var(--red)' : 'var(--green)';
+    return `<button class="inv-select-btn" onclick="selectInvestor('${inv.name}')">
+      <div class="avatar-lg" style="${avStyle};width:40px;height:40px;font-size:14px;flex-shrink:0;">${inv.name[0]}</div>
+      <div>
+        <div class="inv-select-name">${inv.name}</div>
+        <div class="inv-select-meta">$${fmtM(dep)} deposited · <span style="color:${lockColor}">${lockText}</span></div>
+      </div>
+    </button>`;
+  }).join('');
+
+  screen.style.display = 'flex';
+}
+
+function selectInvestor(name) {
+  currentInvestor = name;
+  document.getElementById('inv-select-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+
+  // Show My Portfolio tab, hide master-only features
+  const mpTab = document.getElementById('my-portfolio-tab');
+  if (mpTab) mpTab.style.display = 'block';
+
+  // Auto-navigate to My Portfolio
+  const tabEl = document.getElementById('my-portfolio-tab');
+  if (tabEl) switchTab('myportfolio', tabEl);
+
+  // Render their personal view
+  if (window.lastData) renderMyPortfolio(window.lastData);
+}
+
+// ── RENDER MY PORTFOLIO ───────────────────────────────────────────
+function renderMyPortfolio(d) {
+  if (!currentInvestor || !d.investors) return;
+  const inv = d.investors.find(i => i.name === currentInvestor);
+  if (!inv) return;
+
+  const txMap = {};
+  (d.transactions||[]).forEach(t => {
+    if (!txMap[t.name]) txMap[t.name] = { deposits:[], total:0 };
+    if (t.type==='Deposit') { txMap[t.name].deposits.push(t); txMap[t.name].total += t.deposit; }
+  });
+  const myTxns   = txMap[inv.name] || { deposits:[], total:0 };
+  const totalCap = d.investors.reduce((s,i) => s + (txMap[i.name]?.total||i.deposited), 0);
+  const myDep    = myTxns.total || inv.deposited;
+  const myPct    = totalCap > 0 ? (myDep / totalCap) * 100 : inv.pct * 100;
+
+  // Avatar
+  const avEl = document.getElementById('mp-avatar');
+  if (avEl) { avEl.style.cssText += ';' + getAvatarStyle(inv.name).replace('background:','background-image:none;background:'); avEl.textContent = inv.name[0]; }
+  document.getElementById('mp-welcome').textContent = 'Welcome, ' + inv.name;
+  document.getElementById('mp-sub').textContent = myPct.toFixed(4) + '% fund ownership · Updated live';
+
+  // Metric cards
+  const isLocked = inv.status === 'LOCKED';
+  const netCap   = myDep - inv.withdrawn;
+  const totalPnl = d.totalPnl || 0;
+  const myPnl    = inv.pnlShare;
+
+  // Annualised rate
+  const txns = (d.transactions||[]).filter(t=>t.type==='Deposit');
+  let fundAgeDays = 30;
+  if (txns.length > 0) {
+    const pd = s => { const [dd,mm,yy]=s.split('/'); return new Date(+yy,+mm-1,+dd); };
+    const first = txns.reduce((a,b)=>pd(a.date)<pd(b.date)?a:b);
+    fundAgeDays = Math.max(1, Math.round((Date.now()-pd(first.date))/(1000*60*60*24)));
+  }
+  const annRate = d.totalReturn / (fundAgeDays / 365);
+
+  document.getElementById('mp-metrics').innerHTML = [
+    { label:'My Capital',     val:'$'+fmtM(myDep),                          cls:'gold',  sub:'Total deposited' },
+    { label:'Net Capital',    val:'$'+fmtM(netCap),                         cls:'gold',  sub:'After withdrawals' },
+    { label:'My P&L Share',   val:sgn(myPnl)+'$'+fmtM(myPnl),              cls:'green', sub:'Pro-rata allocation' },
+    { label:'My Ownership',   val:myPct.toFixed(4)+'%',                     cls:'blue',  sub:'Of total fund' },
+    { label:'Lock Status',    val:isLocked ? inv.daysToUnlock+'d left' : 'Unlocked', cls:isLocked?'red':'green', sub:isLocked?'Funds locked':'Available to withdraw' },
+    { label:'Ann. Return',    val:(annRate*100).toFixed(1)+'%',              cls:'green', sub:'Current rate (annualised)' },
+  ].map(c=>`<div class="metric-card">
+    <div class="metric-label">${c.label}</div>
+    <div class="metric-value ${c.cls}">${c.val}</div>
+    <div class="metric-sub">${c.sub}</div>
+  </div>`).join('');
+
+  // Lockup status
+  const lockupEl = document.getElementById('mp-lockup');
+  if (isLocked) {
+    const pct = Math.max(0, Math.min(100, 100 - (inv.daysToUnlock / inv.lockDays * 100)));
+    lockupEl.innerHTML = `
+      <div class="lockup-bar-wrap">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+          <span style="color:var(--muted)">Lockup period: ${inv.lockDays} days</span>
+          <span style="color:var(--red);font-family:var(--mono)">${inv.daysToUnlock} days remaining</span>
+        </div>
+        <div class="lockup-progress">
+          <div class="lockup-fill" style="width:${pct.toFixed(1)}%;background:linear-gradient(90deg,var(--green),var(--accent2))"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);">
+          <span>Deposit date: ${inv.depositDate||'—'}</span>
+          <span>${pct.toFixed(0)}% elapsed</span>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px;padding:10px;background:rgba(232,83,74,0.06);border-radius:6px;border:1px solid rgba(232,83,74,0.15);">
+        Your funds are locked until the lockup period expires. Withdrawal requests submitted now will be processed after unlock.
+      </div>`;
+  } else {
+    lockupEl.innerHTML = `<div style="display:flex;align-items:center;gap:10px;padding:12px;background:rgba(62,207,142,0.06);border-radius:8px;border:1px solid rgba(62,207,142,0.15);">
+      <div style="width:10px;height:10px;border-radius:50%;background:var(--green);flex-shrink:0;"></div>
+      <span style="font-size:12px;color:var(--green);">Your funds are fully unlocked and available for withdrawal.</span>
+    </div>`;
+  }
+
+  // Deposit history
+  const depEl = document.getElementById('mp-deposits');
+  if (myTxns.deposits.length > 0) {
+    let running = 0;
+    depEl.innerHTML = myTxns.deposits.map(t => {
+      running += t.deposit;
+      return `<div class="deposit-row">
+        <div class="deposit-date">${t.date}</div>
+        <div class="deposit-amount" style="color:var(--green)">+$${fmtM(t.deposit)}</div>
+        <div class="deposit-note">${t.note}</div>
+        <div>${t.verified ? badge('VERIFIED','green') : badge('PENDING','gold')}</div>
+        <div style="color:var(--muted);font-size:10px;">Total: $${fmtM(running)}</div>
+      </div>`;
+    }).join('');
+  } else {
+    depEl.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px 0;">No deposit records found</div>';
+  }
+
+  // Projections
+  const projEl = document.getElementById('mp-projections');
+  const proj = m => {
+    const r = annRate * (m/12);
+    const gain = myDep * r;
+    return (gain>=0?'+':'')+fmtM(gain);
+  };
+  projEl.innerHTML = `
+    <div style="font-size:10px;color:var(--muted);margin-bottom:12px;">
+      Based on annualised rate of <span style="color:var(--accent2);font-family:var(--mono);">${(annRate*100).toFixed(1)}%</span> · Fund age: <span style="color:var(--accent2);font-family:var(--mono);">${fundAgeDays}d</span>
+    </div>
+    <div class="proj-grid">
+      <div class="proj-cell"><div class="proj-period">3 months</div><div class="proj-val">${proj(3)}</div></div>
+      <div class="proj-cell"><div class="proj-period">6 months</div><div class="proj-val">${proj(6)}</div></div>
+      <div class="proj-cell"><div class="proj-period">12 months</div><div class="proj-val">${proj(12)}</div></div>
+    </div>`;
+
+  // Fund overview (read-only)
+  document.getElementById('mp-fund-overview').innerHTML = [
+    ['Fund NAV',     '$'+fmtM(d.nav||0),                       'color:var(--accent2)'],
+    ['Total P&L',    sgn(totalPnl)+'$'+fmtM(totalPnl),         'color:var(--green)'],
+    ['Win Rate',     ((d.winRate||0)*100).toFixed(2)+'%',       'color:var(--green)'],
+    ['Total Return', sgn(d.totalReturn||0)+fmtPct(d.totalReturn||0),'color:var(--green)'],
+    ['Open Positions',(d.positions||[]).filter(p=>p.status==='Open').length,'color:var(--blue)'],
+    ['Closed Trades', d.totalTrades||0,                         ''],
+  ].map(([k,v,s])=>rowLabel(k,v,s)).join('');
+}
 
 // ── HEATMAP TOOLTIP ──────────────────────────────────────────────
 function showHeatTipFromEl(e, el) {
