@@ -641,8 +641,13 @@
     </div>
     <div class="two-col">
       <div class="card">
-        <div class="card-header"><span class="card-title">&#127942; Fund Milestones</span></div>
-        <div id="milestones-container"></div>
+        <div class="card-header"><span class="card-title">Recent Closed Trades</span><span style="font-size:10px;color:var(--muted);">Last 10</span></div>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Entry</th><th>Exit</th><th>Hold</th><th>P&L</th><th>Result</th></tr></thead>
+            <tbody id="recent-trades-tbody"></tbody>
+          </table>
+        </div>
       </div>
       <div class="card">
         <div class="card-header"><span class="card-title">&#128200; Investor Projections</span><span style="font-size:10px;color:var(--muted);">At current annualised rate</span></div>
@@ -1388,7 +1393,7 @@ function renderInvestors(investors, transactions) {
                   ${isDeposit?'+':'-'}$${fmtM(isDeposit?t.deposit:t.withdrawal)}
                 </div>
               </div>
-              <div class="tl-meta">${t.date} · ${t.note} · Fund balance: $${fmtM(t.balanceAfter)}</div>
+              <div class="tl-meta">${t.date} · ${t.note}</div>
             </div>
           </div>`;
       }).join('')}</div>`
@@ -1715,6 +1720,7 @@ function renderAll(d) {
   renderMilestones(d);
   renderProjections(d);
   renderRiskMeter(d.positions||[]);
+  renderRecentTrades(d.positions||[]);
 }
 
 // ── LAUNCH ───────────────────────────────────────────────────────
@@ -1850,30 +1856,35 @@ function renderStreaks(positions) {
     + '</div>';
 }
 
-// ── MILESTONES ────────────────────────────────────────────────────
-const MILESTONES = [
-  { id:'pnl_100m',  icon:'💰', name:'$100M P&L',           sub:'Crossed $100M in total returns',        check: d => d.totalPnl >= 1e8 },
-  { id:'pnl_1b',    icon:'🏆', name:'$1B P&L',             sub:'Legendary — crossed $1B in returns',    check: d => d.totalPnl >= 1e9 },
-  { id:'pnl_10b',   icon:'🚀', name:'$10B P&L',            sub:'Stratospheric returns',                 check: d => d.totalPnl >= 1e10 },
-  { id:'win20',     icon:'🔥', name:'20-Trade Win Streak',  sub:'Won 20 trades in a row',                check: d => calcStreaks(d.positions||[]).best >= 20 },
-  { id:'win10',     icon:'⚡', name:'10-Trade Win Streak',  sub:'10 consecutive winning trades',         check: d => calcStreaks(d.positions||[]).best >= 10 },
-  { id:'wr80',      icon:'🎯', name:'80%+ Win Rate',        sub:'Sustained win rate above 80%',          check: d => d.winRate >= 0.80 },
-  { id:'pf5',       icon:'📈', name:'Profit Factor 5×+',   sub:'Exceptional risk/reward ratio',         check: d => d.profitFactor >= 5 },
-  { id:'trades20',  icon:'🏅', name:'20 Closed Trades',    sub:'Completed 20 trades',                   check: d => d.totalTrades >= 20 },
-];
+// ── MILESTONES (removed — stub kept for render call) ─────────────
+function renderMilestones(d) {}
 
-function renderMilestones(d) {
-  const el = document.getElementById('milestones-container');
-  if(!el) return;
-  el.innerHTML = MILESTONES.map(m => {
-    const unlocked = m.check(d);
-    return '<div class="milestone-item'+(unlocked?'':' milestone-locked')+'">'
-      + '<div class="milestone-icon">'+m.icon+'</div>'
-      + '<div><div class="milestone-name">'+m.name+(unlocked?' <span style="color:var(--green);font-size:9px;">✓ UNLOCKED</span>':'')+'</div>'
-      + '<div class="milestone-sub">'+m.sub+'</div></div>'
-      + '</div>';
+// ── RECENT TRADES TABLE ───────────────────────────────────────────
+function renderRecentTrades(positions) {
+  const el = document.getElementById('recent-trades-tbody');
+  if (!el) return;
+  const closed = positions.filter(p=>p.status==='Closed').slice(-10).reverse();
+  if (!closed.length) {
+    el.innerHTML = '<tr><td colspan="9" style="color:var(--muted);text-align:center;padding:16px;">No closed trades</td></tr>';
+    return;
+  }
+  el.innerHTML = closed.map(p => {
+    const rb = p.result==='TAKE PROFIT HIT'?'green':p.result==='STOP LOSS HIT'?'red':'blue';
+    const rl = p.result==='TAKE PROFIT HIT'?'TP HIT':p.result==='STOP LOSS HIT'?'SL HIT':'CLOSED';
+    return `<tr>
+      <td>${p.id}</td>
+      <td class="label">${p.cls}</td>
+      <td class="label">${p.ticker}</td>
+      <td>${badge(p.side.toUpperCase(), p.side==='Long'?'green':'red')}</td>
+      <td>${p.entry}</td>
+      <td>${p.exit}</td>
+      <td>${p.hold}d</td>
+      <td style="color:${clr(p.pnl)}">${sgn(p.pnl)}$${fmtM(p.pnl)}</td>
+      <td>${badge(rl, rb)}</td>
+    </tr>`;
   }).join('');
 }
+
 
 // ── INVESTOR PROJECTIONS ──────────────────────────────────────────
 function renderProjections(d) {
