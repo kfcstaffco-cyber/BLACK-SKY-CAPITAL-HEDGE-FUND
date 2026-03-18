@@ -1062,44 +1062,90 @@ function renderAnalytics(d) {
 }
 
 function renderAll(d) {
-  window.lastData = d; // Saves the current data globally for the fluctuation script
-  $('live-date').textContent=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();
-  renderOverview(d); renderPositions(d.positions); renderInvestors(d.investors,d); renderAnalytics(d);
+  // 1. GLOBAL STATE & DEBUGGING
+  // Saves the current data globally for your fluctuation script and F12 inspection
+  window.lastData = d; 
+
+  // 2. HEADER & DATE DISPLAY
+  // Updates the top-right date in the 'DD MMM YYYY' format
+  if ($('live-date')) {
+    $('live-date').textContent = new Date().toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    }).toUpperCase();
+  }
+
+  // 3. CORE RENDERING
+  // Pass both the summary and the logs to investors
+  renderInvestors(d.investors, d.transactions); 
+  
+  // Existing render calls
+  renderOverview(d); 
+  renderPositions(d.positions); 
+  renderAnalytics(d);
+
+  // 4. FLUCTUATION ENGINE
+  // Feeds the data into the micro-movement script
   seedFluctuations(d);
-  if (!fluctTimer) startMicroFluctuations();
+  if (!window.fluctTimer) {
+    startMicroFluctuations();
+  }
+
+  // 5. UPDATE SYNC TIME (Optional)
+  if ($('last-update')) {
+    $('last-update').textContent = 'Last Sync: ' + new Date().toLocaleTimeString();
+  }
 }
 
 // ── LAUNCH ───────────────────────────────────────────────────────
 async function launchDashboard(sheetId, apiKey) {
   $('loading-screen').style.display = 'flex';
   try {
-    const [measureRows, posRows, invRows] = await Promise.all([
+    // 1. FETCH 4 SHEETS (Added txnRows to the list)
+    const [measureRows, posRows, invRows, txnRows] = await Promise.all([
       fetchSheet(sheetId, apiKey, SHEET_TABS.fundMeasures),
       fetchSheet(sheetId, apiKey, SHEET_TABS.positions),
       fetchSheet(sheetId, apiKey, SHEET_TABS.investors),
-      fetchSheet(sheetId, apiKey, SHEET_TABS.transaction)
+      fetchSheet(sheetId, apiKey, SHEET_TABS.transactions) // Match your key name here
     ]);
-    const measures  = parseFundMeasures(measureRows);
+
+    // 2. PARSE DATA
+    const measures = parseFundMeasures(measureRows);
     measures.positions = parsePositions(posRows);
     measures.investors = parseInvestors(invRows);
+    
+    // Attach the transactions to the measures object so they travel together
+    measures.transactions = txnRows; 
+
     $('loading-screen').style.display = 'none';
     $('app').style.display = 'block';
+    
+    // 3. INITIAL RENDER
     renderAll(measures);
+
+    // 4. REFRESH INTERVAL (Updated to fetch all 4 sheets)
     setInterval(async () => {
       try {
-        const [mr,pr,ir] = await Promise.all([
-          fetchSheet(sheetId,apiKey,SHEET_TABS.fundMeasures),
-          fetchSheet(sheetId,apiKey,SHEET_TABS.positions),
-          fetchSheet(sheetId,apiKey,SHEET_TABS.investors),
+        const [mr, pr, ir, tr] = await Promise.all([
+          fetchSheet(sheetId, apiKey, SHEET_TABS.fundMeasures),
+          fetchSheet(sheetId, apiKey, SHEET_TABS.positions),
+          fetchSheet(sheetId, apiKey, SHEET_TABS.investors),
+          fetchSheet(sheetId, apiKey, SHEET_TABS.transactions)
         ]);
-        const m=parseFundMeasures(mr); m.positions=parsePositions(pr); m.investors=parseInvestors(ir);
+        const m = parseFundMeasures(mr); 
+        m.positions = parsePositions(pr); 
+        m.investors = parseInvestors(ir);
+        m.transactions = tr; // Keep transactions updated on refresh
         renderAll(m);
       } catch(e) { console.warn('Refresh failed:', e); }
     }, REFRESH_INTERVAL);
+
   } catch(err) {
+    // ERROR HANDLING
     $('loading-screen').style.display = 'none';
     $('error-banner').style.display = 'block';
-    $('error-banner').textContent = '⚠ Could not connect to Google Sheets: ' + err.message + ' — check your Sheet ID and API key.';
+    $('error-banner').textContent = '⚠ ' + err.message;
     $('app').style.display = 'block';
     renderAll({...DEMO, investors: DEMO.investors});
     sessionStorage.removeItem('bsc_sheet_id');
