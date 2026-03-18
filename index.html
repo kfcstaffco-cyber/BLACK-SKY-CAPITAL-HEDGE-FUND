@@ -764,12 +764,36 @@ function animateMetricCard(cardEl, newVal, oldVal, formatter) {
 }
 
 // ── GOOGLE SHEETS FETCH ──────────────────────────────────────────
-async function fetchSheet(sheetId, apiKey, tabName) {
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(tabName)}?key=${apiKey}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Sheets API ${res.status}`);
-  const data = await res.json();
-  return data.values || [];
+async function fetchSheet(id, key, tabName) {
+  // encodeURIComponent fixes the "Transaction Log" space issue
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${encodeURIComponent(tabName)}?key=${key}`;
+  
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    
+    // If Google returns an error (like 400), throw it here so we can see it
+    if (data.error) {
+      throw new Error(`Sheets API ${data.error.code}: ${data.error.message}`);
+    }
+
+    const rows = data.values;
+    if (!rows || rows.length === 0) return [];
+
+    const headers = rows[0];
+    return rows.slice(1).map(row => {
+      const obj = {};
+      headers.forEach((h, i) => {
+        // This converts "Deposit Date" to "depositDate" for your code
+        const key = h.toLowerCase().replace(/[^a-z0-9]/g, '');
+        obj[key] = row[i];
+      });
+      return obj;
+    });
+  } catch (err) {
+    console.error("Fetch error for tab:", tabName, err);
+    throw err;
+  }
 }
 
 function parseFundMeasures(rows) {
