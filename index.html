@@ -990,7 +990,7 @@ function renderInvestors(investors, transactions) {
           return invTxns.deposits.map(t => {
             running += t.deposit;
             const lockLabel = inv.status === 'LOCKED'
-              ? `<span style="color:var(--red);font-size:10px;font-family:var(--mono);">🔒 ${inv.daysToUnlock}d to unlock</span>`
+              ? `<span style="color:var(--red);font-size:10px;font-family:var(--mono);"> ${inv.daysToUnlock}d to unlock</span>`
               : `<span style="color:var(--green);font-size:10px;">✓ Unlocked</span>`;
             return `
             <div class="deposit-row">
