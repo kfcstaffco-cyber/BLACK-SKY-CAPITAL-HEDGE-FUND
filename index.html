@@ -490,6 +490,19 @@
     .step-dot.done   { background: var(--green); border-color: var(--green); color: #0a0c0f; }
     .step-line { flex: 1; height: 1px; background: var(--border); }
 
+
+    /* ── PRIVACY MODE ── */
+    .privacy-toggle {
+      display:flex; align-items:center; gap:8px; cursor:pointer;
+      background:var(--bg3); border:1px solid var(--border2); border-radius:8px;
+      padding:6px 12px; font-size:11px; color:var(--muted); transition:all 0.15s;
+      user-select:none;
+    }
+    .privacy-toggle:hover { border-color:var(--accent); color:var(--text); }
+    .privacy-toggle .pt-icon { font-size:13px; }
+    body.privacy-on .priv-name { filter:blur(6px); transition:filter 0.2s; }
+    body.privacy-on .priv-name:hover { filter:blur(0); }
+
     /* TICKER */
     .ticker-wrap { background: var(--bg2); border-bottom: 1px solid var(--border); overflow: hidden; padding: 12px 0; display: flex; width: 100%; }
     .ticker-move { display: flex; white-space: nowrap; animation: ticker-loop 60s linear infinite; }
@@ -569,6 +582,7 @@
       </div>
     </div>
     <div class="header-right">
+      <div id="access-badge" style="display:none;align-items:center;gap:6px;font-size:10px;color:var(--accent2);letter-spacing:0.08em;background:rgba(232,196,122,0.1);border:1px solid rgba(232,196,122,0.2);border-radius:6px;padding:4px 10px;">&#9679; MASTER</div>
       <div class="live-badge"><div class="live-dot"></div>LIVE</div>
       <div class="date-label" id="live-date">—</div>
       <button class="logout-btn" onclick="logout()">Lock</button>
@@ -631,7 +645,7 @@
     <div class="metric-grid" id="investor-metrics"></div>
 
     <!-- Investor Cards -->
-    <div id="investor-cards-container" style="margin-bottom:14px;"></div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:10px;"><div class="privacy-toggle" onclick="togglePrivacy()" id="privacy-btn"><span class="pt-icon">&#128065;</span><span id="privacy-label">Show Names</span></div></div><div id="investor-cards-container" style="margin-bottom:14px;"></div>
 
     <div class="two-col">
       <div class="card">
@@ -875,7 +889,9 @@
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ── PASSWORD ────────────────────────────────────────────────────
-const _h = '105f30404ab7b6785fdbaee01e4a7b35965cae0b412f21eb082bc6c786836a68';
+const _h  = '105f30404ab7b6785fdbaee01e4a7b35965cae0b412f21eb082bc6c786836a68'; // standard
+const _hm = 'aaf414daab723c2d4cfbaa75aee88af0791f4db7e4caf663bc492d995782f5df'; // master
+let isMasterAccess = false;
 async function _digest(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
@@ -885,7 +901,12 @@ async function checkPassword() {
   const err = document.getElementById('pw-error');
   const inp = document.getElementById('pw-input');
   const hash = await _digest(val);
-  if (hash === _h) {
+  if (hash === _hm) {
+    isMasterAccess = true;
+    document.getElementById('pw-screen').style.display = 'none';
+    showPostAuth();
+  } else if (hash === _h) {
+    isMasterAccess = false;
     document.getElementById('pw-screen').style.display = 'none';
     showPostAuth();
   } else {
@@ -923,29 +944,29 @@ const DEMO = {
   profitFactor:7.22,sharpe:0.62,expectancy:49571241,avgHold:1.09,bestTrade:408384000,
   worstTrade:-121000000,avgWin:66169178,avgLoss:-61081667,avgPnlPerTrade:51444285,
   positions:[
-    {id:1,status:'Closed',cls:'Stock',ticker:'NVDA',side:'Long',entry:307.98,exit:305.56,qty:2500000,lev:20,pnl:-121000000,hold:3,result:'STOP LOSS HIT'},
-    {id:2,status:'Closed',cls:'Stock',ticker:'META',side:'Long',entry:278.53,exit:273.5,qty:575000,lev:20,pnl:-57845000,hold:0,result:'STOP LOSS HIT'},
-    {id:3,status:'Closed',cls:'Forex',ticker:'AUD/USD',side:'Short',entry:0.7798,exit:0.777,qty:300000000,lev:20,pnl:16800000,hold:2,result:'STOP LOSS HIT'},
-    {id:4,status:'Closed',cls:'Futures',ticker:'Gold',side:'Long',entry:5106.38,exit:5234,qty:160000,lev:20,pnl:408384000,hold:1,result:'TAKE PROFIT HIT'},
-    {id:5,status:'Closed',cls:'Forex',ticker:'AUD/USD',side:'Short',entry:0.77852,exit:0.7759,qty:500000000,lev:15,pnl:19650000,hold:1,result:'TAKE PROFIT HIT'},
-    {id:6,status:'Closed',cls:'Futures',ticker:'Gold',side:'Long',entry:5078,exit:5172,qty:140000,lev:20,pnl:263200000,hold:0,result:'TAKE PROFIT HIT'},
-    {id:7,status:'Closed',cls:'Crypto',ticker:'BTC',side:'Long',entry:70509.74,exit:71230,qty:15000,lev:20,pnl:216078000,hold:0,result:'TAKE PROFIT HIT'},
-    {id:8,status:'Closed',cls:'Futures',ticker:'Oil',side:'Long',entry:78.585,exit:86.28,qty:500000,lev:10,pnl:38475000,hold:0,result:'TAKE PROFIT HIT'},
-    {id:9,status:'Closed',cls:'Crypto',ticker:'BTC',side:'Short',entry:70755.2,exit:69975,qty:7200,lev:20,pnl:112348800,hold:0,result:'TAKE PROFIT HIT'},
-    {id:10,status:'Closed',cls:'Futures',ticker:'Oil',side:'Long',entry:85.43,exit:90.16,qty:15000,lev:20,pnl:1419000,hold:1,result:'TAKE PROFIT HIT'},
-    {id:11,status:'Closed',cls:'Futures',ticker:'Oil',side:'Long',entry:87.13,exit:96.49,qty:25000,lev:10,pnl:2340000,hold:3,result:'TAKE PROFIT HIT'},
-    {id:12,status:'Closed',cls:'Index',ticker:'Nikkei',side:'Short',entry:22748.99,exit:22387.68,qty:18000,lev:10,pnl:65035260,hold:3,result:'CLOSED'},
-    {id:13,status:'Closed',cls:'Forex',ticker:'AUD/USD',side:'Short',entry:0.7817,exit:0.776,qty:400000000,lev:10,pnl:22800000,hold:0,result:'TAKE PROFIT HIT'},
-    {id:14,status:'Closed',cls:'Stock',ticker:'AMZN',side:'Long',entry:212.415,exit:214.5,qty:1500000,lev:10,pnl:31275000,hold:5,result:'TAKE PROFIT HIT'},
-    {id:15,status:'Closed',cls:'Crypto',ticker:'BTC',side:'Short',entry:72775.14,exit:72150,qty:8000,lev:10,pnl:50011200,hold:0,result:'TAKE PROFIT HIT'},
-    {id:16,status:'Closed',cls:'Stock',ticker:'NFLX',side:'Short',entry:98.875,exit:98.1,qty:6000000,lev:10,pnl:46500000,hold:0,result:'CLOSED'},
-    {id:17,status:'Closed',cls:'Index',ticker:'SPX',side:'Short',entry:6869.5,exit:6835,qty:25000,lev:10,pnl:8625000,hold:0,result:'TAKE PROFIT HIT'},
-    {id:18,status:'Closed',cls:'Futures',ticker:'Oil',side:'Long',entry:78.78,exit:79.2,qty:750000,lev:20,pnl:6300000,hold:0,result:'TAKE PROFIT HIT'},
-    {id:19,status:'Closed',cls:'Forex',ticker:'USD/JPY',side:'Short',entry:157,exit:156.72,qty:800000,lev:20,pnl:4480000,hold:1,result:'TAKE PROFIT HIT'},
-    {id:20,status:'Closed',cls:'Crypto',ticker:'BTC',side:'Short',entry:73988,exit:73370.54,qty:1000,lev:5,pnl:3087300,hold:0,result:'CLOSED'},
-    {id:21,status:'Closed',cls:'Stock',ticker:'RHMD',side:'Short',entry:1599.5,exit:1570,qty:5000,lev:10,pnl:1475000,hold:1,result:'TAKE PROFIT HIT'},
-    {id:22,status:'Closed',cls:'ETF',ticker:'REMX',side:'Long',entry:20.69,exit:20.47,qty:800000,lev:25,pnl:-4400000,hold:1,result:'STOP LOSS HIT'},
-    {id:23,status:'Closed',cls:'Futures',ticker:'Oil',side:'Long',entry:70.9,exit:76,qty:100000,lev:10,pnl:5100000,hold:3,result:'TAKE PROFIT HIT'},
+    {id:1,status:'Closed',date:'01/02/2026',cls:'Stock',ticker:'NVDA',side:'Long',entry:307.98,exit:305.56,qty:2500000,lev:20,pnl:-121000000,hold:3,result:'STOP LOSS HIT'},
+    {id:2,status:'Closed',date:'03/02/2026',cls:'Stock',ticker:'META',side:'Long',entry:278.53,exit:273.5,qty:575000,lev:20,pnl:-57845000,hold:0,result:'STOP LOSS HIT'},
+    {id:3,status:'Closed',date:'05/02/2026',cls:'Forex',ticker:'AUD/USD',side:'Short',entry:0.7798,exit:0.777,qty:300000000,lev:20,pnl:16800000,hold:2,result:'STOP LOSS HIT'},
+    {id:4,status:'Closed',date:'07/02/2026',cls:'Futures',ticker:'Gold',side:'Long',entry:5106.38,exit:5234,qty:160000,lev:20,pnl:408384000,hold:1,result:'TAKE PROFIT HIT'},
+    {id:5,status:'Closed',date:'09/02/2026',cls:'Forex',ticker:'AUD/USD',side:'Short',entry:0.77852,exit:0.7759,qty:500000000,lev:15,pnl:19650000,hold:1,result:'TAKE PROFIT HIT'},
+    {id:6,status:'Closed',date:'11/02/2026',cls:'Futures',ticker:'Gold',side:'Long',entry:5078,exit:5172,qty:140000,lev:20,pnl:263200000,hold:0,result:'TAKE PROFIT HIT'},
+    {id:7,status:'Closed',date:'13/02/2026',cls:'Crypto',ticker:'BTC',side:'Long',entry:70509.74,exit:71230,qty:15000,lev:20,pnl:216078000,hold:0,result:'TAKE PROFIT HIT'},
+    {id:8,status:'Closed',date:'15/02/2026',cls:'Futures',ticker:'Oil',side:'Long',entry:78.585,exit:86.28,qty:500000,lev:10,pnl:38475000,hold:0,result:'TAKE PROFIT HIT'},
+    {id:9,status:'Closed',date:'17/02/2026',cls:'Crypto',ticker:'BTC',side:'Short',entry:70755.2,exit:69975,qty:7200,lev:20,pnl:112348800,hold:0,result:'TAKE PROFIT HIT'},
+    {id:10,status:'Closed',date:'19/02/2026',cls:'Futures',ticker:'Oil',side:'Long',entry:85.43,exit:90.16,qty:15000,lev:20,pnl:1419000,hold:1,result:'TAKE PROFIT HIT'},
+    {id:11,status:'Closed',date:'21/02/2026',cls:'Futures',ticker:'Oil',side:'Long',entry:87.13,exit:96.49,qty:25000,lev:10,pnl:2340000,hold:3,result:'TAKE PROFIT HIT'},
+    {id:12,status:'Closed',date:'23/02/2026',cls:'Index',ticker:'Nikkei',side:'Short',entry:22748.99,exit:22387.68,qty:18000,lev:10,pnl:65035260,hold:3,result:'CLOSED'},
+    {id:13,status:'Closed',date:'25/02/2026',cls:'Forex',ticker:'AUD/USD',side:'Short',entry:0.7817,exit:0.776,qty:400000000,lev:10,pnl:22800000,hold:0,result:'TAKE PROFIT HIT'},
+    {id:14,status:'Closed',date:'27/02/2026',cls:'Stock',ticker:'AMZN',side:'Long',entry:212.415,exit:214.5,qty:1500000,lev:10,pnl:31275000,hold:5,result:'TAKE PROFIT HIT'},
+    {id:15,status:'Closed',date:'01/03/2026',cls:'Crypto',ticker:'BTC',side:'Short',entry:72775.14,exit:72150,qty:8000,lev:10,pnl:50011200,hold:0,result:'TAKE PROFIT HIT'},
+    {id:16,status:'Closed',date:'03/03/2026',cls:'Stock',ticker:'NFLX',side:'Short',entry:98.875,exit:98.1,qty:6000000,lev:10,pnl:46500000,hold:0,result:'CLOSED'},
+    {id:17,status:'Closed',date:'05/03/2026',cls:'Index',ticker:'SPX',side:'Short',entry:6869.5,exit:6835,qty:25000,lev:10,pnl:8625000,hold:0,result:'TAKE PROFIT HIT'},
+    {id:18,status:'Closed',date:'07/03/2026',cls:'Futures',ticker:'Oil',side:'Long',entry:78.78,exit:79.2,qty:750000,lev:20,pnl:6300000,hold:0,result:'TAKE PROFIT HIT'},
+    {id:19,status:'Closed',date:'09/03/2026',cls:'Forex',ticker:'USD/JPY',side:'Short',entry:157,exit:156.72,qty:800000,lev:20,pnl:4480000,hold:1,result:'TAKE PROFIT HIT'},
+    {id:20,status:'Closed',date:'11/03/2026',cls:'Crypto',ticker:'BTC',side:'Short',entry:73988,exit:73370.54,qty:1000,lev:5,pnl:3087300,hold:0,result:'CLOSED'},
+    {id:21,status:'Closed',date:'13/03/2026',cls:'Stock',ticker:'RHMD',side:'Short',entry:1599.5,exit:1570,qty:5000,lev:10,pnl:1475000,hold:1,result:'TAKE PROFIT HIT'},
+    {id:22,status:'Closed',date:'15/03/2026',cls:'ETF',ticker:'REMX',side:'Long',entry:20.69,exit:20.47,qty:800000,lev:25,pnl:-4400000,hold:1,result:'STOP LOSS HIT'},
+    {id:23,status:'Closed',date:'17/03/2026',cls:'Futures',ticker:'Oil',side:'Long',entry:70.9,exit:76,qty:100000,lev:10,pnl:5100000,hold:3,result:'TAKE PROFIT HIT'},
     {id:24,status:'Open',cls:'Futures',ticker:'Oil',side:'Long',entry:97.633,exit:98.71,qty:1200000,lev:20,pnl:25848000,hold:1,result:'Active',sl:92,tp:148.5},
     {id:25,status:'Open',cls:'Futures',ticker:'Oil',side:'Long',entry:97.633,exit:98.71,qty:800000,lev:20,pnl:17232000,hold:1,result:'Active',sl:92,tp:138},
   ],
@@ -1447,7 +1468,7 @@ function renderInvestors(investors, transactions) {
           <div class="investor-left">
             <div class="avatar-lg" style="${avStyle}">${inv.name[0]}</div>
             <div>
-              <div class="investor-name">${inv.name}</div>
+              <div class="investor-name priv-name">${inv.name}</div>
               <div class="investor-meta">${ownershipPct.toFixed(4)}% ownership · ${daysText}</div>
             </div>
           </div>
@@ -1505,7 +1526,7 @@ function renderInvestors(investors, transactions) {
     return `
     <div style="margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
-        <span style="color:var(--muted)">${inv.name}</span>
+        <span style="color:var(--muted)" class="priv-name">${inv.name}</span>
         <span style="font-family:var(--mono);color:${getOwnerColor(inv.name)}">${ownerPct.toFixed(4)}%</span>
       </div>
       <div class="bar-track" style="height:6px">
@@ -1532,7 +1553,7 @@ function renderInvestors(investors, transactions) {
     return `
       <div style="border-bottom:1px solid var(--border);">
         <div onclick="togglePnlRow(${idx})" style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;cursor:pointer;">
-          <span style="font-size:12px;">${inv.name}</span>
+          <span style="font-size:12px;" class="priv-name">${inv.name}</span>
           <div style="display:flex;align-items:center;gap:10px;">
             <span style="font-family:var(--mono);font-size:12px;color:var(--green)">${sgn(inv.pnlShare)}$${fmtM(inv.pnlShare)}</span>
             <svg id="pnl-chev-${idx}" style="width:12px;height:12px;color:var(--muted);transition:transform 0.2s;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
@@ -1560,7 +1581,7 @@ function renderInvestors(investors, transactions) {
             <div class="tl-content">
               <div class="tl-header">
                 <div>
-                  <span class="tl-name">${t.name}</span>
+                  <span class="tl-name priv-name">${t.name}</span>
                   <span class="tl-badge">${badge(t.type.toUpperCase(), isDeposit?'green':'red')}</span>
                   ${t.verified?badge('✓ VERIFIED','gray'):''}
                 </div>
@@ -1585,7 +1606,7 @@ function renderInvestors(investors, transactions) {
       ? `<span style="color:var(--red);font-family:var(--mono);font-size:11px;">${inv.daysToUnlock}d remaining</span>`
       : `<span style="color:var(--green);font-size:11px;">Available now</span>`;
     return `<tr>
-      <td class="label">${inv.name}</td>
+      <td class="label priv-name">${inv.name}</td>
       <td style="color:var(--accent2)">$${fmtM(dep)}</td>
       <td style="color:${hasWithdrawals?'var(--red)':'var(--muted)'}">$${fmtM(wdr)}</td>
       <td style="color:var(--text)">$${fmtM(net)}</td>
@@ -1858,7 +1879,7 @@ function renderNewAnalytics(positions) {
     byDate[dateKey].count++;
     byDate[dateKey].trades.push(p);
   });
-  const dates  = Object.keys(byDate).sort();
+  const dates  = Object.keys(byDate).filter(d => d !== 'Unknown').sort();
   const maxAbs = Math.max(...Object.values(byDate).map(v => Math.abs(v.pnl)), 1);
 
   const cells = dates.map(date => {
@@ -1930,6 +1951,7 @@ async function launchDashboard(sheetId, apiKey) {
     $('loading-screen').style.display = 'none';
     $('app').style.display = 'block';
     renderAll(measures);
+    applyAccessLevel();
     setInterval(async () => {
       try {
         const [mr,pr,ir,tr] = await Promise.all([
@@ -1952,6 +1974,7 @@ async function launchDashboard(sheetId, apiKey) {
     $('app').style.display = 'block';
     renderAll({...DEMO});
   }
+  applyAccessLevel();
 }
 
 // ── CLOCK ────────────────────────────────────────────────────────
@@ -2133,6 +2156,46 @@ async function submitDWRequest() {
   }
 }
 
+
+
+// ── ACCESS LEVEL ─────────────────────────────────────────────────
+function applyAccessLevel() {
+  if (isMasterAccess) {
+    // Master: names visible, show master badge, hide privacy toggle
+    document.body.classList.remove('privacy-on');
+    privacyOn = false;
+    const badge = document.getElementById('access-badge');
+    if (badge) badge.style.display = 'flex';
+    const toggle = document.getElementById('privacy-btn');
+    if (toggle) toggle.style.display = 'none';
+    // Update label
+    const lbl = document.getElementById('privacy-label');
+    if (lbl) lbl.textContent = 'Names Visible';
+  } else {
+    // Standard: names blurred by default, show privacy toggle
+    document.body.classList.add('privacy-on');
+    privacyOn = true;
+    const badge = document.getElementById('access-badge');
+    if (badge) badge.style.display = 'none';
+    const toggle = document.getElementById('privacy-btn');
+    if (toggle) toggle.style.display = 'flex';
+  }
+}
+
+// ── PRIVACY MODE ─────────────────────────────────────────────────
+let privacyOn = true; // default: names hidden
+function togglePrivacy() {
+  if (isMasterAccess) return; // master always sees names
+  privacyOn = !privacyOn;
+  document.body.classList.toggle('privacy-on', privacyOn);
+  document.getElementById('privacy-label').textContent = privacyOn ? 'Show Names' : 'Hide Names';
+  document.getElementById('privacy-btn').querySelector('.pt-icon').innerHTML = privacyOn ? '&#128065;' : '&#128064;';
+}
+// Apply on load
+document.addEventListener('DOMContentLoaded', () => {
+  document.body.classList.add('privacy-on');
+});
+
 // ── HEATMAP TOOLTIP ──────────────────────────────────────────────
 function showHeatTipFromEl(e, el) {
   const date  = el.getAttribute('data-date');
@@ -2267,7 +2330,7 @@ function renderProjections(d) {
       return (gain>=0?'+':'')+fmtM(gain);
     };
     return '<div class="proj-row">'
-      + '<div class="proj-name">'+inv.name+'</div>'
+      + '<div class="proj-name priv-name">'+inv.name+'</div>'
       + '<div class="proj-grid">'
       + '<div class="proj-cell"><div class="proj-period">3 months</div><div class="proj-val">'+proj(3)+'</div></div>'
       + '<div class="proj-cell"><div class="proj-period">6 months</div><div class="proj-val">'+proj(6)+'</div></div>'
@@ -2387,5 +2450,7 @@ function exportPDF() {
 }
 
 </script>
+
+<div id="heatmap-tooltip" style="position:fixed;z-index:9000;pointer-events:none;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;font-size:11px;box-shadow:0 4px 20px rgba(0,0,0,0.5);opacity:0;transition:opacity 0.1s;min-width:160px;"><div class="ht-date" id="ht-date"></div><div class="ht-pnl" id="ht-pnl"></div><div class="ht-count" id="ht-count"></div><div class="ht-trades" id="ht-trades"></div></div>
 </body>
 </html>
