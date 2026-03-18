@@ -436,7 +436,7 @@
       <div class="card-header"><span class="card-title">Withdrawal Tracker</span></div>
       <div class="table-scroll">
         <table>
-          <thead><tr><th>Investor</th><th>Total Deposited</th><th>Total Withdrawn</th><th>Net Capital</th><th>Status</th></tr></thead>
+          <thead><tr><th>Investor</th><th>Total Deposited</th><th>Total Withdrawn</th><th>Net Capital</th><th>Status</th><th>Lockup Remaining</th></tr></thead>
           <tbody id="withdrawal-tbody"></tbody>
         </table>
       </div>
@@ -989,12 +989,15 @@ function renderInvestors(investors, transactions) {
           let running = 0;
           return invTxns.deposits.map(t => {
             running += t.deposit;
+            const lockLabel = inv.status === 'LOCKED'
+              ? `<span style="color:var(--red);font-size:10px;font-family:var(--mono);">🔒 ${inv.daysToUnlock}d to unlock</span>`
+              : `<span style="color:var(--green);font-size:10px;">✓ Unlocked</span>`;
             return `
             <div class="deposit-row">
               <div class="deposit-date">${t.date}</div>
               <div class="deposit-amount" style="color:var(--green)">+$${fmtM(t.deposit)}</div>
               <div class="deposit-note">${t.note}</div>
-              <div>${t.verified ? badge('VERIFIED','green') : badge('PENDING','gold')}</div>
+              <div style="display:flex;flex-direction:column;gap:4px;">${t.verified ? badge('VERIFIED','green') : badge('PENDING','gold')}${lockLabel}</div>
               <div style="color:var(--muted);font-size:10px;">Total: $${fmtM(running)}</div>
             </div>`;
           }).join('');
@@ -1132,14 +1135,21 @@ function renderInvestors(investors, transactions) {
 
   // ── Withdrawal tracker table ──
   $('withdrawal-tbody').innerHTML = investors.map(inv => {
-    const net = inv.deposited - inv.withdrawn;
-    const hasWithdrawals = inv.withdrawn > 0;
+    const invT = txnsByName[inv.name] || { totalDeposit: 0, totalWithdrawal: 0 };
+    const dep = invT.totalDeposit || inv.deposited;
+    const wdr = invT.totalWithdrawal || inv.withdrawn;
+    const net = dep - wdr;
+    const hasWithdrawals = wdr > 0;
+    const lockText = inv.status === 'LOCKED'
+      ? `<span style="color:var(--red);font-family:var(--mono);font-size:11px;">${inv.daysToUnlock}d remaining</span>`
+      : `<span style="color:var(--green);font-size:11px;">Available now</span>`;
     return `<tr>
       <td class="label">${inv.name}</td>
-      <td style="color:var(--accent2)">$${fmtM(inv.deposited)}</td>
-      <td style="color:${hasWithdrawals?'var(--red)':'var(--muted)'}">$${fmtM(inv.withdrawn)}</td>
+      <td style="color:var(--accent2)">$${fmtM(dep)}</td>
+      <td style="color:${hasWithdrawals?'var(--red)':'var(--muted)'}">$${fmtM(wdr)}</td>
       <td style="color:var(--text)">$${fmtM(net)}</td>
       <td>${inv.status==='LOCKED'?badge('LOCKED','red'):badge('UNLOCKED','green')}</td>
+      <td>${lockText}</td>
     </tr>`;
   }).join('');
 }
