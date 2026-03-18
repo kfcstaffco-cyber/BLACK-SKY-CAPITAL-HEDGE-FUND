@@ -626,6 +626,83 @@
     .cal-pnl { font-size:9px; font-family:var(--mono); margin-top:2px; }
     @media(max-width:600px){ .cal-day { min-height:48px; } }
 
+
+    /* ── NOTIFICATION CENTRE ── */
+    .notif-bell {
+      position: relative; background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: 16px; padding: 4px; transition: color 0.15s;
+    }
+    .notif-bell:hover { color: var(--text); }
+    .notif-badge {
+      position: absolute; top: -2px; right: -2px;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--red); color: #fff;
+      font-size: 9px; font-weight: 700; font-family: var(--mono);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.2s;
+    }
+    .notif-badge.visible { opacity: 1; }
+    .notif-panel {
+      position: fixed; top: 56px; right: 16px; width: 320px;
+      background: var(--bg2); border: 1px solid var(--border2);
+      border-radius: 12px; z-index: 3000;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      display: none; flex-direction: column; overflow: hidden;
+      max-height: 400px;
+    }
+    .notif-panel.open { display: flex; }
+    .notif-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 16px 10px; border-bottom: 1px solid var(--border);
+      font-size: 12px; font-weight: 600;
+    }
+    .notif-clear { font-size: 10px; color: var(--muted); cursor: pointer; background: none; border: none; }
+    .notif-clear:hover { color: var(--red); }
+    .notif-list { overflow-y: auto; flex: 1; }
+    .notif-item {
+      display: flex; gap: 10px; padding: 10px 16px;
+      border-bottom: 1px solid var(--border); align-items: flex-start;
+    }
+    .notif-item:last-child { border-bottom: none; }
+    .notif-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+    .notif-body { flex: 1; }
+    .notif-title { font-size: 12px; font-weight: 500; }
+    .notif-time  { font-size: 10px; color: var(--muted); margin-top: 2px; }
+    .notif-empty { padding: 24px; text-align: center; color: var(--muted); font-size: 12px; }
+
+    /* ── SKELETON LOADING ── */
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg3) 25%, rgba(255,255,255,0.04) 50%, var(--bg3) 75%);
+      background-size: 200% 100%;
+      animation: skeleton-shimmer 1.4s ease-in-out infinite;
+      border-radius: 6px;
+    }
+    @keyframes skeleton-shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+    .skeleton-card { height: 80px; border-radius: 12px; }
+    .skeleton-row  { height: 14px; border-radius: 4px; margin-bottom: 8px; }
+
+    /* ── COLOUR-CODED POSITION ROWS ── */
+    tbody tr.row-profit:hover { background: rgba(62,207,142,0.06) !important; }
+    tbody tr.row-loss:hover   { background: rgba(232,83,74,0.06)   !important; }
+    tbody tr.row-profit { background: rgba(62,207,142,0.03); }
+    tbody tr.row-loss   { background: rgba(232,83,74,0.03); }
+
+    /* ── HERO NAV DISPLAY ── */
+    .hero-nav {
+      background: linear-gradient(135deg, rgba(200,169,110,0.08), rgba(200,169,110,0.03));
+      border: 1px solid rgba(200,169,110,0.2); border-radius: 16px;
+      padding: 24px 28px; margin-bottom: 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      backdrop-filter: blur(12px);
+    }
+    .hero-nav-val { font-size: 42px; font-weight: 600; font-family: var(--mono); color: var(--accent2); line-height: 1; }
+    .hero-nav-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 6px; }
+    .hero-nav-sub { font-size: 13px; color: var(--muted); margin-top: 6px; }
+    .hero-stats { display: flex; gap: 28px; }
+    .hero-stat-item { text-align: right; }
+    .hero-stat-val { font-size: 18px; font-weight: 500; font-family: var(--mono); }
+    .hero-stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-top: 2px; }
+
     /* TICKER */
     .ticker-move { display: flex; white-space: nowrap; animation: ticker-loop 60s linear infinite; }
     @keyframes ticker-loop { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
@@ -758,6 +835,14 @@
 
   <!-- OVERVIEW -->
   <div class="page active" id="page-overview">
+    <div class="hero-nav" id="hero-nav-block" style="display:none;">
+      <div>
+        <div class="hero-nav-label">Fund NAV</div>
+        <div class="hero-nav-val" id="hero-nav-val">—</div>
+        <div class="hero-nav-sub" id="hero-nav-sub"></div>
+      </div>
+      <div class="hero-stats" id="hero-stats"></div>
+    </div>
     <div class="metric-grid" id="overview-metrics"></div>
     <div class="two-col">
       <div class="card">
@@ -827,6 +912,7 @@
   <!-- INVESTORS -->
   <div class="page" id="page-investors">
     <div class="metric-grid" id="investor-metrics"></div>
+    <div id="statement-btn-wrap" style="display:none;margin-bottom:14px;"><button class="modal-btn" style="margin:0;" onclick="openStatementModal()">&#128196; Generate Investor Statement</button></div>
 
     <!-- Investor Cards -->
     <!-- privacy toggle removed - master access only --><div id="investor-cards-container" style="margin-bottom:14px;"></div>
@@ -1057,6 +1143,35 @@
       <div id="cal-trade-list"></div>
     </div>
   </div>
+  
+  <!-- NOTIFICATION PANEL -->
+  <div class="notif-panel" id="notif-panel">
+    <div class="notif-header">
+      <span>Notifications</span>
+      <button class="notif-clear" onclick="clearNotifications()">Clear all</button>
+    </div>
+    <div class="notif-list" id="notif-list">
+      <div class="notif-empty" id="notif-empty">No notifications yet</div>
+    </div>
+  </div>
+
+  
+  <!-- INVESTOR STATEMENT MODAL -->
+  <div class="modal-overlay" id="statement-modal" onclick="closeStatementModal(event)">
+    <div class="modal-box" style="position:relative;max-width:500px;">
+      <button class="modal-close" onclick="closeStatementModal(null,true)">&#x2715;</button>
+      <div class="modal-title">&#128196; Investor Statement</div>
+      <div class="modal-sub" style="margin-bottom:16px;">Select an investor to generate their formal statement</div>
+      <label style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Investor</label>
+      <select id="stmt-investor-select" class="modal-input" style="padding:10px 14px;cursor:pointer;margin-bottom:16px;">
+        <option value="">— Select investor —</option>
+      </select>
+      <label style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Statement Date</label>
+      <input type="text" id="stmt-date" class="modal-input" style="margin-bottom:16px;" placeholder="e.g. 18 March 2026">
+      <button class="modal-btn" style="margin-bottom:0;width:100%;" onclick="generateStatement()">Generate &amp; Open PDF</button>
+    </div>
+  </div>
+
   <footer class="site-footer">
     <div class="footer-inner">
       <!-- LEFT: KFC affiliation -->
@@ -2760,6 +2875,379 @@ function hideCalTip() {
 }
 
 
+
+// ── NOTIFICATION CENTRE ──────────────────────────────────────────
+const notifications = [];
+let notifOpen = false;
+
+function addNotification(title, type, detail) {
+  const ts = new Date().toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  notifications.unshift({title, type, detail, ts, id: Date.now()});
+  if (notifications.length > 50) notifications.pop();
+  renderNotifications();
+  // Flash bell
+  const bell = document.getElementById('notif-bell-btn');
+  if (bell) {
+    bell.style.color = 'var(--accent2)';
+    setTimeout(() => { bell.style.color = ''; }, 1000);
+  }
+}
+
+function renderNotifications() {
+  const badge = document.getElementById('notif-badge');
+  const list  = document.getElementById('notif-list');
+  const empty = document.getElementById('notif-empty');
+  if (badge) {
+    badge.textContent = notifications.length > 9 ? '9+' : notifications.length;
+    badge.classList.toggle('visible', notifications.length > 0);
+  }
+  if (!list) return;
+  if (notifications.length === 0) {
+    list.innerHTML = '<div class="notif-empty">No notifications yet</div>';
+    return;
+  }
+  list.innerHTML = notifications.map(n => {
+    const col = n.type === 'tp' ? 'var(--green)' : n.type === 'sl' ? 'var(--red)' : 'var(--blue)';
+    return `<div class="notif-item">
+      <div class="notif-dot" style="background:${col}"></div>
+      <div class="notif-body">
+        <div class="notif-title">${n.title}</div>
+        <div class="notif-time">${n.detail} · ${n.ts}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleNotifPanel() {
+  notifOpen = !notifOpen;
+  const panel = document.getElementById('notif-panel');
+  if (panel) panel.classList.toggle('open', notifOpen);
+}
+
+function clearNotifications() {
+  notifications.length = 0;
+  renderNotifications();
+}
+
+document.addEventListener('click', e => {
+  if (notifOpen && !e.target.closest('#notif-panel') && !e.target.closest('#notif-bell-btn')) {
+    notifOpen = false;
+    const panel = document.getElementById('notif-panel');
+    if (panel) panel.classList.remove('open');
+  }
+});
+
+// Override checkForNewTP to also log notifications
+function checkForNewTP(positions) {
+  const closed = positions.filter(p => p.status === 'Closed');
+  const tpCount = closed.filter(p => p.result === 'TAKE PROFIT HIT').length;
+  const slCount = closed.filter(p => p.result === 'STOP LOSS HIT').length;
+  if (prevTpCount > 0 && tpCount > prevTpCount) {
+    // Find which new trade hit TP
+    const newTPs = closed.filter(p => p.result === 'TAKE PROFIT HIT').slice(-(tpCount - prevTpCount));
+    newTPs.forEach(p => {
+      addNotification('Take Profit Hit — ' + p.ticker, 'tp', (p.pnl>=0?'+':'') + '$' + fmtM(p.pnl));
+    });
+    playChime();
+  }
+  if (prevTpCount > 0 && slCount > (window._prevSlCount||0)) {
+    const newSLs = closed.filter(p => p.result === 'STOP LOSS HIT').slice(-(slCount - (window._prevSlCount||0)));
+    newSLs.forEach(p => {
+      addNotification('Stop Loss Hit — ' + p.ticker, 'sl', (p.pnl>=0?'+':'') + '$' + fmtM(p.pnl));
+    });
+  }
+  prevTpCount = tpCount;
+  window._prevSlCount = slCount;
+}
+
+// ── HERO NAV BLOCK ───────────────────────────────────────────────
+function renderHeroNav(d) {
+  const block = document.getElementById('hero-nav-block');
+  if (!block) return;
+  block.style.display = 'flex';
+
+  const navEl  = document.getElementById('hero-nav-val');
+  const subEl  = document.getElementById('hero-nav-sub');
+  const statsEl= document.getElementById('hero-stats');
+
+  if (navEl)  navEl.textContent  = '$' + fmtM(d.nav);
+  if (subEl)  subEl.innerHTML    = `<span style="color:${d.totalPnl>=0?'var(--green)':'var(--red)'}">${sgn(d.totalPnl)}$${fmtM(d.totalPnl)}</span> total P&amp;L &nbsp;·&nbsp; <span style="color:var(--green)">${sgn(d.totalReturn)}${(d.totalReturn*100).toFixed(2)}%</span> return`;
+  if (statsEl) statsEl.innerHTML = [
+    {label:'Win Rate',  val:(d.winRate*100).toFixed(1)+'%',    cls:'var(--accent2)'},
+    {label:'Profit Factor', val:d.profitFactor.toFixed(2)+'×', cls:'var(--text)'},
+    {label:'Open Trades', val:(d.positions||[]).filter(p=>p.status==='Open').length, cls:'var(--blue)'},
+  ].map(s => `<div class="hero-stat-item">
+    <div class="hero-stat-val" style="color:${s.cls}">${s.val}</div>
+    <div class="hero-stat-label">${s.label}</div>
+  </div>`).join('');
+}
+
+// ── FUND INCEPTION DATE ──────────────────────────────────────────
+function renderInceptionStats(d) {
+  const txns = (d.transactions||[]).filter(t=>t.type==='Deposit');
+  if (!txns.length) return;
+  const parseD = s => { const [dd,mm,yy]=s.split('/'); return new Date(+yy,+mm-1,+dd); };
+  const first  = txns.reduce((a,b) => parseD(a.date)<parseD(b.date)?a:b);
+  const daysOld= Math.round((Date.now()-parseD(first.date))/(1000*60*60*24));
+  const weeksOld = (daysOld/7).toFixed(1);
+  const tradesPerWeek = daysOld>0 ? ((d.totalTrades||0)/(daysOld/7)).toFixed(1) : '—';
+  // Add inception card to metric grid if not already there
+  const grid = document.getElementById('overview-metrics');
+  if (!grid) return;
+  let inceptionCard = document.getElementById('mc-inception');
+  if (!inceptionCard) {
+    inceptionCard = document.createElement('div');
+    inceptionCard.className = 'metric-card';
+    inceptionCard.id = 'mc-inception';
+    grid.appendChild(inceptionCard);
+  }
+  inceptionCard.innerHTML = `
+    <div class="metric-label">Fund Age</div>
+    <div class="metric-value blue">${daysOld}<span style="font-size:13px;">d</span></div>
+    <div class="metric-sub">Since ${first.date} · ${tradesPerWeek} trades/wk</div>`;
+}
+
+// ── SKELETON LOADING ─────────────────────────────────────────────
+function showSkeletons() {
+  const grid = document.getElementById('overview-metrics');
+  if (!grid || grid.children.length > 0) return;
+  grid.innerHTML = Array(8).fill(0).map(() =>
+    '<div class="metric-card skeleton skeleton-card"></div>'
+  ).join('');
+}
+
+// ── COLOUR-CODED POSITION ROWS ───────────────────────────────────
+function colorPositionRows() {
+  document.querySelectorAll('#open-tbody tr, #closed-tbody tr').forEach(row => {
+    // Find P&L cell
+    const pnlCell = row.querySelector('[id^="pnl-"]') || Array.from(row.querySelectorAll('td')).find(td => td.textContent.includes('$') && (td.textContent.includes('+') || td.textContent.includes('-')));
+    if (!pnlCell) return;
+    const val = parseFloat(pnlCell.textContent.replace(/[^0-9.\-]/g,''));
+    if (!isNaN(val)) {
+      row.classList.remove('row-profit','row-loss');
+      if (val > 0) row.classList.add('row-profit');
+      else if (val < 0) row.classList.add('row-loss');
+    }
+  });
+}
+
+// ── BTC BENCHMARK on NAV CHART ───────────────────────────────────
+let btcBenchmarkData = [];
+
+function fetchBTCBenchmark() {
+  // Use CoinGecko free API to get BTC daily prices
+  const url = 'https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=60&interval=daily';
+  fetch(url)
+    .then(r => r.json())
+    .then(data => {
+      if (data.prices) {
+        const prices = data.prices;
+        const startPrice = prices[0][1];
+        // Normalise to % return from start
+        btcBenchmarkData = prices.map(p => +((p[1]/startPrice - 1)*100).toFixed(2));
+        // Re-render NAV chart if it exists
+        if (window.lastData) renderNAVWithBenchmark(window.lastData);
+      }
+    })
+    .catch(e => console.warn('BTC benchmark fetch failed:', e));
+}
+
+function renderNAVWithBenchmark(d) {
+  destroyChart('navChart');
+  const canvas = document.getElementById('navChart');
+  if (!canvas || !d.positions) return;
+  const closedPos = d.positions.filter(p=>p.status==='Closed');
+  if (!closedPos.length) return;
+
+  let cumPnl = 0;
+  const navLabels = closedPos.map(p => p.exitDate||p.date||'#'+p.id);
+  const navData   = closedPos.map(p => {
+    cumPnl += p.pnl;
+    return +((d.totalDeposited+cumPnl)/1e9).toFixed(3);
+  });
+  // Normalise fund to % return for comparison
+  const fundPctData = navData.map(v => +((v/navData[0]-1)*100).toFixed(2));
+
+  const datasets = [{
+    label: 'Black-Sky Capital',
+    data: fundPctData,
+    borderColor: '#c8a96e', backgroundColor: 'rgba(200,169,110,0.06)',
+    borderWidth: 2.5, pointRadius: 3, pointHoverRadius: 5,
+    pointBackgroundColor: '#c8a96e', fill: true, tension: 0.4, yAxisID: 'y',
+  }];
+
+  if (btcBenchmarkData.length > 0) {
+    // Sample BTC data to match fund trade count
+    const step = Math.max(1, Math.floor(btcBenchmarkData.length / closedPos.length));
+    const sampled = closedPos.map((_, i) => btcBenchmarkData[Math.min(i*step, btcBenchmarkData.length-1)]);
+    datasets.push({
+      label: 'BTC',
+      data: sampled,
+      borderColor: '#f7931a', backgroundColor: 'transparent',
+      borderWidth: 1.5, pointRadius: 0, tension: 0.4,
+      borderDash: [4,4], yAxisID: 'y',
+    });
+  }
+
+  charts.navChart = new Chart(canvas, {
+    type: 'line', data: { labels: navLabels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: true, position: 'top', labels: { color: '#6b7380', usePointStyle: true, pointStyleWidth: 8, font:{size:10} }},
+        tooltip: {
+          backgroundColor: 'rgba(10,12,15,0.95)', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
+          padding: 10, cornerRadius: 8,
+          callbacks: {
+            title: ctx => 'Trade ' + (ctx[0].dataIndex+1) + ' — ' + ctx[0].label,
+            label: ctx => ' ' + ctx.dataset.label + ': ' + (ctx.parsed.y>0?'+':'') + ctx.parsed.y.toFixed(1) + '%',
+          }
+        }
+      },
+      scales: {
+        x: { grid:{display:false}, ticks:{color:'#6b7380', maxTicksLimit:8} },
+        y: { grid:{color:'rgba(255,255,255,0.05)'}, ticks:{color:'#6b7380', callback:v=>(v>0?'+':'')+v+'%'} }
+      }
+    }
+  });
+}
+
+// ── INVESTOR STATEMENT GENERATOR ─────────────────────────────────
+function openStatementModal() {
+  const d = window.lastData;
+  if (!d || !d.investors) return;
+  const sel = document.getElementById('stmt-investor-select');
+  if (sel) {
+    sel.innerHTML = '<option value="">— Select investor —</option>'
+      + d.investors.map(inv => `<option value="${inv.name}">${inv.name}</option>`).join('');
+  }
+  const dateEl = document.getElementById('stmt-date');
+  if (dateEl) dateEl.value = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+  document.getElementById('statement-modal').classList.add('open');
+}
+
+function closeStatementModal(e, force) {
+  if (force || (e && e.target === document.getElementById('statement-modal')))
+    document.getElementById('statement-modal').classList.remove('open');
+}
+
+function generateStatement() {
+  const d = window.lastData;
+  if (!d) return;
+  const name = document.getElementById('stmt-investor-select').value;
+  if (!name) { alert('Please select an investor'); return; }
+  const stmtDate = document.getElementById('stmt-date').value || new Date().toLocaleDateString('en-GB');
+  const inv = d.investors.find(i => i.name === name);
+  if (!inv) return;
+
+  const txMap = {};
+  (d.transactions||[]).forEach(t => {
+    if (!txMap[t.name]) txMap[t.name] = {deposits:[], totalDeposit:0, totalWithdrawal:0};
+    if (t.type==='Deposit')    { txMap[t.name].deposits.push(t); txMap[t.name].totalDeposit+=t.deposit; }
+    if (t.type==='Withdrawal') txMap[t.name].totalWithdrawal+=t.withdrawal;
+  });
+  const invTxns  = txMap[name] || {deposits:[], totalDeposit:0, totalWithdrawal:0};
+  const totalCap = Object.values(txMap).reduce((s,v)=>s+v.totalDeposit,0);
+  const dep      = invTxns.totalDeposit || inv.deposited;
+  const wdr      = invTxns.totalWithdrawal || inv.withdrawn;
+  const net      = dep - wdr;
+  const pnl      = inv.pnlShare;
+  const ownerPct = totalCap>0?(dep/totalCap*100).toFixed(4):0;
+  const retPct   = dep>0?((pnl/dep)*100).toFixed(2):0;
+  const isLocked = inv.status==='LOCKED';
+
+  // Get BSC logo
+  const logoEl = document.querySelector('#pw-logo-wrap img');
+  const logoSrc = logoEl ? logoEl.src : '';
+
+  const depositRows = invTxns.deposits.map(t =>
+    `<tr><td>${t.date}</td><td>Deposit</td><td style="color:#16a34a">+$${fmtM(t.deposit)}</td><td style="color:#16a34a">${t.verified?'Verified':'Pending'}</td><td>${t.note||'—'}</td></tr>`
+  ).join('');
+
+  const win = window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><title>Statement — ${name} — ${stmtDate}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', Georgia, sans-serif; color: #111; background: #fff; padding: 40px 48px; font-size: 12px; line-height: 1.6; }
+    .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) rotate(-30deg); opacity: 0.04; pointer-events: none; z-index: 0; }
+    .watermark img { width: 280px; height: 280px; }
+    .content { position: relative; z-index: 1; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; padding-bottom: 20px; border-bottom: 2px solid #c8a96e; }
+    .fund-name { font-size: 22px; font-weight: 700; color: #1a1d23; }
+    .fund-sub  { font-size: 11px; color: #888; margin-top: 3px; letter-spacing: 0.06em; text-transform: uppercase; }
+    .stmt-title { text-align: right; }
+    .stmt-title h2 { font-size: 16px; font-weight: 600; color: #1a1d23; }
+    .stmt-title p  { font-size: 11px; color: #888; margin-top: 3px; }
+    .investor-block { background: #f8f9fa; border-radius: 8px; padding: 16px 20px; margin-bottom: 24px; display: flex; justify-content: space-between; }
+    .inv-name  { font-size: 18px; font-weight: 700; }
+    .inv-id    { font-size: 11px; color: #888; font-family: monospace; margin-top: 2px; }
+    .metrics { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 24px; }
+    .metric-box { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 14px; }
+    .metric-box .label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.07em; color: #888; margin-bottom: 4px; }
+    .metric-box .value { font-size: 16px; font-weight: 700; font-family: monospace; }
+    .green { color: #16a34a; } .red { color: #dc2626; } .gold { color: #b45309; } .blue { color: #1d4ed8; }
+    h3 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #555; margin-bottom: 10px; margin-top: 24px; }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    th { text-align: left; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: #888; padding: 0 10px 8px 0; border-bottom: 1px solid #e5e7eb; font-weight: 500; }
+    td { padding: 8px 10px 8px 0; border-bottom: 1px solid #f3f4f6; font-family: monospace; }
+    .lockup-box { margin-top: 20px; padding: 12px 16px; border-radius: 8px; font-size: 11px; }
+    .lockup-locked   { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; }
+    .lockup-unlocked { background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a; }
+    .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; font-size: 10px; color: #aaa; }
+    .disclaimer { margin-top: 16px; font-size: 9px; color: #aaa; line-height: 1.5; }
+    @media print { body{padding:20px;} .no-print{display:none;} }
+  </style></head><body>
+  <div class="watermark"><img src="${logoSrc}"></div>
+  <div class="content">
+  <button class="no-print" onclick="window.print()" style="margin-bottom:24px;padding:8px 18px;background:#92400e;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px;">Print / Save PDF</button>
+  <div class="header">
+    <div>
+      ${logoSrc ? `<img src="${logoSrc}" style="width:52px;height:52px;border-radius:10px;margin-bottom:8px;display:block;">` : ''}
+      <div class="fund-name">Black-Sky Capital</div>
+      <div class="fund-sub">KFC Hedge Fund · Investor Statement</div>
+    </div>
+    <div class="stmt-title">
+      <h2>Capital Account Statement</h2>
+      <p>Statement Date: ${stmtDate}</p>
+      <p>Generated: ${new Date().toLocaleString('en-GB')}</p>
+    </div>
+  </div>
+  <div class="investor-block">
+    <div>
+      <div class="inv-name">${name}</div>
+      <div class="inv-id">Account ID: ${encryptName(name)}</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:11px;color:#888;">Ownership Stake</div>
+      <div style="font-size:20px;font-weight:700;color:#b45309;">${ownerPct}%</div>
+    </div>
+  </div>
+  <div class="metrics">
+    <div class="metric-box"><div class="label">Total Deposited</div><div class="value gold">$${fmtM(dep)}</div></div>
+    <div class="metric-box"><div class="label">Total Withdrawn</div><div class="value red">$${fmtM(wdr)}</div></div>
+    <div class="metric-box"><div class="label">P&amp;L Share</div><div class="value green">${pnl>=0?'+':''}$${fmtM(pnl)}</div></div>
+    <div class="metric-box"><div class="label">Return on Capital</div><div class="value green">${retPct>=0?'+':''}${retPct}%</div></div>
+  </div>
+  <h3>Transaction History</h3>
+  <table><thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Status</th><th>Reference</th></tr></thead>
+  <tbody>${depositRows||'<tr><td colspan=5 style="color:#aaa">No transactions found</td></tr>'}</tbody></table>
+  <div class="lockup-box ${isLocked?'lockup-locked':'lockup-unlocked'}">
+    ${isLocked
+      ? `<b>Funds Locked</b> — ${inv.daysToUnlock} days remaining until withdrawal is available. Lockup period: ${inv.lockDays} days from deposit date.`
+      : `<b>Funds Available</b> — Your capital is unlocked and available for withdrawal upon request.`}
+  </div>
+  <div class="footer">
+    <span>&copy; 2026 Black Sky Capital · KFC Hedge Fund · All rights reserved</span>
+    <span>Restricted · Authorised investors only</span>
+  </div>
+  <div class="disclaimer">This statement is confidential and intended solely for the named investor. Past performance is not indicative of future results. Black-Sky Capital is an independent investment entity affiliated with KFC Premium Gambling &amp; Entertainment.</div>
+  </div></body></html>`);
+  win.document.close();
+  document.getElementById('statement-modal').classList.remove('open');
+}
+
+
 // ── RENDER ALL ───────────────────────────────────────────────────
 function renderAll(d) {
   window.lastData = d;
@@ -2767,6 +3255,7 @@ function renderAll(d) {
   renderOverview(d);
   renderPositions(d.positions||[]);
   checkForNewTP(d.positions||[]);
+  setTimeout(colorPositionRows, 50);
   renderInvestors(d.investors||[], d.transactions||[]);
   renderAvatars();
   renderAnalytics(d);
@@ -2775,6 +3264,10 @@ function renderAll(d) {
   renderMilestones(d);
   renderProjections(d);
   renderRiskMeter(d.positions||[]);
+  renderHeroNav(d);
+  renderInceptionStats(d);
+  renderNAVWithBenchmark(d);
+  setTimeout(colorPositionRows, 100);
   renderCalendar(d.positions||[]);
   renderRecentTrades(d.positions||[]);
 }
@@ -2782,6 +3275,7 @@ function renderAll(d) {
 // ── LAUNCH ───────────────────────────────────────────────────────
 async function launchDashboard(sheetId, apiKey) {
   $('loading-screen').style.display = 'flex';
+  showSkeletons();
   try {
     const [measureRows, posRows, invRows, txnRows] = await Promise.all([
       fetchSheet(sheetId, apiKey, SHEET_TABS.fundMeasures),
@@ -2797,6 +3291,7 @@ async function launchDashboard(sheetId, apiKey) {
     $('app').style.display = 'block';
     renderAll(measures);
     initParticles();
+    fetchBTCBenchmark();
     applyAccessLevel();
     setInterval(async () => {
       try {
@@ -2820,6 +3315,7 @@ async function launchDashboard(sheetId, apiKey) {
     $('app').style.display = 'block';
     renderAll({...DEMO});
     initParticles();
+    fetchBTCBenchmark();
   }
   applyAccessLevel();
 }
