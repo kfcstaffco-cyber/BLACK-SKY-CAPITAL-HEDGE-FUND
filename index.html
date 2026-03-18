@@ -1670,7 +1670,7 @@ function renderInvestors(investors, transactions) {
           </div>
           <div class="sparkline-wrap" id="spark-wrap-${idx}">
             <div class="sparkline-label">Deposit Growth</div>
-            <div style="height:40px;"><canvas id="spark-${idx}"></canvas></div>
+            <div style="height:52px;"><canvas id="spark-${idx}"></canvas></div>
           </div>
           <div style="padding:12px 0 4px;">
             <div class="section-title" style="margin-bottom:8px;">Deposit History</div>
@@ -2310,29 +2310,55 @@ function renderWLDonut(d) {
 
 // ── SPARKLINE FOR INVESTOR DEPOSIT GROWTH ───────────────────────
 function renderSparklines(investors, txnsByName) {
-  investors.forEach((inv, idx) => {
+  // Use sorted order to match card indices
+  const sorted = [...investors].sort((a,b) => {
+    const dA = txnsByName[a.name]?.totalDeposit || a.deposited;
+    const dB = txnsByName[b.name]?.totalDeposit || b.deposited;
+    return dB - dA;
+  });
+  sorted.forEach((inv, idx) => {
     const canvasId = 'spark-' + idx;
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
     destroyChart(canvasId);
-    const deps = (txnsByName[inv.name] || {deposits:[]}).deposits;
-    if (deps.length < 2) { canvas.style.display='none'; return; }
+    const txns = txnsByName[inv.name] || {deposits:[], withdrawals:[]};
+    // Build chronological events (deposits + withdrawals)
+    const events = [
+      ...txns.deposits.map(t => ({date:t.date, amount:t.deposit})),
+      ...(txns.withdrawals||[]).map(t => ({date:t.date, amount:-t.withdrawal}))
+    ].sort((a,b) => {
+      const pd = s => { const [d,m,y]=s.split('/'); return new Date(+y,+m-1,+d); };
+      return pd(a.date) - pd(b.date);
+    });
+    // Always show at least starting point + current
+    if (events.length === 0) { canvas.style.display='none'; return; }
+    // Add a zero point at the start for visual context
+    const points = [{date:'Start', amount:0}, ...events];
     let running = 0;
-    const data   = deps.map(t => { running += t.deposit; return running; });
-    const labels = deps.map(t => t.date);
+    const data   = points.map(e => { running += e.amount; return Math.max(0, running); });
+    const labels = points.map(e => e.date);
+    canvas.style.display = 'block';
     charts[canvasId] = new Chart(canvas, {
       type: 'line',
       data: { labels, datasets: [{
-        data, borderColor: 'rgba(255,255,255,0.7)',
+        data,
+        borderColor: 'rgba(255,255,255,0.75)',
         backgroundColor: 'rgba(255,255,255,0.05)',
-        borderWidth: 1.5, pointRadius: 2, tension: 0.4, fill: true,
+        borderWidth: 1.5, pointRadius: 2, pointHoverRadius: 4,
+        tension: 0.4, fill: true,
       }]},
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend:{display:false}, tooltip:{
-          callbacks:{ label: ctx => ' $'+fmtM(ctx.parsed.y) }
-        }},
-        scales: { x:{display:false}, y:{display:false} },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: ctx => ctx[0].label === 'Start' ? 'Inception' : ctx[0].label,
+              label: ctx => ' Net Capital: $' + fmtM(ctx.parsed.y)
+            }
+          }
+        },
+        scales: { x:{display:false}, y:{display:false, min:0} },
         animation: { duration: 600 },
       }
     });
