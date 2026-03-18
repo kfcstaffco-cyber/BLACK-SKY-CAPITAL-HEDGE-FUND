@@ -856,18 +856,17 @@ function parsePositions(rows) {
 }
 
 function parseInvestors(rows) {
-    // If the sheet has fewer than 5 rows, there's no data to show
+    // If the sheet has fewer than 5 rows (headers + empty space), return empty
     if (!rows || rows.length < 5) return [];
     
     const grouped = {};
     
-    // CHANGE IS HERE: .slice(4) skips the first 4 rows of your sheet
+    // .slice(4) skips the first 4 rows to reach Row 5
     rows.slice(4).forEach(row => {
-        const name = row[0];   // Column A
-        const date = row[1];   // Column B
+        const name = row[0]; // Column A
+        const date = row[1]; // Column B
         const amount = parseFloat(String(row[2]).replace(/[^0-9.-]+/g, "")) || 0; // Column C
 
-        // Only process the row if there is actually a name in Column A
         if (!name || name.trim() === "") return;
 
         if (!grouped[name]) {
@@ -882,12 +881,6 @@ function parseInvestors(rows) {
     });
 
     return Object.values(grouped);
-}
-    grouped[name].totalBalance += amount;
-    grouped[name].history.push({ date, amount });
-  });
-
-  return Object.values(grouped);
 }
 // ── RENDER ───────────────────────────────────────────────────────
 function renderOverview(d) {
@@ -1099,7 +1092,6 @@ async function launchDashboard(sheetId, apiKey) {
         $('error-banner').style.display = 'block';
         $('error-banner').textContent = '⚠ Connection failed: ' + err.message;
         $('app').style.display = 'block';
-        renderAll({ ...DEMO, investors: DEMO.investors });
     }
 }
 // 3. General Price Fluctuation Simulation
