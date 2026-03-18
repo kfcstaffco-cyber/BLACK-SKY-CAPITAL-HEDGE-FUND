@@ -718,12 +718,12 @@
         </div>
       </div>
       <div class="card">
-        <div class="card-header"><span class="card-title">&#128200; Investor Projections</span><span style="font-size:10px;color:var(--muted);">At current annualised rate</span></div>
+        <div class="card-header"><span class="card-title">Investor Projections</span><span style="font-size:10px;color:var(--muted);">At current annualised rate</span></div>
         <div id="projections-container"></div>
       </div>
     </div>
     <div class="card">
-      <div class="card-header"><span class="card-title">&#9888; Position Risk Meter</span><span style="font-size:10px;color:var(--muted);">Open positions vs SL/TP</span></div>
+      <div class="card-header"><span class="card-title">Position Risk Meter</span><span style="font-size:10px;color:var(--muted);">Open positions vs SL/TP</span></div>
       <div id="risk-meter-container"></div>
     </div>
     <div class="card">
@@ -779,12 +779,12 @@
         <div class="modal-sub" style="margin-bottom:20px;">What would you like to do?</div>
         <div class="dw-type-grid">
           <div class="dw-type-btn" id="dw-btn-deposit" onclick="selectDWType('deposit')">
-            <div class="dw-type-icon">&#8593;&#128176;</div>
+            <div class="dw-type-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></div>
             <div class="dw-type-label">Deposit</div>
             <div class="dw-type-sub">Add funds to the fund</div>
           </div>
           <div class="dw-type-btn" id="dw-btn-withdrawal" onclick="selectDWType('withdrawal')">
-            <div class="dw-type-icon">&#8595;&#128177;</div>
+            <div class="dw-type-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></div>
             <div class="dw-type-label">Withdrawal</div>
             <div class="dw-type-sub">Request fund payout</div>
           </div>
@@ -827,9 +827,9 @@
 
   <!-- ── DEPOSIT/WITHDRAWAL FLOAT BUTTON ── -->
   <button class="dw-float-btn" onclick="openDWModal()" title="Deposit / Withdrawal">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>
-      <polyline points="19 8 12 1 5 8" style="transform:translateY(-2px)"/>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="3" x2="12" y2="10"/><polyline points="8 7 12 3 16 7"/>
+      <line x1="12" y1="21" x2="12" y2="14"/><polyline points="16 17 12 21 8 17"/>
     </svg>
   </button>
   <div class="dw-float-tooltip">Deposit / Withdrawal</div>
@@ -1945,9 +1945,9 @@ setInterval(syncTickerWithSheet,60000);
 
 // ── EMAILJS CONFIG ────────────────────────────────────────────────
 // Replace these with your actual EmailJS credentials
-const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';   // from EmailJS dashboard
-const EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID';   // e.g. 'service_abc123'
-const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';  // e.g. 'template_xyz789'
+const EMAILJS_PUBLIC_KEY  = 'FgkCtu3VJt0A2BBeC';
+const EMAILJS_SERVICE_ID  = 'service_n8orwfd';
+const EMAILJS_TEMPLATE_ID = 'template_ncucuy8';
 
 // ── DEPOSIT/WITHDRAWAL MODAL ──────────────────────────────────────
 let dwType = null;  // 'deposit' or 'withdrawal'
