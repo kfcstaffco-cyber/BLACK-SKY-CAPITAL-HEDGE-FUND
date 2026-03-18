@@ -1485,11 +1485,11 @@ function startMicroFluctuations() {
       // Run the normal fluctuation logic inline
       const direction = Math.random() > 0.5 ? 1 : -1;
       const LINKED = ['nav', 'totalPnl', 'unrealisedPnl', 'totalReturn'];
-      LINKED.forEach(key => {
+            LINKED.forEach(key => {
         const card = document.getElementById('mc-'+key);
         if (!card) return;
         const cfg = FLUCT_RANGES[key], base = fluctBase[key];
-        if (base == null) return;
+        if (!cfg || base == null) return;
         const newVal = base + (base * cfg.scale * direction * (0.5 + Math.random() * 0.5));
         const valEl = card.querySelector('.metric-value');
         if (!valEl) return;
@@ -1504,18 +1504,19 @@ function startMicroFluctuations() {
           valEl.classList.remove('tick-up','tick-down');
           card.classList.remove('flash-green','flash-red');
         }, 500);
-        // Sync hero NAV in lockstep
-        if (key === 'nav') {
-          const heroEl = document.getElementById('hero-nav-val');
-          if (heroEl) {
-            heroEl.classList.remove('tick-up','tick-down');
-            void heroEl.offsetWidth;
-            heroEl.classList.add(direction > 0 ? 'tick-up' : 'tick-down');
-            heroEl.textContent = '$' + fmtM(newVal);
-            setTimeout(() => heroEl.classList.remove('tick-up','tick-down'), 500);
-          }
-        }
       });
+      // Hero NAV always syncs with same direction — runs independently of forEach
+      const heroEl = document.getElementById('hero-nav-val');
+      const navBase = fluctBase['nav'];
+      if (heroEl && navBase != null) {
+        const navCfg = FLUCT_RANGES['nav'];
+        const heroVal = navBase + (navBase * navCfg.scale * direction * (0.5 + Math.random() * 0.5));
+        heroEl.classList.remove('tick-up','tick-down');
+        void heroEl.offsetWidth;
+        heroEl.classList.add(direction > 0 ? 'tick-up' : 'tick-down');
+        heroEl.textContent = '$' + fmtM(heroVal);
+        setTimeout(() => heroEl.classList.remove('tick-up','tick-down'), 500);
+      }
       // Open position P&L rows
       if (window.lastData && window.lastData.positions) {
         window.lastData.positions.filter(p => p.status === 'Open').forEach(p => {
@@ -3323,13 +3324,15 @@ function generateStatement() {
 
 // ── STATEMENT REQUEST (standard users) ───────────────────────────
 function openStmtReqModal() {
-  document.getElementById('stmt-req-name').value = '';
-  document.getElementById('stmt-req-note').value = '';
-  document.getElementById('stmt-req-error').textContent = '';
-  document.getElementById('stmt-req-modal').querySelector('.modal-box').querySelectorAll(':not(#stmt-req-success)').forEach(el => el.style.display = '');
+  const nameEl = document.getElementById('stmt-req-name');
+  if (nameEl) nameEl.value = '';
+  const errEl = document.getElementById('stmt-req-error');
+  if (errEl) errEl.textContent = '';
   document.getElementById('stmt-req-success').style.display = 'none';
+  // Show form elements
+  document.querySelectorAll('#stmt-req-modal .modal-box > *:not(#stmt-req-success):not(.modal-close)').forEach(el => el.style.display = '');
   document.getElementById('stmt-req-modal').classList.add('open');
-  setTimeout(() => document.getElementById('stmt-req-name').focus(), 200);
+  setTimeout(() => { if (nameEl) nameEl.focus(); }, 200);
 }
 
 function closeStmtReqModal(e, force) {
