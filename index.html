@@ -1125,53 +1125,38 @@ async function launchDashboard(sheetId, apiKey) {
       fetchSheet(sheetId, apiKey, SHEET_TABS.positions),
       fetchSheet(sheetId, apiKey, SHEET_TABS.investors),
     ]);
-    const measures  = parseFundMeasures(measureRows);
+
+    const measures = parseFundMeasures(measureRows);
     measures.positions = parsePositions(posRows);
-    measures.investors = parseInvestors(invRows);
+    
+    // This calls the grouping logic below
+    measures.investors = parseInvestors(invRows); 
+
     $('loading-screen').style.display = 'none';
     $('app').style.display = 'block';
     renderAll(measures);
+
+    // Refresh Loop
     setInterval(async () => {
       try {
-        const [mr,pr,ir] = await Promise.all([
-          fetchSheet(sheetId,apiKey,SHEET_TABS.fundMeasures),
-          fetchSheet(sheetId,apiKey,SHEET_TABS.positions),
-          fetchSheet(sheetId,apiKey,SHEET_TABS.investors),
+        const [mr, pr, ir] = await Promise.all([
+          fetchSheet(sheetId, apiKey, SHEET_TABS.fundMeasures),
+          fetchSheet(sheetId, apiKey, SHEET_TABS.positions),
+          fetchSheet(sheetId, apiKey, SHEET_TABS.investors),
         ]);
-        const m=parseFundMeasures(mr); m.positions=parsePositions(pr); m.investors=parseInvestors(ir);
+        const m = parseFundMeasures(mr);
+        m.positions = parsePositions(pr);
+        m.investors = parseInvestors(ir);
         renderAll(m);
-      } catch(e) { console.warn('Refresh failed:', e); }
+      } catch (e) { console.warn('Refresh failed:', e); }
     }, REFRESH_INTERVAL);
-  } catch(err) {
-    $('loading-screen').style.display = 'none';
-    $('error-banner').style.display = 'block';
-    $('error-banner').textContent = '⚠ Could not connect to Google Sheets: ' + err.message + ' — check your Sheet ID and API key.';
-    $('app').style.display = 'block';
-    renderAll({...DEMO, investors: DEMO.investors});
-    sessionStorage.removeItem('bsc_sheet_id');
-    sessionStorage.removeItem('bsc_api_key');
-  }
-}
-  try {
-    const response = await gapi.client.sheets.spreadsheets.values.get({
-      spreadsheetId: 'YOUR_SPREADSHEET_ID_HERE', // Make sure this is your ID
-      range: 'Investors!A2:C100',                // The range for Investor data
-    });
-
-    const rows = response.result.values;
-
-    if (rows && rows.length > 0) {
-      // THIS IS THE KEY CHANGE:
-      // Instead of looping through rows here, we call our new functions:
-      const grouped = groupData(rows);      // 1. Group the duplicates
-      displayInvestors(grouped);           // 2. Build the UI
-    } else {
-      console.warn("No investor data found in sheet.");
-      document.getElementById('investor-list').innerHTML = "No data found.";
-    }
 
   } catch (err) {
-    console.error("Investor Fetch Error:", err);
+    $('loading-screen').style.display = 'none';
+    $('error-banner').style.display = 'block';
+    $('error-banner').textContent = '⚠ Connection failed: ' + err.message;
+    $('app').style.display = 'block';
+    renderAll({ ...DEMO, investors: DEMO.investors });
   }
 }
 // 3. General Price Fluctuation Simulation
