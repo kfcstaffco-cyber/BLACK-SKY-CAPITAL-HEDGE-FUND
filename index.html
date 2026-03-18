@@ -856,30 +856,30 @@ function parsePositions(rows) {
 }
 
 function parseInvestors(rows) {
-  let hi = rows.findIndex(r=>r[0]==='#');
-  if(hi<0) return [];
-  const clean = v => parseFloat((v||'0').toString().replace(/[,$%\s()]/g,'')) || 0;
-  const pct = v => {
-    const s = (v||'0').toString().trim();
-    if (s.endsWith('%')) return parseFloat(s.replace('%','')) / 100;
-    const n = clean(v);
-    return Math.abs(n) > 1 ? n / 100 : n;
-  };
-  return rows.slice(hi+1).filter(r=>r[1]&&r[1].trim()).map(r=>({
-    name:         r[1],
-    depositDate:  r[2]||'',
-    lockDays:     clean(r[3]),
-    daysToUnlock: clean(r[5]),
-    status:       r[6]||'',
-    deposited:    clean(r[7]),
-    withdrawn:    clean(r[8]),
-    balance:      clean(r[9]),
-    pct:          pct(r[10]),
-    pnlShare:     clean(r[12]),
-    netPayout:    r[17] ? clean(r[17]) : null,
-  }));
-}
+  if (!rows || rows.length < 2) return [];
+  const grouped = {};
+  
+  // Skip header, process rows
+  rows.slice(1).forEach(row => {
+    const name = row[0];
+    const date = row[1];
+    const amount = parseFloat(String(row[2]).replace(/[^0-9.-]+/g, "")) || 0;
 
+    if (!name) return;
+
+    if (!grouped[name]) {
+      grouped[name] = { 
+        name: name, 
+        totalBalance: 0, 
+        history: [] 
+      };
+    }
+    grouped[name].totalBalance += amount;
+    grouped[name].history.push({ date, amount });
+  });
+
+  return Object.values(grouped);
+}
 // ── RENDER ───────────────────────────────────────────────────────
 function renderOverview(d) {
   const metrics = [
@@ -961,112 +961,66 @@ function renderPositions(positions) {
   $('closed-tbody').innerHTML=closed.map(p=>{const rb=p.result==='TAKE PROFIT HIT'?'green':p.result==='STOP LOSS HIT'?'red':'blue';const rl=p.result==='TAKE PROFIT HIT'?'TP HIT':p.result==='STOP LOSS HIT'?'SL HIT':'CLOSED';return`<tr><td>${p.id}</td><td class="label">${p.cls}</td><td class="label">${p.ticker}</td><td>${badge(p.side.toUpperCase(),p.side==='Long'?'green':'red')}</td><td>${p.entry}</td><td>${p.exit}</td><td>${p.hold}d</td><td id="pnl-${p.id}" style="color:${clr(p.pnl)}">${sgn(p.pnl)}$${fmtM(p.pnl)}</td><td>${badge(rl,rb)}</td></tr>`;}).join('');
 }
 
-function renderInvestors(investors, d) {
-  // DEBUG: Open your browser console (F12) to see if the API is sending individual rows
-  console.log("Raw Investors Data:", investors);
+function renderInvestors(investors) {
+  const rosterContainer = $('investor-list');
+  const ownershipContainer = $('ownership-stats');
+  if (!rosterContainer) return;
 
-  if (!investors || investors.length === 0) return;
+  // Calculate Total Fund Value for Percentage Math
+  const grandTotal = investors.reduce((sum, inv) => sum + inv.totalBalance, 0);
 
-  // 1. GROUP DATA & CALCULATE AGGREGATES
-  const grouped = investors.reduce((acc, inv, index) => {
-    const name = (inv.name || "Unknown").trim();
-    if (!acc[name]) {
-      acc[name] = {
-        name: name,
-        totalDeposited: 0,
-        totalPct: 0,
-        totalPnlShare: 0,
-        entries: [] 
-      };
-    }
-    
-    // Use a temporary variable to ensure we are grabbing the row-level data
-    const rowAmount = Number(inv.deposited) || 0;
-    const rowPct = Number(inv.pct) || 0;
-    const rowPnl = Number(inv.pnlShare) || 0;
+  rosterContainer.innerHTML = '';
+  if (ownershipContainer) ownershipContainer.innerHTML = '';
 
-    acc[name].totalDeposited += rowAmount;
-    acc[name].totalPct += rowPct;
-    acc[name].totalPnlShare += rowPnl;
-    
-    // We create a new object copy to ensure no reference interference
-    acc[name].entries.push({
-        amount: rowAmount,
-        date: inv.depositDate || 'N/A',
-        lock: inv.lockDays || 0,
-        pct: rowPct,
-        pnl: rowPnl,
-        status: inv.status,
-        days: inv.daysToUnlock
-    }); 
-    return acc;
-  }, {});
+  investors.forEach((inv, index) => {
+    const id = `inv-details-${index}`;
+    const totalShare = grandTotal > 0 ? ((inv.totalBalance / grandTotal) * 100).toFixed(2) : "0.00";
 
-  const groupedArray = Object.values(grouped);
-
-  // 2. INVESTOR ROSTER (THE FIX)
-  $('investor-roster').innerHTML = groupedArray.map(group => {
-    
-    // We map through the 'entries' we just pushed
-    const entryRows = group.entries.map(entry => {
-      const lb = entry.status === 'UNLOCKED' 
-        ? `<span style="color:var(--green)">●</span>` 
-        : `<span style="color:var(--red)">●</span>`;
-
-      return `
-        <div style="display:flex; justify-content:space-between; padding: 10px 0; border-top: 1px solid rgba(255,255,255,0.05);">
-          <div>
-            <div style="font-size:12px; color:var(--white)">Dep: ${entry.date}</div>
-            <div style="font-size:10px; color:var(--muted)">${entry.lock}d Lockup ${lb}</div>
+    // Main Roster Item
+    rosterContainer.innerHTML += `
+      <div class="investor-card-wrapper" style="border-bottom: 1px solid var(--border); padding: 12px 0;">
+        <div class="player-row" onclick="toggleTrans('${id}')" style="cursor:pointer">
+          <div class="avatar">${inv.name.charAt(0)}</div>
+          <div class="player-info">
+            <div class="player-name">${inv.name}</div>
+            <div style="font-size: 10px; color: var(--text-dim);">${inv.history.length} DEPOSITS</div>
           </div>
-          <div style="text-align:right">
-            <div style="font-family:var(--mono); font-size:13px; color:var(--accent)">$${fmtM(entry.amount)}</div>
-            <div style="font-size:10px; color:var(--muted)">${(entry.pct * 100).toFixed(2)}% share</div>
-          </div>
-        </div>`;
-    }).join('');
-
-    return `
-      <div class="player-card" style="margin-bottom:20px; background:rgba(255,255,255,0.03); border-radius:12px; padding:16px; border:1px solid rgba(255,255,255,0.08)">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <div style="display:flex; align-items:center;">
-            <div class="avatar" style="background:var(--gold); color:black;">${group.name[0]}</div>
-            <div style="margin-left:12px; font-weight:bold; font-size:16px;">${group.name}</div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-size:15px; font-weight:bold; color:var(--gold)">$${fmtM(group.totalDeposited)}</div>
-            <div style="font-size:9px; color:var(--muted); text-transform:uppercase;">Aggregate Capital</div>
+          <div style="text-align: right;">
+            <div class="metric-value gold">$${(inv.totalBalance / 1e9).toFixed(2)}B</div>
+            <div style="font-size: 10px; color: var(--text-dim); text-transform: uppercase;">Aggregate Capital</div>
           </div>
         </div>
-        ${entryRows}
-      </div>`;
-  }).join('');
 
-  // 3. OWNERSHIP BARS (Aggregated)
-  $('ownership-bars').innerHTML = groupedArray.map(group => `
-    <div style="margin-bottom:16px">
-      <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px">
-        <span style="color:var(--muted)">${group.name}</span>
-        <span style="font-family:var(--mono); color:var(--gold)">${(group.totalPct * 100).toFixed(2)}%</span>
+        <div id="${id}" style="display:none; padding: 15px 10px 10px 50px; background: rgba(255,215,0,0.02); margin-top: 10px; border-left: 1px solid var(--gold);">
+          ${inv.history.map(t => {
+            const indShare = grandTotal > 0 ? ((t.amount / grandTotal) * 100).toFixed(2) : "0.00";
+            return `
+              <div style="display:flex; justify-content:space-between; margin-bottom: 10px;">
+                <div>
+                  <div style="font-size: 12px; color: var(--text-bright);">Dep: ${t.date}</div>
+                  <div style="font-size: 10px; color: var(--text-dim);"><span style="color:#4caf50">●</span> Od Lockup</div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="color: var(--gold); font-size: 12px;">$${(t.amount / 1e9).toFixed(2)}B</div>
+                  <div style="font-size: 10px; color: var(--text-dim);">${indShare}% share</div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
       </div>
-      <div class="bar-track" style="height:6px; background:rgba(255,255,255,0.05)">
-        <div class="bar-fill" style="width:${(group.totalPct * 100).toFixed(2)}%; background:var(--gold)"></div>
-      </div>
-    </div>`).join('');
+    `;
 
-  // 4. P&L SHARES (Grouped Sections)
-  $('pnl-shares').innerHTML = groupedArray.map(group => {
-    const head = `<div style="padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.1); margin-top:20px; display:flex; justify-content:space-between; align-items:flex-end;">
-      <span style="color:var(--white); font-weight:bold; font-size:13px;">${group.name}</span>
-      <span style="color:var(--green); font-family:var(--mono); font-size:14px;">Total P&L: ${sgn(group.totalPnlShare)}$${fmtM(group.totalPnlShare)}</span>
-    </div>`;
-    
-    const rows = group.entries.map(e => 
-      rowLabel(e.date + ' Allocation', sgn(e.pnl) + '$' + fmtM(e.pnl), 'color:var(--muted); font-size:11px;')
-    ).join('');
-
-    return `<div>${head}${rows}</div>`;
-  }).join('');
+    // Update Ownership Card
+    if (ownershipContainer) {
+      ownershipContainer.innerHTML += `
+        <div class="row-label" style="display:flex; justify-content:space-between; padding: 5px 0;">
+          <span class="stat-key">${inv.name}</span>
+          <span class="stat-value gold">${totalShare}%</span>
+        </div>
+      `;
+    }
+  });
 }
 function renderAnalytics(d) {
   $('trade-stats').innerHTML=[
@@ -1286,6 +1240,12 @@ syncTickerWithSheet();
 
 // Refresh the data every 60 seconds so it stays "Live"
 setInterval(syncTickerWithSheet, 60000);
+function toggleTrans(id) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'block' : 'none';
+  }
+}
 </script>
 </body>
 </html>
