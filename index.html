@@ -1852,34 +1852,49 @@ function renderNewAnalytics(positions) {
   // Trade heatmap by date
   const byDate = {};
   closed.forEach(p => {
-    const d = p.date || 'Unknown';
-    if (!byDate[d]) byDate[d] = {pnl:0,count:0,trades:[]};
-    byDate[d].pnl += p.pnl;
-    byDate[d].count++;
-    byDate[d].trades.push(p);
+    const dateKey = p.date || 'Unknown';
+    if (!byDate[dateKey]) byDate[dateKey] = {pnl:0, count:0, trades:[]};
+    byDate[dateKey].pnl   += p.pnl;
+    byDate[dateKey].count++;
+    byDate[dateKey].trades.push(p);
   });
-  const dates = Object.keys(byDate).sort();
-  const maxAbs = Math.max(...Object.values(byDate).map(v=>Math.abs(v.pnl)));
+  const dates  = Object.keys(byDate).sort();
+  const maxAbs = Math.max(...Object.values(byDate).map(v => Math.abs(v.pnl)), 1);
+
   const cells = dates.map(date => {
-    const {pnl,count,trades} = byDate[date];
-    const intensity = maxAbs > 0 ? Math.abs(pnl)/maxAbs : 0;
-    const isWin = pnl >= 0;
+    const {pnl, count, trades} = byDate[date];
+    const intensity = Math.abs(pnl) / maxAbs;
+    const isWin     = pnl >= 0;
     const r = isWin ? [62,207,142] : [232,83,74];
-    const bg = `rgba(${r[0]},${r[1]},${r[2]},${0.15 + intensity*0.75})`;
-    const shortDate = date.length >= 8 ? date.slice(0,5) : date;
-    const tradeList = trades.map(t=>'<div class="ht-trade-row"><span>#'+t.id+' '+t.ticker+'</span><span style="color:'+(t.pnl>=0?'var(--green)':'var(--red)')+'">'+(t.pnl>=0?'+':'')+'$'+fmtM(t.pnl)+'</span></div>').join('');
-    return '<div class="heatmap-cell" style="background:'+bg+';" onmouseenter="showHeatTip(event,\''+date+'\','+count+','+pnl+',\''+encodeURIComponent(tradeList)+'\')" onmouseleave="hideHeatTip()">'+shortDate+'</div>';
+    const bg = 'rgba('+r[0]+','+r[1]+','+r[2]+','+(0.15 + intensity*0.75)+')';
+    const shortDate = date.length >= 5 ? date.slice(0,5) : date;
+
+    // Build trade rows as a data attribute (JSON) to avoid quote escaping hell
+    const tradeData = JSON.stringify(trades.map(t => ({
+      id: t.id, ticker: t.ticker, pnl: t.pnl
+    })));
+
+    return '<div class="heatmap-cell"'
+      + ' style="background:' + bg + ';"'
+      + ' data-date="' + date + '"'
+      + ' data-count="' + count + '"'
+      + ' data-pnl="' + pnl + '"'
+      + ' data-trades="' + tradeData.replace(/"/g, '&quot;') + '"'
+      + ' onmouseenter="showHeatTipFromEl(event,this)"'
+      + ' onmouseleave="hideHeatTip()">'
+      + shortDate + '</div>';
   }).join('');
 
   $('heatmap-container').innerHTML = dates.length > 0
-    ? `<div class="heatmap-grid">${cells}</div>
-       <div class="heatmap-legend">
-         <div style="width:12px;height:12px;border-radius:2px;background:rgba(62,207,142,0.8)"></div><span>Profitable day</span>
-         <div style="width:12px;height:12px;border-radius:2px;background:rgba(232,83,74,0.8);margin-left:8px;"></div><span>Loss day</span>
-         <span style="margin-left:auto;font-size:9px;">Hover for details</span>
-       </div>`
-    : `<div style="color:var(--muted);font-size:12px;padding:12px 0;">No date data — add a date column (col F) to your Positions sheet</div>`;
+    ? '<div class="heatmap-grid">' + cells + '</div>'
+      + '<div class="heatmap-legend">'
+      + '<div style="width:12px;height:12px;border-radius:2px;background:rgba(62,207,142,0.8)"></div><span>Profitable day</span>'
+      + '<div style="width:12px;height:12px;border-radius:2px;background:rgba(232,83,74,0.8);margin-left:8px;"></div><span>Loss day</span>'
+      + '<span style="margin-left:auto;font-size:9px;">Hover for details</span>'
+      + '</div>'
+    : '<div style="color:var(--muted);font-size:12px;padding:12px 0;">No date data — add a date column (col F) to your Positions sheet</div>';
 }
+
 
 // ── RENDER ALL ───────────────────────────────────────────────────
 function renderAll(d) {
@@ -2119,7 +2134,21 @@ async function submitDWRequest() {
 }
 
 // ── HEATMAP TOOLTIP ──────────────────────────────────────────────
-function showHeatTip(e, date, count, pnl, encodedTrades) {
+function showHeatTipFromEl(e, el) {
+  const date  = el.getAttribute('data-date');
+  const count = parseInt(el.getAttribute('data-count'), 10);
+  const pnl   = parseFloat(el.getAttribute('data-pnl'));
+  let trades  = [];
+  try { trades = JSON.parse((el.getAttribute('data-trades') || '[]').replace(/&quot;/g,'"')); } catch(err) {}
+  const tradesHTML = trades.map(t =>
+    '<div class="ht-trade-row"><span>#' + t.id + ' ' + t.ticker + '</span>'
+    + '<span style="color:' + (t.pnl >= 0 ? 'var(--green)' : 'var(--red)') + '">'
+    + (t.pnl >= 0 ? '+' : '') + '$' + fmtM(t.pnl) + '</span></div>'
+  ).join('');
+  showHeatTip(e, date, count, pnl, tradesHTML);
+}
+
+function showHeatTip(e, date, count, pnl, tradesHTML) {
   const tip = document.getElementById('heatmap-tooltip');
   if (!tip) return;
   document.getElementById('ht-date').textContent = date;
