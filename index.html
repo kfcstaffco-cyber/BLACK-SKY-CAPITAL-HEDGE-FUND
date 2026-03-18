@@ -361,7 +361,7 @@ td[id^="pnl-"] {
       <div class="pw-title">Black-Sky Capital</div>
       <div class="pw-sub" style="margin-top:6px;">KFC Hedge Fund · Restricted Access</div>
     </div>
-    <input type="password" class="pw-input" id="access-key" name="access-key" placeholder="ENTER ACCESS KEY">
+    <input type="password" class="pw-input" id="pw-input" placeholder="Enter password" autocomplete="off" />
     <div class="pw-error" id="pw-error"></div>
     <button class="pw-btn" onclick="checkPassword()">Enter</button>
   </div>
@@ -968,43 +968,47 @@ function renderInvestors(investors, d) {
   if (!investors || investors.length === 0) return;
 
   // 1. GROUP DATA & CALCULATE AGGREGATES
- const grouped = {};
+  const grouped = investors.reduce((acc, inv, index) => {
+    const name = (inv.name || "Unknown").trim();
+    if (!acc[name]) {
+      acc[name] = {
+        name: name,
+        totalDeposited: 0,
+        totalPct: 0,
+        totalPnlShare: 0,
+        entries: [] 
+      };
+    }
+    
+    // Use a temporary variable to ensure we are grabbing the row-level data
+    const rowAmount = Number(inv.deposited) || 0;
+    const rowPct = Number(inv.pct) || 0;
+    const rowPnl = Number(inv.pnlShare) || 0;
 
-(d.transactions || []).forEach(tx => {
-  const name = (tx.name || "Unknown").trim();
+    acc[name].totalDeposited += rowAmount;
+    acc[name].totalPct += rowPct;
+    acc[name].totalPnlShare += rowPnl;
+    
+    // We create a new object copy to ensure no reference interference
+    acc[name].entries.push({
+        amount: rowAmount,
+        date: inv.depositDate || 'N/A',
+        lock: inv.lockDays || 0,
+        pct: rowPct,
+        pnl: rowPnl,
+        status: inv.status,
+        days: inv.daysToUnlock
+    }); 
+    return acc;
+  }, {});
 
-  if (!grouped[name]) {
-    grouped[name] = {
-      name,
-      deposits: [],
-      withdrawals: [],
-      totalDeposited: 0,
-      totalWithdrawn: 0,
-      net: 0
-    };
-  }
-
-  if (tx.type === 'deposit') {
-    grouped[name].deposits.push(tx);
-    grouped[name].totalDeposited += tx.amount;
-  }
-
-  if (tx.type === 'withdrawal') {
-    grouped[name].withdrawals.push(tx);
-    grouped[name].totalWithdrawn += tx.amount;
-  }
-
-  grouped[name].net =
-    grouped[name].totalDeposited -
-    grouped[name].totalWithdrawn;
-});
   const groupedArray = Object.values(grouped);
 
   // 2. INVESTOR ROSTER (THE FIX)
   $('investor-roster').innerHTML = groupedArray.map(group => {
     
     // We map through the 'entries' we just pushed
-     const entryRows = (group.deposits || []).map(...)
+    const entryRows = group.entries.map(entry => {
       const lb = entry.status === 'UNLOCKED' 
         ? `<span style="color:var(--green)">●</span>` 
         : `<span style="color:var(--red)">●</span>`;
@@ -1013,7 +1017,7 @@ function renderInvestors(investors, d) {
         <div style="display:flex; justify-content:space-between; padding: 10px 0; border-top: 1px solid rgba(255,255,255,0.05);">
           <div>
             <div style="font-size:12px; color:var(--white)">Dep: ${entry.date}</div>
-            <div style="font-size:10px; color:var(--muted)">${entry.lock || 0}d Lockup ${lb}</div>
+            <div style="font-size:10px; color:var(--muted)">${entry.lock}d Lockup ${lb}</div>
           </div>
           <div style="text-align:right">
             <div style="font-family:var(--mono); font-size:13px; color:var(--accent)">$${fmtM(entry.amount)}</div>
@@ -1023,14 +1027,14 @@ function renderInvestors(investors, d) {
     }).join('');
 
     return `
-      <div class="player-card" style="margin-bottom:20px; background:rgba(255,255,255,0.03); border-radius:12px; padding:16px; border:1px solid rgba(255,255,255,0.08)">>
+      <div class="player-card" style="margin-bottom:20px; background:rgba(255,255,255,0.03); border-radius:12px; padding:16px; border:1px solid rgba(255,255,255,0.08)">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
           <div style="display:flex; align-items:center;">
             <div class="avatar" style="background:var(--gold); color:black;">${group.name[0]}</div>
             <div style="margin-left:12px; font-weight:bold; font-size:16px;">${group.name}</div>
           </div>
           <div style="text-align:right">
-            <div style="font-size:15px; font-weight:bold; color:var(--gold)">$${fmtM(group.net)}</div>
+            <div style="font-size:15px; font-weight:bold; color:var(--gold)">$${fmtM(group.totalDeposited)}</div>
             <div style="font-size:9px; color:var(--muted); text-transform:uppercase;">Aggregate Capital</div>
           </div>
         </div>
@@ -1039,15 +1043,14 @@ function renderInvestors(investors, d) {
   }).join('');
 
   // 3. OWNERSHIP BARS (Aggregated)
-  const totalFund = groupedArray.reduce((sum, g) => sum + g.net, 0);
   $('ownership-bars').innerHTML = groupedArray.map(group => `
     <div style="margin-bottom:16px">
       <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px">
         <span style="color:var(--muted)">${group.name}</span>
-        <span style="font-family:var(--mono); color:var(--gold)">${((group.net / totalFund) * 100).toFixed(2)}%</span>
+        <span style="font-family:var(--mono); color:var(--gold)">${(group.totalPct * 100).toFixed(2)}%</span>
       </div>
       <div class="bar-track" style="height:6px; background:rgba(255,255,255,0.05)">
-        <div class="bar-fill" style="width:${((group.net / totalFund) * 100).toFixed(2)}%; background:var(--gold)"></div>
+        <div class="bar-fill" style="width:${(group.totalPct * 100).toFixed(2)}%; background:var(--gold)"></div>
       </div>
     </div>`).join('');
 
@@ -1055,10 +1058,10 @@ function renderInvestors(investors, d) {
   $('pnl-shares').innerHTML = groupedArray.map(group => {
     const head = `<div style="padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.1); margin-top:20px; display:flex; justify-content:space-between; align-items:flex-end;">
       <span style="color:var(--white); font-weight:bold; font-size:13px;">${group.name}</span>
-      <span style="color:var(--green); font-family:var(--mono); font-size:14px;">Total P&L: ${sgn(const totalPnl = group.withdrawals.reduce((sum, w) => sum + (w.pnl || 0), 0);)}$${fmtM(Total P&L: ${sgn(totalPnl)}$${fmtM(totalPnl)})}</span>
+      <span style="color:var(--green); font-family:var(--mono); font-size:14px;">Total P&L: ${sgn(group.totalPnlShare)}$${fmtM(group.totalPnlShare)}</span>
     </div>`;
     
-    const rows = group.withdrawals.map(e => 
+    const rows = group.entries.map(e => 
       rowLabel(e.date + ' Allocation', sgn(e.pnl) + '$' + fmtM(e.pnl), 'color:var(--muted); font-size:11px;')
     ).join('');
 
