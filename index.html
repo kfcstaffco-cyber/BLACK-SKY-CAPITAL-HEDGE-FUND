@@ -703,6 +703,88 @@
     .hero-stat-val { font-size: 18px; font-weight: 500; font-family: var(--mono); }
     .hero-stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-top: 2px; }
 
+
+    /* ── REMEMBER ME ── */
+    .pw-remember {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 11px; color: var(--muted); cursor: pointer; user-select: none;
+    }
+    .pw-remember input[type=checkbox] { accent-color: var(--accent); width: 14px; height: 14px; cursor: pointer; }
+    .pw-remember:hover { color: var(--text); }
+
+    /* ── MOBILE HEADER TAB NAME ── */
+    #mobile-tab-name {
+      display: none; font-size: 11px; color: var(--muted);
+      letter-spacing: 0.06em; text-transform: uppercase;
+    }
+    @media (max-width: 600px) {
+      #mobile-tab-name { display: block; }
+      .nav-tabs { display: none; }
+      /* Mobile hero nav */
+      .hero-nav { flex-direction: column; gap: 16px; padding: 18px 16px; }
+      .hero-nav-val { font-size: 32px; }
+      .hero-stats { gap: 16px; justify-content: flex-start; }
+      .hero-stat-item { text-align: left; }
+      /* Mobile investor cards */
+      .investor-card-header { flex-wrap: wrap; gap: 8px; }
+      .investor-right { flex-wrap: wrap; gap: 8px; }
+      /* Mobile calendar */
+      .cal-day { min-height: 44px; padding: 4px; font-size: 10px; }
+      .cal-day-header { font-size: 8px; padding: 4px 0; }
+      .cal-trade-dot { width: 6px; height: 6px; }
+      .cal-pnl { display: none; }
+      /* Mobile positions - hide less important columns */
+      #open-thead th:nth-child(8),
+      #open-tbody td:nth-child(8),
+      #open-thead th:nth-child(9),
+      #open-tbody td:nth-child(9),
+      #open-thead th:nth-child(10),
+      #open-tbody td:nth-child(10),
+      #closed-thead th:nth-child(5),
+      #closed-tbody td:nth-child(5),
+      #closed-thead th:nth-child(6),
+      #closed-tbody td:nth-child(6) { display: none; }
+      /* Mobile metric grid - 2 cols */
+      .metric-grid { grid-template-columns: repeat(2,1fr); }
+      /* Mobile two-col */
+      .two-col { grid-template-columns: 1fr; }
+      /* Hide particle canvas on mobile */
+      #particle-canvas { display: none; }
+      /* Mobile float buttons */
+      .float-btn, #stmt-req-float { width: 46px; height: 46px; }
+      /* Better touch targets for nav */
+      .mobile-nav-bar {
+        display: flex !important;
+        position: fixed; bottom: 0; left: 0; right: 0;
+        background: var(--bg2); border-top: 1px solid var(--border);
+        z-index: 500; padding: 4px 0 env(safe-area-inset-bottom, 4px);
+        justify-content: space-around;
+      }
+      .mobile-nav-item {
+        display: flex; flex-direction: column; align-items: center;
+        padding: 6px 10px; font-size: 9px; letter-spacing: 0.05em;
+        text-transform: uppercase; color: var(--muted); cursor: pointer;
+        gap: 3px; min-width: 48px; transition: color 0.15s;
+      }
+      .mobile-nav-item.active { color: var(--accent); }
+      .mobile-nav-item svg { width: 18px; height: 18px; }
+      .page { padding-bottom: 80px !important; }
+      .site-footer { display: none; }
+    }
+    .mobile-nav-bar { display: none; }
+
+    /* ── ERROR STATE ── */
+    .error-state {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 48px 24px; text-align: center; gap: 16px;
+    }
+    .error-icon { font-size: 40px; }
+    .error-title { font-size: 15px; font-weight: 600; color: var(--red); }
+    .error-sub   { font-size: 12px; color: var(--muted); line-height: 1.6; max-width: 320px; }
+    .error-retry { background: var(--bg3); border: 1px solid var(--border2); border-radius: 8px;
+      padding: 8px 18px; font-size: 12px; color: var(--text); cursor: pointer; transition: border-color 0.15s; }
+    .error-retry:hover { border-color: var(--accent); color: var(--accent); }
+
     /* TICKER */
     .ticker-move { display: flex; white-space: nowrap; animation: ticker-loop 60s linear infinite; }
     @keyframes ticker-loop { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
@@ -785,6 +867,7 @@
     <div style="height:8px;"></div>
     <input type="password" class="pw-input" id="pw-input" placeholder="Enter password" autocomplete="off" />
     <div class="pw-error" id="pw-error"></div>
+    <label class="pw-remember"><input type="checkbox" id="pw-remember"> Remember me for 24 hours</label>
     <button class="pw-btn" onclick="checkPassword()">Enter</button>
   </div>
 </div>
@@ -816,7 +899,10 @@
     </div>
     <div class="header-right">
       <div id="access-badge" style="display:none;align-items:center;gap:6px;font-size:10px;color:var(--accent2);letter-spacing:0.08em;background:rgba(232,196,122,0.1);border:1px solid rgba(232,196,122,0.2);border-radius:6px;padding:4px 10px;">&#9679; MASTER</div>
-      <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+      <div style="display:flex;flex-direction:column;gap:2px;align-items:flex-end;">
+        <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+        <div id="mobile-tab-name">Overview</div>
+      </div>
       <div class="date-label" id="live-date">—</div>
       <button class="logout-btn" onclick="logout()">Lock</button>
     </div>
@@ -1218,6 +1304,30 @@
     pointer-events:none;opacity:0;transition:opacity 0.15s;"
     id="stmt-req-tip">Request Statement</div>
 
+  
+  <!-- MOBILE BOTTOM NAV -->
+  <div class="mobile-nav-bar" id="mobile-nav-bar">
+    <div class="mobile-nav-item active" onclick="switchTab('overview',null,this)" data-tab="overview">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Overview
+    </div>
+    <div class="mobile-nav-item" onclick="switchTab('positions',null,this)" data-tab="positions">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Positions
+    </div>
+    <div class="mobile-nav-item" onclick="switchTab('investors',null,this)" data-tab="investors">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      Investors
+    </div>
+    <div class="mobile-nav-item" onclick="switchTab('analytics',null,this)" data-tab="analytics">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Analytics
+    </div>
+    <div class="mobile-nav-item" onclick="switchTab('calendar',null,this)" data-tab="calendar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Calendar
+    </div>
+  </div>
   <footer class="site-footer">
     <div class="footer-inner">
       <!-- LEFT: KFC affiliation -->
@@ -1789,6 +1899,11 @@ function renderOverview(d) {
     {label:'Unrealised P&L', val:sgn(d.unrealisedPnl)+'$'+fmtM(d.unrealisedPnl), cls:'green', sub:'Open positions',         key:'unrealisedPnl'},
     {label:'Margin Deployed',val:'$'+fmtM(d.marginDeployed), cls:'blue',  sub:'Active positions',                          key:'marginDeployed'},
     {label:'Notional Exp.',  val:'$'+fmtM(d.notional),       cls:'blue',  sub:'Total leveraged',                           key:'notional'},
+    {label:"Today's P&L", val:(()=>{
+      const t=getTodayPnl(d.positions);
+      return (t>=0?'+':'')+'$'+fmtM(t);
+    })(), cls:(()=>{const t=getTodayPnl(d.positions);return t>0?'green':t<0?'red':'muted';})(),
+    sub:'Closed trades today', key:'todayPnl'},
     {label:'Fund Age',       val:(()=>{
       const txns=(d.transactions||[]).filter(t=>t.type==='Deposit');
       if(!txns.length) return '—';
@@ -3388,6 +3503,119 @@ function updateStmtReqButton() {
     btn.addEventListener('mouseleave', () => { if(tip) tip.style.opacity='0'; });
   }
 }
+
+
+// ── REMEMBER ME ──────────────────────────────────────────────────
+const REMEMBER_KEY = 'bsc_remembered_until';
+
+function checkRemembered() {
+  const until = localStorage.getItem(REMEMBER_KEY);
+  if (until && Date.now() < parseInt(until)) {
+    // Auto-login
+    document.getElementById('pw-screen').style.display = 'none';
+    showPostAuth();
+    return true;
+  }
+  return false;
+}
+
+// Override checkPassword to save remember me
+const _origCheckPassword = checkPassword;
+async function checkPassword() {
+  const val = document.getElementById('pw-input').value;
+  const err = document.getElementById('pw-error');
+  const inp = document.getElementById('pw-input');
+  const hash = await _digest(val);
+  if (hash === _h || hash === _hm) {
+    const remember = document.getElementById('pw-remember')?.checked;
+    if (remember) {
+      localStorage.setItem(REMEMBER_KEY, Date.now() + 24*60*60*1000);
+    }
+    document.getElementById('pw-screen').style.display = 'none';
+    if (hash === _hm) { isMasterAccess = true; }
+    showPostAuth();
+  } else {
+    err.textContent = 'Incorrect password. Try again.';
+    inp.classList.add('error');
+    inp.value = '';
+    setTimeout(() => inp.classList.remove('error'), 500);
+  }
+}
+
+// Also clear remember on logout
+const _origLogout = logout;
+function logout() {
+  localStorage.removeItem(REMEMBER_KEY);
+  isMasterAccess = false; privacyOn = true;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('pw-screen').style.display = 'flex';
+  document.getElementById('pw-input').value = '';
+  document.getElementById('pw-error').textContent = '';
+}
+
+// ── MOBILE TAB SWITCHING ─────────────────────────────────────────
+const _origSwitchTab = switchTab;
+function switchTab(name, el, mobileEl) {
+  // Update desktop nav
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  if (el) el.classList.add('active');
+  else {
+    const desktopTab = document.querySelector(`.nav-tab[onclick*="'${name}'"]`);
+    if (desktopTab) desktopTab.classList.add('active');
+  }
+  const page = document.getElementById('page-' + name);
+  if (page) {
+    page.classList.add('active');
+    page.style.animation = 'pageIn 0.22s ease forwards';
+  }
+  showParticles(name === 'overview');
+  // Update mobile nav
+  document.querySelectorAll('.mobile-nav-item').forEach(i => i.classList.remove('active'));
+  if (mobileEl) mobileEl.classList.add('active');
+  else {
+    const mItem = document.querySelector(`.mobile-nav-item[data-tab="${name}"]`);
+    if (mItem) mItem.classList.add('active');
+  }
+  // Update mobile tab name in header
+  const tabNames = {overview:'Overview',positions:'Positions',investors:'Investors',analytics:'Analytics',calendar:'Calendar'};
+  const mobileLabel = document.getElementById('mobile-tab-name');
+  if (mobileLabel) mobileLabel.textContent = tabNames[name] || name;
+  // Render calendar if switching to it
+  if (name === 'calendar' && window.lastData) renderCalendar(window.lastData.positions||[]);
+}
+
+// ── TODAY'S P&L ──────────────────────────────────────────────────
+function getTodayPnl(positions) {
+  const today = new Date();
+  const dd = String(today.getDate()).padStart(2,'0');
+  const mm = String(today.getMonth()+1).padStart(2,'0');
+  const yyyy = today.getFullYear();
+  const todayStr = dd+'/'+mm+'/'+yyyy;
+  return (positions||[])
+    .filter(p => p.status==='Closed' && (p.exitDate===todayStr || p.date===todayStr))
+    .reduce((s,p) => s+p.pnl, 0);
+}
+
+// ── ERROR STATE ──────────────────────────────────────────────────
+function showErrorState(message) {
+  const banner = document.getElementById('error-banner');
+  if (!banner) return;
+  banner.style.display = 'block';
+  banner.innerHTML = `
+    <div class="error-state">
+      <div class="error-icon">⚠</div>
+      <div class="error-title">Could not load fund data</div>
+      <div class="error-sub">${message}<br>The dashboard is showing cached demo data.</div>
+      <button class="error-retry" onclick="retryLoad()">&#8635; Retry</button>
+    </div>`;
+}
+
+function retryLoad() {
+  document.getElementById('error-banner').style.display = 'none';
+  launchDashboard('1ELp_ABRtz_r2PSSQ5sS_AJPdVwFC8RBWY9RLOOR-WEo', 'AIzaSyCTd5pfr8gZLttk17YDlnWCHpem93IuzsY');
+}
+
 
 // ── RENDER ALL ───────────────────────────────────────────────────
 function renderAll(d) {
