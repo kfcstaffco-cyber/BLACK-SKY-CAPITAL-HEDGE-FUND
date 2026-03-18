@@ -772,7 +772,10 @@ function parsePositions(rows) {
   }));
 }
 
-// ── PARSE INVESTOR WITHDRAWALS (aggregate row per investor) ──────
+// ── PARSE INVESTOR WITHDRAWALS ───────────────────────────────────
+// The sheet may have multiple rows per investor (one per deposit tranche).
+// We parse every raw row, then collapse by name so each investor appears once,
+// summing deposited / withdrawn / pct / pnlShare across all their rows.
 function parseInvestors(rows) {
   let hi = rows.findIndex(r => r[0]==='#'); if(hi<0) return [];
   const clean = v => parseFloat((v||'0').toString().replace(/[,$%\s()]/g,''))||0;
@@ -781,8 +784,11 @@ function parseInvestors(rows) {
     if(s.endsWith('%')) return parseFloat(s.replace('%',''))/100;
     const n=clean(v); return Math.abs(n)>1?n/100:n;
   };
-  return rows.slice(hi+1).filter(r=>r[1]&&r[1].trim()).map(r=>({
-    name:        r[1]||'',
+
+  // Parse every raw row
+  const rawRows = rows.slice(hi+1).filter(r=>r[1]&&r[1].trim());
+  const rawParsed = rawRows.map(r=>({
+    name:        (r[1]||'').trim(),
     depositDate: r[2]||'',
     lockDays:    clean(r[3]),
     daysToUnlock:clean(r[5]),
@@ -794,6 +800,32 @@ function parseInvestors(rows) {
     pnlShare:    clean(r[12]),
     netPayout:   r[17]?clean(r[17]):null,
   }));
+
+  // Collapse: one entry per unique investor name
+  const byName = {};
+  rawParsed.forEach(r => {
+    const n = r.name;
+    if (!byName[n]) {
+      // First row for this investor seeds the object
+      byName[n] = { ...r };
+    } else {
+      // Subsequent rows: accumulate numeric fields
+      byName[n].deposited   += r.deposited;
+      byName[n].withdrawn   += r.withdrawn;
+      byName[n].pct         += r.pct;
+      byName[n].pnlShare    += r.pnlShare;
+      byName[n].balance     += r.balance;
+      // Keep the most recent deposit date
+      byName[n].depositDate  = r.depositDate || byName[n].depositDate;
+      // Keep LOCKED if any tranche is locked; keep shortest daysToUnlock
+      if (r.status === 'LOCKED') {
+        byName[n].status = 'LOCKED';
+        byName[n].daysToUnlock = Math.min(byName[n].daysToUnlock, r.daysToUnlock);
+      }
+    }
+  });
+
+  return Object.values(byName);
 }
 
 // ── PARSE TRANSACTION LOG ────────────────────────────────────────
@@ -918,10 +950,10 @@ function renderInvestors(investors, transactions) {
   const totalPnlShared = investors.reduce((s,i)=>s+i.pnlShare,0);
   const metricsEl = $('investor-metrics');
   metricsEl.innerHTML = [
-    {label:'Total Capital',  val:'$'+fmtM(totalCapital),    cls:'gold',  sub:investors.length+' investors'},
-    {label:'Total Withdrawn',val:'$'+fmtM(totalWithdrawn),  cls:'red',   sub:'All time'},
-    {label:'Total P&L Dist.',val:'$'+fmtM(totalPnlShared),  cls:'green', sub:'Pro-rata shares'},
-    {label:'Active Investors',val:investors.length,          cls:'blue',  sub:txns.length+' transactions'},
+    {label:'Total Capital',   val:'$'+fmtM(totalCapital),   cls:'gold',  sub:investors.length+' investors'},
+    {label:'Total Withdrawn', val:'$'+fmtM(totalWithdrawn), cls:'red',   sub:'All time'},
+    {label:'Total P&L Dist.', val:'$'+fmtM(totalPnlShared), cls:'green', sub:'Pro-rata shares'},
+    {label:'Total Investors', val:investors.length,          cls:'blue',  sub:txns.length+' transactions'},
   ].map(c=>`
     <div class="metric-card">
       <div class="metric-label">${c.label}</div>
@@ -937,7 +969,10 @@ function renderInvestors(investors, transactions) {
     const statusBadge = isLocked ? badge('LOCKED','red') : badge('UNLOCKED','green');
     const daysText = isLocked ? `${inv.daysToUnlock}d to unlock` : 'Available';
     const invTxns = txnsByName[inv.name] || { deposits:[], totalDeposit:0, totalWithdrawal:0 };
-    const netCapital = inv.deposited - inv.withdrawn;
+    // Use aggregated transaction totals as source of truth for the dropdown
+    const aggDeposited  = invTxns.totalDeposit    || inv.deposited;
+    const aggWithdrawn  = invTxns.totalWithdrawal || inv.withdrawn;
+    const netCapital    = aggDeposited - aggWithdrawn;
 
     const depositRows = invTxns.deposits.length > 0
       ? invTxns.deposits.map(t => `
@@ -979,11 +1014,11 @@ function renderInvestors(investors, transactions) {
           <div class="investor-summary-row">
             <div class="inv-stat-box">
               <div class="inv-stat-label">Total Deposited</div>
-              <div class="inv-stat-value" style="color:var(--accent2)">$${fmtM(inv.deposited)}</div>
+              <div class="inv-stat-value" style="color:var(--accent2)">$${fmtM(aggDeposited)}</div>
             </div>
             <div class="inv-stat-box">
               <div class="inv-stat-label">Total Withdrawn</div>
-              <div class="inv-stat-value" style="color:var(--red)">$${fmtM(inv.withdrawn)}</div>
+              <div class="inv-stat-value" style="color:var(--red)">$${fmtM(aggWithdrawn)}</div>
             </div>
             <div class="inv-stat-box">
               <div class="inv-stat-label">Net Capital</div>
@@ -1002,22 +1037,48 @@ function renderInvestors(investors, transactions) {
       </div>`;
   }).join('');
 
-  // ── Ownership bars ──
+  // ── Ownership bars — one bar per unique investor ──
+  const OWNER_COLORS = { 'Kimmo':'var(--accent2)', 'Andre':'var(--blue)', 'Veronica':'var(--red)', 'Elyes':'var(--green)' };
+  const getOwnerColor = name => OWNER_COLORS[name] || 'var(--accent)';
   $('ownership-bars').innerHTML = investors.map(inv => `
     <div style="margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
         <span style="color:var(--muted)">${inv.name}</span>
-        <span style="font-family:var(--mono);color:var(--accent2)">${(inv.pct*100).toFixed(4)}%</span>
+        <span style="font-family:var(--mono);color:${getOwnerColor(inv.name)}">${(inv.pct*100).toFixed(4)}%</span>
       </div>
       <div class="bar-track" style="height:6px">
-        <div class="bar-fill" style="width:${Math.min(inv.pct*100,100).toFixed(4)}%;background:${getAvatarStyle(inv.name).includes('c8a96e')?'var(--accent2)':getAvatarStyle(inv.name).includes('4a9eff')?'var(--blue)':getAvatarStyle(inv.name).includes('e8534a')?'var(--red)':'var(--green)'}"></div>
+        <div class="bar-fill" style="width:${Math.min(inv.pct*100,100).toFixed(4)}%;background:${getOwnerColor(inv.name)}"></div>
       </div>
     </div>`).join('');
 
-  // ── P&L shares ──
-  $('pnl-shares').innerHTML = investors.map(inv =>
-    rowLabel(inv.name, sgn(inv.pnlShare)+'$'+fmtM(inv.pnlShare), 'color:var(--green)')
-  ).join('');
+  // ── P&L shares — expandable per investor ──
+  $('pnl-shares').innerHTML = investors.map((inv, idx) => {
+    const invTxnsForPnl = txnsByName[inv.name] || { deposits:[] };
+    const totalFundDeposited = investors.reduce((s,i)=>s+i.deposited, 0);
+    // Per-deposit P&L allocation = (deposit / total fund) * total P&L
+    const totalPnlPool = totalPnlShared;
+    const depositBreakdown = invTxnsForPnl.deposits.map(t => {
+      const share = totalFundDeposited > 0 ? (t.deposit / totalFundDeposited) * totalPnlPool : 0;
+      return `<div style="display:flex;justify-content:space-between;padding:6px 0 6px 12px;border-top:1px solid var(--border);font-size:11px;">
+        <span style="color:var(--muted)">${t.date} · $${fmtM(t.deposit)}</span>
+        <span style="font-family:var(--mono);color:var(--green)">${sgn(share)}$${fmtM(share)}</span>
+      </div>`;
+    }).join('');
+
+    return `
+      <div style="border-bottom:1px solid var(--border);">
+        <div onclick="togglePnlRow(${idx})" style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;cursor:pointer;">
+          <span style="font-size:12px;">${inv.name}</span>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-family:var(--mono);font-size:12px;color:var(--green)">${sgn(inv.pnlShare)}$${fmtM(inv.pnlShare)}</span>
+            <svg id="pnl-chev-${idx}" style="width:12px;height:12px;color:var(--muted);transition:transform 0.2s;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+        <div id="pnl-breakdown-${idx}" style="display:none;">
+          ${depositBreakdown || '<div style="padding:6px 0 6px 12px;font-size:11px;color:var(--muted);">No deposit breakdown available</div>'}
+        </div>
+      </div>`;
+  }).join('');
 
   // ── Transaction Timeline (newest first) ──
   const sortedTxns = [...txns].sort((a,b) => {
@@ -1070,6 +1131,15 @@ function toggleInvestorCard(idx) {
   const isOpen = !body.classList.contains('collapsed');
   body.classList.toggle('collapsed');
   chev.classList.toggle('open', !isOpen);
+}
+
+function togglePnlRow(idx) {
+  const breakdown = $('pnl-breakdown-'+idx);
+  const chev = $('pnl-chev-'+idx);
+  if (!breakdown || !chev) return;
+  const isOpen = breakdown.style.display !== 'none';
+  breakdown.style.display = isOpen ? 'none' : 'block';
+  chev.style.transform = isOpen ? '' : 'rotate(180deg)';
 }
 
 // ── RENDER ANALYTICS ─────────────────────────────────────────────
