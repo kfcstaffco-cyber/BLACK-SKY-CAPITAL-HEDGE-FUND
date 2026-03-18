@@ -1039,6 +1039,17 @@ function renderInvestors(investors, d) {
   // 5. P&L SHARES (Aggregated with Individual Sub-rows)
   $('pnl-shares').innerHTML = groupedArray.map(group => {
     const header = `<div style="padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.1); margin-top:15px; display:flex; justify-content:space-between;">
+      <span style="color:var(--gold); font-weight:bold;">${group.name}</span>
+      <span style="color:var(--green); font-family:var(--mono)">Total: ${sgn(group.totalPnlShare)}$${fmtM(group.totalPnlShare)}</span>
+    </div>`;
+    
+    const rows = group.entries.map(inv => 
+      rowLabel(inv.depositDate + ' Contribution', sgn(inv.pnlShare) + '$' + fmtM(inv.pnlShare), 'color:var(--muted); font-size:11px;')
+    ).join('');
+
+    return `<div class="pnl-group">${header}${rows}</div>`;
+  }).join('');
+}
 function renderAnalytics(d) {
   $('trade-stats').innerHTML=[
     ['Best Trade',sgn(d.bestTrade)+'$'+fmtM(d.bestTrade),'color:var(--green)'],
