@@ -535,10 +535,71 @@
     #page-overview { position: relative; z-index: 1; }
 
 
+
+    /* ── PASSWORD SCREEN BACKGROUND ── */
+    #pw-screen::before {
+      content: ''; position: fixed; inset: 0;
+      background: radial-gradient(ellipse at 20% 50%, rgba(200,169,110,0.06) 0%, transparent 60%),
+                  radial-gradient(ellipse at 80% 20%, rgba(74,158,255,0.04) 0%, transparent 50%),
+                  radial-gradient(ellipse at 60% 80%, rgba(62,207,142,0.03) 0%, transparent 50%);
+      animation: pwBgPulse 8s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+    @keyframes pwBgPulse {
+      0%   { opacity: 0.6; transform: scale(1); }
+      100% { opacity: 1;   transform: scale(1.05); }
+    }
+    #pw-screen::after {
+      content: ''; position: fixed; inset: 0;
+      background-image: radial-gradient(circle, rgba(200,169,110,0.08) 1px, transparent 1px);
+      background-size: 40px 40px;
+      animation: pwGridDrift 20s linear infinite;
+      pointer-events: none; opacity: 0.5;
+    }
+    @keyframes pwGridDrift {
+      0%   { transform: translate(0, 0); }
+      100% { transform: translate(40px, 40px); }
+    }
+
+    /* ── TICKER IMPROVEMENTS ── */
+    .ticker-wrap {
+      background: linear-gradient(90deg, var(--bg3) 0%, rgba(21,27,36,0.95) 50%, var(--bg3) 100%);
+      border-bottom: 1px solid rgba(200,169,110,0.15);
+      border-top: 1px solid rgba(200,169,110,0.08);
+      overflow: hidden; padding: 10px 0; display: flex; width: 100%;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    }
+    .ticker-item {
+      display: inline-block; padding: 0 32px;
+      font-family: var(--mono); font-size: 11px; color: var(--text);
+      border-right: 1px solid rgba(255,255,255,0.06); flex-shrink: 0;
+      letter-spacing: 0.02em;
+    }
+    .ticker-item:first-child { padding-left: 20px; }
+
+    /* ── NAV TAB SLIDE INDICATOR ── */
+    .nav-tabs { position: relative; }
+    .nav-tab {
+      padding: 13px 18px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent;
+      white-space: nowrap; transition: color 0.2s; user-select: none; position: relative;
+    }
+    .nav-tab::after {
+      content: ''; position: absolute; bottom: -1px; left: 50%; right: 50%;
+      height: 2px; background: var(--accent);
+      transition: left 0.25s ease, right 0.25s ease;
+    }
+    .nav-tab:hover { color: var(--text); }
+    .nav-tab.active { color: var(--accent); border-bottom-color: transparent; }
+    .nav-tab.active::after { left: 0; right: 0; }
+
+
+    /* ── SPARKLINE ── */
+    .sparkline-wrap { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+    .sparkline-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 6px; }
+
     /* TICKER */
-    .ticker-wrap { background: var(--bg2); border-bottom: 1px solid var(--border); overflow: hidden; padding: 12px 0; display: flex; width: 100%; }
     .ticker-move { display: flex; white-space: nowrap; animation: ticker-loop 60s linear infinite; }
-    .ticker-item { display: inline-block; padding: 0 40px; font-family: var(--mono); font-size: 11px; color: var(--text); border-right: 1px solid var(--border); flex-shrink: 0; }
     @keyframes ticker-loop { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
     .ticker-wrap:hover .ticker-move { animation-play-state: paused; }
 
@@ -569,6 +630,38 @@
       .pw-box { padding: 32px 24px; }
     }
   </style>
+
+  <style media="print">
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    body { background: #fff !important; color: #111 !important; font-family: 'DM Sans', sans-serif; }
+    #pw-screen, #loading-screen, .ticker-wrap, .header, .nav-tabs,
+    .float-btn, .dw-float-btn, .float-tooltip, .dw-float-tooltip,
+    #particle-canvas, #heatmap-tooltip, .site-footer { display: none !important; }
+    .page { display: block !important; padding: 0 !important; }
+    .page:not(#page-overview) { display: none !important; }
+    .metric-card {
+      background: #f8f8f8 !important; border: 1px solid #ddd !important;
+      box-shadow: none !important; backdrop-filter: none !important;
+    }
+    .metric-value { color: #111 !important; }
+    .metric-value.green { color: #16a34a !important; }
+    .metric-value.gold  { color: #b45309 !important; }
+    .metric-value.blue  { color: #1d4ed8 !important; }
+    .card {
+      background: #fff !important; border: 1px solid #e5e7eb !important;
+      box-shadow: none !important; backdrop-filter: none !important;
+      break-inside: avoid;
+    }
+    .badge-green { background: #dcfce7 !important; color: #16a34a !important; }
+    .badge-red   { background: #fee2e2 !important; color: #dc2626 !important; }
+    .badge-blue  { background: #dbeafe !important; color: #1d4ed8 !important; }
+    .badge-gold  { background: #fef3c7 !important; color: #b45309 !important; }
+    .badge-gray  { background: #f3f4f6 !important; color: #6b7280 !important; }
+    .card-title  { color: #111 !important; }
+    .stat-key, .metric-label, .metric-sub { color: #6b7280 !important; }
+    @page { margin: 20mm; size: A4; }
+  </style>
+
 </head>
 <body>
 
@@ -648,7 +741,16 @@
     <div class="two-col">
       <div class="card">
         <div class="card-header"><span class="card-title">Trade Outcomes</span></div>
-        <div id="trade-outcomes"></div>
+        <div style="display:grid;grid-template-columns:1fr 140px;gap:16px;align-items:center;">
+          <div id="trade-outcomes"></div>
+          <div style="position:relative;width:130px;height:130px;">
+            <canvas id="wlDonut"></canvas>
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
+              <div id="donut-center-val" style="font-size:18px;font-weight:600;font-family:var(--mono);color:var(--green);"></div>
+              <div style="font-size:9px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;">Win Rate</div>
+            </div>
+          </div>
+        </div>
         <div class="separator"></div>
         <div class="section-title">Win / Loss Heatmap</div>
         <div class="wl-viz" id="wlViz"></div>
@@ -1400,6 +1502,7 @@ function renderOverview(d) {
     ['Active Positions',d.positions?d.positions.filter(p=>p.status==='Open').length:2,'color:var(--blue)'],
   ].map(([k,v,s])=>rowLabel(k,v,s)).join('');
 
+  renderWLDonut(d);
   $('risk-metrics').innerHTML=[
     ['Profit Factor',d.profitFactor.toFixed(2)+'×','color:var(--green)'],
     ['Sharpe Ratio',d.sharpe.toFixed(2),''],
@@ -1565,6 +1668,10 @@ function renderInvestors(investors, transactions) {
               <div class="inv-stat-value" style="color:var(--green)">${sgn(inv.pnlShare)}$${fmtM(inv.pnlShare)}</div>
             </div>
           </div>
+          <div class="sparkline-wrap" id="spark-wrap-${idx}">
+            <div class="sparkline-label">Deposit Growth</div>
+            <div style="height:40px;"><canvas id="spark-${idx}"></canvas></div>
+          </div>
           <div style="padding:12px 0 4px;">
             <div class="section-title" style="margin-bottom:8px;">Deposit History</div>
             ${depositRows}
@@ -1572,6 +1679,9 @@ function renderInvestors(investors, transactions) {
         </div>
       </div>`;
   }).join('');
+
+  // Render sparklines after cards are in DOM
+  setTimeout(() => renderSparklines(investors, txnsByName), 50);
 
   // ── Ownership bars — sorted largest to smallest ──
   const sortedByOwnership = [...investors].sort((a,b) => {
@@ -2159,6 +2269,76 @@ function animateMetricRefresh(key, newVal, formatter) {
   }, 600);
 }
 
+
+// ── WIN/LOSS DONUT CHART ─────────────────────────────────────────
+function renderWLDonut(d) {
+  destroyChart('wlDonut');
+  const canvas = document.getElementById('wlDonut');
+  if (!canvas) return;
+  const tp  = d.tpHits || 0;
+  const sl  = d.slHits || 0;
+  const other = Math.max(0, (d.totalTrades||0) - tp - sl);
+  const total = tp + sl + other;
+  if (total === 0) return;
+  const winRate = ((tp/total)*100).toFixed(1)+'%';
+  const centerEl = document.getElementById('donut-center-val');
+  if (centerEl) centerEl.textContent = winRate;
+  charts.wlDonut = new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels: ['Take Profit', 'Stop Loss', 'Manual Close'],
+      datasets: [{
+        data: [tp, sl, other],
+        backgroundColor: ['#3ecf8e','#e8534a','#4a9eff'],
+        borderColor: 'rgba(15,19,24,0.8)',
+        borderWidth: 2, hoverOffset: 4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true, cutout: '72%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.label}: ${ctx.parsed} trades (${((ctx.parsed/total)*100).toFixed(1)}%)`
+          }
+        }
+      }
+    }
+  });
+}
+
+// ── SPARKLINE FOR INVESTOR DEPOSIT GROWTH ───────────────────────
+function renderSparklines(investors, txnsByName) {
+  investors.forEach((inv, idx) => {
+    const canvasId = 'spark-' + idx;
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    destroyChart(canvasId);
+    const deps = (txnsByName[inv.name] || {deposits:[]}).deposits;
+    if (deps.length < 2) { canvas.style.display='none'; return; }
+    let running = 0;
+    const data   = deps.map(t => { running += t.deposit; return +(running/1e9).toFixed(3); });
+    const labels = deps.map(t => t.date);
+    charts[canvasId] = new Chart(canvas, {
+      type: 'line',
+      data: { labels, datasets: [{
+        data, borderColor: getInvestorColor(inv.name).bar,
+        backgroundColor: 'transparent',
+        borderWidth: 1.5, pointRadius: 2, tension: 0.4,
+      }]},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend:{display:false}, tooltip:{
+          callbacks:{ label: ctx => ' $'+ctx.parsed.y.toFixed(2)+'B' }
+        }},
+        scales: { x:{display:false}, y:{display:false} },
+        animation: { duration: 600 },
+      }
+    });
+  });
+}
+
 // ── RENDER ALL ───────────────────────────────────────────────────
 function renderAll(d) {
   window.lastData = d;
@@ -2709,7 +2889,39 @@ function exportPDF() {
     h2{font-size:13px;font-weight:600;margin:20px 0 10px;text-transform:uppercase;letter-spacing:0.06em;color:#444;}
     .footer{margin-top:32px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:10px;color:#aaa;display:flex;justify-content:space-between;}
     @media print{body{padding:16px;}.no-print{display:none;}}
-  </style></head><body>
+  </style>
+  <style media="print">
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    body { background: #fff !important; color: #111 !important; font-family: 'DM Sans', sans-serif; }
+    #pw-screen, #loading-screen, .ticker-wrap, .header, .nav-tabs,
+    .float-btn, .dw-float-btn, .float-tooltip, .dw-float-tooltip,
+    #particle-canvas, #heatmap-tooltip, .site-footer { display: none !important; }
+    .page { display: block !important; padding: 0 !important; }
+    .page:not(#page-overview) { display: none !important; }
+    .metric-card {
+      background: #f8f8f8 !important; border: 1px solid #ddd !important;
+      box-shadow: none !important; backdrop-filter: none !important;
+    }
+    .metric-value { color: #111 !important; }
+    .metric-value.green { color: #16a34a !important; }
+    .metric-value.gold  { color: #b45309 !important; }
+    .metric-value.blue  { color: #1d4ed8 !important; }
+    .card {
+      background: #fff !important; border: 1px solid #e5e7eb !important;
+      box-shadow: none !important; backdrop-filter: none !important;
+      break-inside: avoid;
+    }
+    .badge-green { background: #dcfce7 !important; color: #16a34a !important; }
+    .badge-red   { background: #fee2e2 !important; color: #dc2626 !important; }
+    .badge-blue  { background: #dbeafe !important; color: #1d4ed8 !important; }
+    .badge-gold  { background: #fef3c7 !important; color: #b45309 !important; }
+    .badge-gray  { background: #f3f4f6 !important; color: #6b7280 !important; }
+    .card-title  { color: #111 !important; }
+    .stat-key, .metric-label, .metric-sub { color: #6b7280 !important; }
+    @page { margin: 20mm; size: A4; }
+  </style>
+
+</head><body>
   <button class="no-print" onclick="window.print()" style="margin-bottom:20px;padding:8px 16px;background:#92400e;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;">Print / Save PDF</button>
   <h1>Black-Sky Capital</h1>
   <div class="sub">KFC Hedge Fund &mdash; Fund Report &mdash; Generated ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</div>
