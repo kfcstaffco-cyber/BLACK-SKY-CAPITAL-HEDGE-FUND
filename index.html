@@ -1734,7 +1734,7 @@ function renderOverview(d) {
     {label:'Notional Exp.',  val:'$'+fmtM(d.notional),       cls:'blue',  sub:'Total leveraged',                           key:'notional'},
   ];
   const grid = $('overview-metrics');
-  const isFirstRender = !grid.children.length;
+  const isFirstRender = !grid.children.length || grid.querySelector('.skeleton') !== null;
   if (isFirstRender) {
     // Render cards with 0 first, then count up to real values
     grid.innerHTML = metrics.map((c,i)=>`
@@ -3012,7 +3012,7 @@ function showSkeletons() {
   const grid = document.getElementById('overview-metrics');
   if (!grid || grid.children.length > 0) return;
   grid.innerHTML = Array(8).fill(0).map(() =>
-    '<div class="metric-card skeleton skeleton-card"></div>'
+    '<div class="metric-card skeleton skeleton-card" data-skeleton="true"></div>'
   ).join('');
 }
 
@@ -3268,6 +3268,9 @@ function renderAll(d) {
   renderInceptionStats(d);
   renderNAVWithBenchmark(d);
   setTimeout(colorPositionRows, 100);
+  // Show statement button for master
+  const sw = document.getElementById('statement-btn-wrap');
+  if (sw) sw.style.display = isMasterAccess ? 'block' : 'none';
   renderCalendar(d.positions||[]);
   renderRecentTrades(d.positions||[]);
 }
