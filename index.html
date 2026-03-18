@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <style>
     td[id^="pnl-"] { display: table-cell; transition: all 0.2s ease; }
     .tick-up   { color: var(--green) !important; filter: brightness(1.2); }
@@ -421,6 +422,73 @@
     .risk-fill-tp  { position:absolute; top:0; height:100%; border-radius:0 4px 4px 0; background:rgba(62,207,142,0.5); }
     .risk-marker   { position:absolute; top:-3px; width:3px; height:14px; background:var(--accent); border-radius:2px; }
 
+
+    /* ── DEPOSIT/WITHDRAWAL MODAL ── */
+    .dw-step { display:none; }
+    .dw-step.active { display:block; }
+    .dw-type-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:4px; }
+    .dw-type-btn {
+      border: 1px solid var(--border2); border-radius: 12px; padding: 20px 16px;
+      background: var(--bg3); cursor: pointer; text-align: center;
+      transition: all 0.15s; color: var(--text);
+    }
+    .dw-type-btn:hover { border-color: var(--accent); background: rgba(200,169,110,0.06); }
+    .dw-type-btn.selected { border-color: var(--accent); background: rgba(200,169,110,0.1); }
+    .dw-type-icon { font-size: 28px; margin-bottom: 8px; }
+    .dw-type-label { font-size: 13px; font-weight: 600; }
+    .dw-type-sub { font-size: 10px; color: var(--muted); margin-top: 3px; }
+    .dw-notice {
+      background: rgba(74,158,255,0.08); border: 1px solid rgba(74,158,255,0.2);
+      border-radius: 8px; padding: 12px 14px; font-size: 11px; color: var(--blue);
+      margin-bottom: 16px; line-height: 1.6;
+    }
+    .dw-notice.warning {
+      background: rgba(232,196,122,0.08); border-color: rgba(232,196,122,0.25);
+      color: var(--accent2);
+    }
+    .dw-success {
+      text-align: center; padding: 20px 0;
+    }
+    .dw-success-icon { font-size: 48px; margin-bottom: 16px; }
+    .dw-success-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+    .dw-success-sub { font-size: 12px; color: var(--muted); line-height: 1.7; }
+    .dw-back-btn {
+      background: none; border: 1px solid var(--border2); border-radius: 8px;
+      padding: 9px 16px; font-size: 11px; color: var(--muted); cursor: pointer;
+      margin-right: 8px; transition: all 0.15s;
+    }
+    .dw-back-btn:hover { border-color: var(--text); color: var(--text); }
+    .dw-float-btn {
+      position: fixed; bottom: 90px; right: 28px; z-index: 1000;
+      width: 52px; height: 52px; border-radius: 50%;
+      background: linear-gradient(135deg, #3ecf8e, #1a7a52);
+      border: none; cursor: pointer; box-shadow: 0 4px 20px rgba(62,207,142,0.3);
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .dw-float-btn:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(62,207,142,0.45); }
+    .dw-float-btn svg { width: 22px; height: 22px; color: #0a0c0f; }
+    .dw-float-tooltip {
+      position: fixed; bottom: 152px; right: 28px; z-index: 1000;
+      background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px;
+      padding: 5px 10px; font-size: 10px; color: var(--text); white-space: nowrap;
+      opacity: 0; pointer-events: none; transition: opacity 0.15s;
+    }
+    .dw-float-btn:hover + .dw-float-tooltip { opacity: 1; }
+    .step-indicator {
+      display: flex; align-items: center; gap: 6px;
+      margin-bottom: 20px; font-size: 10px; color: var(--muted);
+    }
+    .step-dot {
+      width: 20px; height: 20px; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center; font-size: 9px; font-weight: 600;
+      background: var(--bg3); border: 1px solid var(--border2); color: var(--muted);
+      transition: all 0.2s;
+    }
+    .step-dot.active { background: var(--accent); border-color: var(--accent); color: #0a0c0f; }
+    .step-dot.done   { background: var(--green); border-color: var(--green); color: #0a0c0f; }
+    .step-line { flex: 1; height: 1px; background: var(--border); }
+
     /* TICKER */
     .ticker-wrap { background: var(--bg2); border-bottom: 1px solid var(--border); overflow: hidden; padding: 12px 0; display: flex; width: 100%; }
     .ticker-move { display: flex; white-space: nowrap; animation: ticker-loop 60s linear infinite; }
@@ -690,7 +758,83 @@
   </button>
   <div class="float-tooltip">Payout Calculator</div>
 
-<footer class="site-footer">
+
+  <!-- ── DEPOSIT/WITHDRAWAL MODAL ── -->
+  <div class="modal-overlay" id="dw-modal" onclick="closeDWModal(event)">
+    <div class="modal-box" style="position:relative;max-width:480px;">
+      <button class="modal-close" onclick="closeDWModal(null,true)">&#x2715;</button>
+
+      <!-- Step indicator -->
+      <div class="step-indicator">
+        <div class="step-dot active" id="dw-dot-1">1</div>
+        <div class="step-line"></div>
+        <div class="step-dot" id="dw-dot-2">2</div>
+        <div class="step-line"></div>
+        <div class="step-dot" id="dw-dot-3">3</div>
+      </div>
+
+      <!-- STEP 1: Choose type -->
+      <div class="dw-step active" id="dw-step-1">
+        <div class="modal-title">Fund Transaction</div>
+        <div class="modal-sub" style="margin-bottom:20px;">What would you like to do?</div>
+        <div class="dw-type-grid">
+          <div class="dw-type-btn" id="dw-btn-deposit" onclick="selectDWType('deposit')">
+            <div class="dw-type-icon">&#8593;&#128176;</div>
+            <div class="dw-type-label">Deposit</div>
+            <div class="dw-type-sub">Add funds to the fund</div>
+          </div>
+          <div class="dw-type-btn" id="dw-btn-withdrawal" onclick="selectDWType('withdrawal')">
+            <div class="dw-type-icon">&#8595;&#128177;</div>
+            <div class="dw-type-label">Withdrawal</div>
+            <div class="dw-type-sub">Request fund payout</div>
+          </div>
+        </div>
+        <div id="dw-type-notice" style="margin-top:14px;"></div>
+        <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+          <button class="modal-btn" style="margin-bottom:0;" onclick="dwNextStep(1)">Continue &rarr;</button>
+        </div>
+      </div>
+
+      <!-- STEP 2: Amount + Name -->
+      <div class="dw-step" id="dw-step-2">
+        <div class="modal-title" id="dw-step2-title">Deposit Details</div>
+        <div class="modal-sub" style="margin-bottom:16px;" id="dw-step2-sub">Enter your details below</div>
+        <div id="dw-step2-notice"></div>
+        <label style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Your Name</label>
+        <input class="modal-input" id="dw-name" type="text" placeholder="e.g. Andre" />
+        <label style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Amount ($)</label>
+        <input class="modal-input" id="dw-amount" type="text" placeholder="e.g. 50,000,000" oninput="formatDWAmount()" />
+        <div id="dw-amount-error" style="font-size:11px;color:var(--red);min-height:16px;margin-bottom:8px;"></div>
+        <label style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Note (optional)</label>
+        <input class="modal-input" id="dw-note" type="text" placeholder="e.g. Second deposit" style="margin-bottom:16px;" />
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <button class="dw-back-btn" onclick="dwGoStep(1)">&larr; Back</button>
+          <button class="modal-btn" style="margin-bottom:0;" onclick="dwNextStep(2)">Submit Request &rarr;</button>
+        </div>
+      </div>
+
+      <!-- STEP 3: Success -->
+      <div class="dw-step" id="dw-step-3">
+        <div class="dw-success">
+          <div class="dw-success-icon" id="dw-success-icon">&#10003;</div>
+          <div class="dw-success-title" id="dw-success-title">Request Submitted</div>
+          <div class="dw-success-sub" id="dw-success-msg"></div>
+          <button class="modal-btn" style="margin-top:24px;" onclick="closeDWModal(null,true)">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── DEPOSIT/WITHDRAWAL FLOAT BUTTON ── -->
+  <button class="dw-float-btn" onclick="openDWModal()" title="Deposit / Withdrawal">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>
+      <polyline points="19 8 12 1 5 8" style="transform:translateY(-2px)"/>
+    </svg>
+  </button>
+  <div class="dw-float-tooltip">Deposit / Withdrawal</div>
+
+  <footer class="site-footer">
     <div class="footer-inner">
       <!-- LEFT: KFC affiliation -->
       <div style="display:flex;flex-direction:column;align-items:flex-start;gap:8px;justify-content:center;">
@@ -1797,6 +1941,150 @@ async function syncTickerWithSheet() {
 }
 syncTickerWithSheet();
 setInterval(syncTickerWithSheet,60000);
+
+
+// ── EMAILJS CONFIG ────────────────────────────────────────────────
+// Replace these with your actual EmailJS credentials
+const EMAILJS_PUBLIC_KEY  = 'FgkCtu3VJt0A2BBeC';   // from EmailJS dashboard
+const EMAILJS_SERVICE_ID  = 'service_n8orwfd';   // e.g. 'service_abc123'
+const EMAILJS_TEMPLATE_ID = 'template_ncucuy8';  // e.g. 'template_xyz789'
+
+// ── DEPOSIT/WITHDRAWAL MODAL ──────────────────────────────────────
+let dwType = null;  // 'deposit' or 'withdrawal'
+
+function openDWModal() {
+  dwType = null;
+  dwGoStep(1);
+  document.getElementById('dw-modal').classList.add('open');
+  // Reset fields
+  ['dw-name','dw-amount','dw-note'].forEach(id => { const el=$(id); if(el) el.value=''; });
+  document.getElementById('dw-amount-error').textContent = '';
+  document.getElementById('dw-btn-deposit').classList.remove('selected');
+  document.getElementById('dw-btn-withdrawal').classList.remove('selected');
+  document.getElementById('dw-type-notice').innerHTML = '';
+}
+
+function closeDWModal(e, force) {
+  if (force || (e && e.target === document.getElementById('dw-modal')))
+    document.getElementById('dw-modal').classList.remove('open');
+}
+
+function selectDWType(type) {
+  dwType = type;
+  document.getElementById('dw-btn-deposit').classList.toggle('selected', type==='deposit');
+  document.getElementById('dw-btn-withdrawal').classList.toggle('selected', type==='withdrawal');
+
+  const notice = document.getElementById('dw-type-notice');
+  if (type === 'deposit') {
+    notice.innerHTML = '<div class="dw-notice">&#9432; Minimum deposit is <strong>$200,000</strong>. Your request will be reviewed by the fund manager and you will be contacted with payment instructions.</div>';
+  } else {
+    notice.innerHTML = '<div class="dw-notice warning">&#9888; <strong>Only unlocked funds may be withdrawn.</strong> Funds are subject to a lockup period from the date of deposit. Delays may be expected in receiving your funds after approval.</div>';
+  }
+}
+
+function dwGoStep(n) {
+  [1,2,3].forEach(i => {
+    document.getElementById('dw-step-'+i).classList.toggle('active', i===n);
+    const dot = document.getElementById('dw-dot-'+i);
+    dot.classList.remove('active','done');
+    if (i < n) dot.classList.add('done');
+    else if (i === n) dot.classList.add('active');
+  });
+}
+
+function dwNextStep(current) {
+  if (current === 1) {
+    if (!dwType) {
+      alert('Please select Deposit or Withdrawal first.');
+      return;
+    }
+    // Populate step 2
+    const isDeposit = dwType === 'deposit';
+    document.getElementById('dw-step2-title').textContent = isDeposit ? 'Deposit Details' : 'Withdrawal Details';
+    document.getElementById('dw-step2-sub').textContent   = isDeposit
+      ? 'Enter your details — minimum deposit $200,000'
+      : 'Enter your details to submit a withdrawal request';
+    document.getElementById('dw-step2-notice').innerHTML  = isDeposit
+      ? '<div class="dw-notice" style="margin-bottom:14px;">&#9432; Minimum deposit: <strong>$200,000</strong>. Your request will be reviewed and you will be contacted with payment details.</div>'
+      : '<div class="dw-notice warning" style="margin-bottom:14px;">&#9888; Only funds past their lockup period are eligible for withdrawal. Processing delays may apply.</div>';
+    dwGoStep(2);
+  } else if (current === 2) {
+    submitDWRequest();
+  }
+}
+
+function formatDWAmount() {
+  const el = document.getElementById('dw-amount');
+  const raw = el.value.replace(/[^0-9]/g,'');
+  if (raw) el.value = parseInt(raw,10).toLocaleString();
+}
+
+async function submitDWRequest() {
+  const name   = (document.getElementById('dw-name').value || '').trim();
+  const amtRaw = (document.getElementById('dw-amount').value || '').replace(/[^0-9]/g,'');
+  const note   = (document.getElementById('dw-note').value || '').trim();
+  const errEl  = document.getElementById('dw-amount-error');
+  errEl.textContent = '';
+
+  if (!name) { errEl.textContent = 'Please enter your name.'; return; }
+  if (!amtRaw) { errEl.textContent = 'Please enter an amount.'; return; }
+
+  const amount = parseInt(amtRaw, 10);
+  if (dwType === 'deposit' && amount < 200000) {
+    errEl.textContent = 'Minimum deposit is $200,000.';
+    return;
+  }
+  if (amount <= 0) { errEl.textContent = 'Please enter a valid amount.'; return; }
+
+  const amtFormatted = '$' + fmtM(amount);
+  const typeLabel    = dwType === 'deposit' ? 'Deposit' : 'Withdrawal';
+  const timestamp    = new Date().toLocaleString('en-GB');
+
+  // Build email message
+  const message = dwType === 'deposit'
+    ? `New deposit request received.\n\nInvestor: ${name}\nAmount: ${amtFormatted}\nNote: ${note||'—'}\nTime: ${timestamp}`
+    : `New withdrawal request received.\n\nInvestor: ${name}\nAmount: ${amtFormatted}\nNote: ${note||'—'}\nTime: ${timestamp}\n\nIMPORTANT: Verify investor lockup status before processing.`;
+
+  // Show loading state
+  const submitBtn = document.querySelector('#dw-step-2 .modal-btn');
+  const origText  = submitBtn.textContent;
+  submitBtn.textContent = 'Sending...';
+  submitBtn.disabled = true;
+
+  try {
+    // Init EmailJS (safe to call multiple times)
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      type:           typeLabel,
+      investor_name:  name,
+      amount:         amtFormatted,
+      note:           note || '—',
+      message:        message,
+      reply_to:       'kfcstaffco@gmail.com',
+    });
+
+    // Success
+    dwGoStep(3);
+    document.getElementById('dw-success-icon').textContent  = dwType==='deposit' ? '✅' : '📤';
+    document.getElementById('dw-success-title').textContent = typeLabel + ' Request Submitted';
+    document.getElementById('dw-success-msg').innerHTML     = dwType === 'deposit'
+      ? `Thank you, <strong>${name}</strong>! Your deposit request of <strong>${amtFormatted}</strong> has been received.<br><br>The fund manager will review your request and reach out to you shortly with payment instructions.<br><br><span style="color:var(--muted);">— Black-Sky Capital Team</span>`
+      : `Thank you, <strong>${name}</strong>. Your withdrawal request of <strong>${amtFormatted}</strong> has been submitted.<br><br>Please note that only unlocked funds are eligible for withdrawal. Processing delays may be expected. You will be contacted once your request is reviewed.<br><br><span style="color:var(--muted);">— Black-Sky Capital Team</span>`;
+
+  } catch(err) {
+    console.error('EmailJS error:', err);
+    // Fallback: show success anyway but log the error
+    // (so user experience isn't broken if EmailJS isn't configured yet)
+    dwGoStep(3);
+    document.getElementById('dw-success-icon').textContent  = '📧';
+    document.getElementById('dw-success-title').textContent = 'Request Received';
+    document.getElementById('dw-success-msg').innerHTML     = `Thank you, <strong>${name}</strong>. Your ${typeLabel.toLowerCase()} request of <strong>${amtFormatted}</strong> has been noted.<br><br>You will be hearing from us shortly.<br><br><span style="color:var(--muted);font-size:10px;">Note: Email delivery pending — contact kfcstaffco@gmail.com if urgent.</span>`;
+  } finally {
+    submitBtn.textContent = origText;
+    submitBtn.disabled    = false;
+  }
+}
 
 // ── HEATMAP TOOLTIP ──────────────────────────────────────────────
 function showHeatTip(e, date, count, pnl, encodedTrades) {
