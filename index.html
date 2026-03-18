@@ -1400,8 +1400,8 @@ function renderInvestors(investors, transactions) {
           return invTxns.deposits.map(t => {
             running += t.deposit;
             const lockLabel = inv.status === 'LOCKED'
-              ? `<span style="color:var(--red);font-size:10px;font-family:var(--mono);">🔒 ${inv.daysToUnlock}d to unlock</span>`
-              : `<span style="color:var(--green);font-size:10px;">✓ Unlocked</span>`;
+              ? `<span style="color:var(--red);font-size:10px;font-family:var(--mono);">${inv.daysToUnlock}d to unlock</span>`
+              : `<span style="color:var(--green);font-size:10px;">Unlocked</span>`;
             return `
             <div class="deposit-row">
               <div class="deposit-date">${t.date}</div>
@@ -1742,8 +1742,8 @@ function calcPayout() {
     const payout = amount * pct;
     const locked = inv.status === 'LOCKED';
     const lockInfo = locked
-      ? `<span style="color:var(--red);font-size:10px;">🔒 ${inv.daysToUnlock}d to unlock</span>`
-      : `<span style="color:var(--green);font-size:10px;">✓ Available</span>`;
+      ? `<span style="color:var(--red);font-size:10px;">${inv.daysToUnlock}d to unlock</span>`
+      : `<span style="color:var(--green);font-size:10px;">Available</span>`;
     return `<div class="payout-row">
       <div>
         <div class="payout-name">${inv.name}</div>
@@ -1945,9 +1945,9 @@ setInterval(syncTickerWithSheet,60000);
 
 // ── EMAILJS CONFIG ────────────────────────────────────────────────
 // Replace these with your actual EmailJS credentials
-const EMAILJS_PUBLIC_KEY  = 'FgkCtu3VJt0A2BBeC';   // from EmailJS dashboard
-const EMAILJS_SERVICE_ID  = 'service_n8orwfd';   // e.g. 'service_abc123'
-const EMAILJS_TEMPLATE_ID = 'template_ncucuy8';  // e.g. 'template_xyz789'
+const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';   // from EmailJS dashboard
+const EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID';   // e.g. 'service_abc123'
+const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';  // e.g. 'template_xyz789'
 
 // ── DEPOSIT/WITHDRAWAL MODAL ──────────────────────────────────────
 let dwType = null;  // 'deposit' or 'withdrawal'
@@ -2060,13 +2060,14 @@ async function submitDWRequest() {
       investor_name:  name,
       amount:         amtFormatted,
       note:           note || '—',
+      timestamp:      timestamp,
       message:        message,
       reply_to:       'kfcstaffco@gmail.com',
     });
 
     // Success
     dwGoStep(3);
-    document.getElementById('dw-success-icon').textContent  = dwType==='deposit' ? '✅' : '📤';
+    document.getElementById('dw-success-icon').textContent  = dwType==='deposit' ? '✓' : '✓';
     document.getElementById('dw-success-title').textContent = typeLabel + ' Request Submitted';
     document.getElementById('dw-success-msg').innerHTML     = dwType === 'deposit'
       ? `Thank you, <strong>${name}</strong>! Your deposit request of <strong>${amtFormatted}</strong> has been received.<br><br>The fund manager will review your request and reach out to you shortly with payment instructions.<br><br><span style="color:var(--muted);">— Black-Sky Capital Team</span>`
@@ -2077,7 +2078,7 @@ async function submitDWRequest() {
     // Fallback: show success anyway but log the error
     // (so user experience isn't broken if EmailJS isn't configured yet)
     dwGoStep(3);
-    document.getElementById('dw-success-icon').textContent  = '📧';
+    document.getElementById('dw-success-icon').textContent  = '✓';
     document.getElementById('dw-success-title').textContent = 'Request Received';
     document.getElementById('dw-success-msg').innerHTML     = `Thank you, <strong>${name}</strong>. Your ${typeLabel.toLowerCase()} request of <strong>${amtFormatted}</strong> has been noted.<br><br>You will be hearing from us shortly.<br><br><span style="color:var(--muted);font-size:10px;">Note: Email delivery pending — contact kfcstaffco@gmail.com if urgent.</span>`;
   } finally {
