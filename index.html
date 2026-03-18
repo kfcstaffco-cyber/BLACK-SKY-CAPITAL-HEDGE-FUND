@@ -1403,7 +1403,12 @@ function renderInvestors(investors, transactions) {
 
   // ── Investor expandable cards ──
   const container = $('investor-cards-container');
-  container.innerHTML = investors.map((inv, idx) => {
+  const sortedInvestors = [...investors].sort((a,b) => {
+    const depA = txnsByName[a.name]?.totalDeposit || a.deposited;
+    const depB = txnsByName[b.name]?.totalDeposit || b.deposited;
+    return depB - depA;
+  });
+  container.innerHTML = sortedInvestors.map((inv, idx) => {
     const avStyle = getAvatarStyle(inv.name);
     const isLocked = inv.status === 'LOCKED';
     const statusBadge = isLocked ? badge('LOCKED','red') : badge('UNLOCKED','green');
