@@ -1023,7 +1023,7 @@ const DEMO = {
 
 // ── HELPERS ─────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
-const fmtM = n => { const a=Math.abs(n); if(a>=1e12) return (n/1e12).toFixed(2)+'T'; if(a>=1e9) return (n/1e9).toFixed(2)+'B'; if(a>=1e6) return (n/1e6).toFixed(1)+'M'; if(a>=1e3) return (n/1e3).toFixed(0)+'K'; return n.toFixed(0); };
+const fmtM = n => { const a=Math.abs(n); if(a>=1e12) return (n/1e12).toFixed(2)+'T'; if(a>=1e9) return (n/1e9).toFixed(2)+'B'; if(a>=1e6) return (n/1e6).toFixed(1)+'M'; if(a>=1e3) return (n/1e3).toFixed(0)+'K'; return n.toFixed(2); };
 const fmtPct = n => (n*100).toFixed(2)+'%';
 const sgn = n => n>=0?'+':'';
 const clr = n => n>=0?'var(--green)':'var(--red)';
@@ -2609,7 +2609,7 @@ function renderProjections(d) {
     const pct = totalCap>0?cap/totalCap:inv.pct;
     const proj = (m) => {
       const r = annRate * (m/12);
-      const gain = cap * r * pct;
+      const gain = cap * r;
       return (gain>=0?'+':'-')+'$'+fmtM(Math.abs(gain));
     };
     return '<div class="proj-row">'
