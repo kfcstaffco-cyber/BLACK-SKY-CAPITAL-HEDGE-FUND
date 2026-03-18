@@ -1062,94 +1062,58 @@ function renderAnalytics(d) {
 }
 
 function renderAll(d) {
-  // 1. GLOBAL STATE & DEBUGGING
-  // Saves the current data globally for your fluctuation script and F12 inspection
+  if (!d) return; 
   window.lastData = d; 
 
-  // 2. HEADER & DATE DISPLAY
-  // Updates the top-right date in the 'DD MMM YYYY' format
+  // Format Date
   if ($('live-date')) {
-    $('live-date').textContent = new Date().toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    }).toUpperCase();
+    $('live-date').textContent = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();
   }
 
-  // 3. CORE RENDERING
-  // Pass both the summary and the logs to investors
-  renderInvestors(d.investors, d.transactions); 
-  
-  // Existing render calls
-  renderOverview(d); 
-  renderPositions(d.positions); 
-  renderAnalytics(d);
+  // Run Renders - Use try/catch so one failure doesn't kill the whole page
+  try { renderOverview(d); } catch(e) { console.error("Overview error:", e); }
+  try { renderPositions(d.positions || []); } catch(e) { console.error("Positions error:", e); }
+  try { renderInvestors(d.investors || [], d.transactions || []); } catch(e) { console.error("Investors error:", e); }
+  try { renderAnalytics(d); } catch(e) { console.error("Analytics error:", e); }
 
-  // 4. FLUCTUATION ENGINE
-  // Feeds the data into the micro-movement script
   seedFluctuations(d);
-  if (!window.fluctTimer) {
-    startMicroFluctuations();
-  }
-
-  // 5. UPDATE SYNC TIME (Optional)
-  if ($('last-update')) {
-    $('last-update').textContent = 'Last Sync: ' + new Date().toLocaleTimeString();
-  }
+  if (!window.fluctTimer) startMicroFluctuations();
 }
 
 // ── LAUNCH ───────────────────────────────────────────────────────
 async function launchDashboard(sheetId, apiKey) {
   $('loading-screen').style.display = 'flex';
+  
   try {
-    // 1. FETCH 4 SHEETS (Added txnRows to the list)
+    // DEBUG: Check if names exist before fetching
+    console.log("Fetching these tabs:", SHEET_TABS);
+
     const [measureRows, posRows, invRows, txnRows] = await Promise.all([
       fetchSheet(sheetId, apiKey, SHEET_TABS.fundMeasures),
       fetchSheet(sheetId, apiKey, SHEET_TABS.positions),
       fetchSheet(sheetId, apiKey, SHEET_TABS.investors),
-      fetchSheet(sheetId, apiKey, SHEET_TABS.transactions) // Match your key name here
+      fetchSheet(sheetId, apiKey, SHEET_TABS.transactions) // <-- Check this key name!
     ]);
 
-    // 2. PARSE DATA
-    const measures = parseFundMeasures(measureRows);
-    measures.positions = parsePositions(posRows);
-    measures.investors = parseInvestors(invRows);
-    
-    // Attach the transactions to the measures object so they travel together
-    measures.transactions = txnRows; 
+    // If we get here, the data exists. Let's build the object.
+    const d = parseFundMeasures(measureRows);
+    d.positions = parsePositions(posRows);
+    d.investors = parseInvestors(invRows);
+    d.transactions = txnRows; // Attach the new log data
 
     $('loading-screen').style.display = 'none';
     $('app').style.display = 'block';
     
-    // 3. INITIAL RENDER
-    renderAll(measures);
-
-    // 4. REFRESH INTERVAL (Updated to fetch all 4 sheets)
-    setInterval(async () => {
-      try {
-        const [mr, pr, ir, tr] = await Promise.all([
-          fetchSheet(sheetId, apiKey, SHEET_TABS.fundMeasures),
-          fetchSheet(sheetId, apiKey, SHEET_TABS.positions),
-          fetchSheet(sheetId, apiKey, SHEET_TABS.investors),
-          fetchSheet(sheetId, apiKey, SHEET_TABS.transactions)
-        ]);
-        const m = parseFundMeasures(mr); 
-        m.positions = parsePositions(pr); 
-        m.investors = parseInvestors(ir);
-        m.transactions = tr; // Keep transactions updated on refresh
-        renderAll(m);
-      } catch(e) { console.warn('Refresh failed:', e); }
-    }, REFRESH_INTERVAL);
+    renderAll(d);
 
   } catch(err) {
-    // ERROR HANDLING
+    console.error("LAUNCH ERROR:", err);
     $('loading-screen').style.display = 'none';
     $('error-banner').style.display = 'block';
-    $('error-banner').textContent = '⚠ ' + err.message;
-    $('app').style.display = 'block';
-    renderAll({...DEMO, investors: DEMO.investors});
-    sessionStorage.removeItem('bsc_sheet_id');
-    sessionStorage.removeItem('bsc_api_key');
+    $('error-banner').textContent = "Connection Failed: " + err.message;
+    
+    // Fallback to demo so the screen isn't blank
+    renderAll(DEMO);
   }
 }
 // 3. General Price Fluctuation Simulation
