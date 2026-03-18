@@ -2318,19 +2318,19 @@ function renderSparklines(investors, txnsByName) {
     const deps = (txnsByName[inv.name] || {deposits:[]}).deposits;
     if (deps.length < 2) { canvas.style.display='none'; return; }
     let running = 0;
-    const data   = deps.map(t => { running += t.deposit; return +(running/1e9).toFixed(3); });
+    const data   = deps.map(t => { running += t.deposit; return running; });
     const labels = deps.map(t => t.date);
     charts[canvasId] = new Chart(canvas, {
       type: 'line',
       data: { labels, datasets: [{
-        data, borderColor: getInvestorColor(inv.name).bar,
-        backgroundColor: 'transparent',
-        borderWidth: 1.5, pointRadius: 2, tension: 0.4,
+        data, borderColor: 'rgba(255,255,255,0.7)',
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderWidth: 1.5, pointRadius: 2, tension: 0.4, fill: true,
       }]},
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: { legend:{display:false}, tooltip:{
-          callbacks:{ label: ctx => ' $'+ctx.parsed.y.toFixed(2)+'B' }
+          callbacks:{ label: ctx => ' $'+fmtM(ctx.parsed.y) }
         }},
         scales: { x:{display:false}, y:{display:false} },
         animation: { duration: 600 },
