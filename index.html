@@ -1467,10 +1467,15 @@ function renderInvestors(investors, transactions) {
       </div>`;
   }).join('');
 
-  // ── Ownership bars — one bar per unique investor ──
+  // ── Ownership bars — sorted largest to smallest ──
   const OWNER_COLORS = { 'Kimmo':'var(--accent2)', 'Andre':'var(--blue)', 'Veronica':'var(--red)', 'Elyes':'var(--green)' };
   const getOwnerColor = name => OWNER_COLORS[name] || 'var(--accent)';
-  $('ownership-bars').innerHTML = investors.map(inv => {
+  const sortedByOwnership = [...investors].sort((a,b) => {
+    const depA = txnsByName[a.name]?.totalDeposit || a.deposited;
+    const depB = txnsByName[b.name]?.totalDeposit || b.deposited;
+    return depB - depA;
+  });
+  $('ownership-bars').innerHTML = sortedByOwnership.map(inv => {
     const dep = txnsByName[inv.name]?.totalDeposit || inv.deposited;
     const ownerPct = totalCapital > 0 ? (dep / totalCapital) * 100 : 0;
     return `
