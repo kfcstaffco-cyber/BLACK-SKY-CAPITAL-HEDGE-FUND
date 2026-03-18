@@ -351,7 +351,7 @@
     .float-btn:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(200,169,110,0.5); }
     .float-btn svg { width: 22px; height: 22px; color: #0a0c0f; }
     .float-tooltip {
-      position: fixed; bottom: 88px; right: 28px; z-index: 1000;
+      position: fixed; bottom: 36px; right: 90px; z-index: 1001;
       background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px;
       padding: 5px 10px; font-size: 10px; color: var(--text); letter-spacing: 0.04em;
       white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.15s;
@@ -492,7 +492,7 @@
     .dw-float-btn:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(62,207,142,0.45); }
     .dw-float-btn svg { width: 22px; height: 22px; color: #0a0c0f; }
     .dw-float-tooltip {
-      position: fixed; bottom: 152px; right: 28px; z-index: 1000;
+      position: fixed; bottom: 100px; right: 90px; z-index: 1001;
       background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px;
       padding: 5px 10px; font-size: 10px; color: var(--text); white-space: nowrap;
       opacity: 0; pointer-events: none; transition: opacity 0.15s;
@@ -597,6 +597,34 @@
     /* ── SPARKLINE ── */
     .sparkline-wrap { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
     .sparkline-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 6px; }
+
+
+    /* ── TRADE CALENDAR ── */
+    .cal-grid {
+      display: grid; grid-template-columns: repeat(7,1fr); gap: 4px;
+    }
+    .cal-day-header {
+      text-align:center; font-size:9px; letter-spacing:0.08em;
+      text-transform:uppercase; color:var(--muted); padding:6px 0;
+    }
+    .cal-day {
+      min-height:72px; border-radius:8px; padding:6px;
+      background:rgba(255,255,255,0.02); border:1px solid var(--border);
+      cursor:default; transition:border-color 0.15s; position:relative;
+      font-size:11px;
+    }
+    .cal-day.other-month { opacity:0.25; }
+    .cal-day.today { border-color:var(--accent); background:rgba(200,169,110,0.05); }
+    .cal-day.has-trades { cursor:pointer; }
+    .cal-day.has-trades:hover { border-color:var(--border2); background:rgba(255,255,255,0.04); }
+    .cal-day-num { font-size:11px; color:var(--muted); margin-bottom:4px; }
+    .cal-day.today .cal-day-num { color:var(--accent); font-weight:600; }
+    .cal-trade-dot {
+      display:inline-block; width:8px; height:8px; border-radius:2px;
+      margin:1px; cursor:pointer;
+    }
+    .cal-pnl { font-size:9px; font-family:var(--mono); margin-top:2px; }
+    @media(max-width:600px){ .cal-day { min-height:48px; } }
 
     /* TICKER */
     .ticker-move { display: flex; white-space: nowrap; animation: ticker-loop 60s linear infinite; }
@@ -711,6 +739,7 @@
       <div id="access-badge" style="display:none;align-items:center;gap:6px;font-size:10px;color:var(--accent2);letter-spacing:0.08em;background:rgba(232,196,122,0.1);border:1px solid rgba(232,196,122,0.2);border-radius:6px;padding:4px 10px;">&#9679; MASTER</div>
       <div class="live-badge"><div class="live-dot"></div>LIVE</div>
       <div class="date-label" id="live-date">—</div>
+      <button onclick="toggleTheme()" id="theme-btn" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--muted);padding:4px;transition:color 0.15s;" title="Toggle theme">&#9790;</button>
       <button class="logout-btn" onclick="logout()">Lock</button>
     </div>
   </div>
@@ -764,6 +793,24 @@
 
   <!-- POSITIONS -->
   <div class="page" id="page-positions">
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+      <input id="pos-search" type="text" placeholder="Search ticker, class, side..."
+        oninput="filterPositions()"
+        style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:8px 14px;font-size:12px;color:var(--text);outline:none;width:240px;font-family:var(--font);">
+      <select id="pos-filter-status" onchange="filterPositions()"
+        style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--text);outline:none;cursor:pointer;">
+        <option value="all">All Positions</option>
+        <option value="Open">Open Only</option>
+        <option value="Closed">Closed Only</option>
+      </select>
+      <select id="pos-filter-result" onchange="filterPositions()"
+        style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--text);outline:none;cursor:pointer;">
+        <option value="all">All Results</option>
+        <option value="TAKE PROFIT HIT">TP Hits</option>
+        <option value="STOP LOSS HIT">SL Hits</option>
+        <option value="Active">Active</option>
+      </select>
+    </div>
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;" id="pos-badges"></div>
     <div class="card" style="margin-bottom:14px;">
       <div class="card-header"><span class="card-title">Open Positions</span><span class="live-badge"><div class="live-dot"></div>LIVE</span></div>
@@ -984,6 +1031,30 @@
   </button>
   <div class="dw-float-tooltip">Deposit / Withdrawal</div>
 
+  
+  <!-- CALENDAR -->
+  <div class="page" id="page-calendar">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button onclick="calNav(-1)" style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:6px 12px;color:var(--text);cursor:pointer;font-size:14px;">&#8592;</button>
+        <div id="cal-title" style="font-size:16px;font-weight:600;min-width:160px;text-align:center;"></div>
+        <button onclick="calNav(1)" style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:6px 12px;color:var(--text);cursor:pointer;font-size:14px;">&#8594;</button>
+      </div>
+      <div style="display:flex;gap:10px;font-size:11px;">
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:#3ecf8e;display:inline-block;"></span>TP Hit</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:#e8534a;display:inline-block;"></span>SL Hit</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:#4a9eff;display:inline-block;"></span>Closed</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:rgba(200,169,110,0.5);display:inline-block;"></span>Open</span>
+      </div>
+    </div>
+    <div class="card">
+      <div id="cal-grid"></div>
+    </div>
+    <div class="card" style="margin-top:14px;">
+      <div class="card-header"><span class="card-title">Trades This Month</span></div>
+      <div id="cal-trade-list"></div>
+    </div>
+  </div>
   <footer class="site-footer">
     <div class="footer-inner">
       <!-- LEFT: KFC affiliation -->
@@ -1524,9 +1595,9 @@ function renderOverview(d) {
 function renderPositions(positions) {
   const open=positions.filter(p=>p.status==='Open'), closed=positions.filter(p=>p.status==='Closed');
   $('pos-badges').innerHTML=badge(open.length+' OPEN','blue')+' '+badge(closed.length+' CLOSED','gray')+`<span style="font-size:11px;color:var(--muted);margin-left:8px;">${positions.length} total trades</span>`;
-  const th=`<tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Entry Date</th><th>Entry</th><th>Cur/Exit</th><th>Qty</th><th>Lev</th><th>Unrealised P&L</th><th>SL</th><th>TP</th><th>Status</th></tr>`;
+  const th=`<tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Entry Date</th><th>Duration</th><th>Entry</th><th>Cur/Exit</th><th>Qty</th><th>Lev</th><th>Unrealised P&L</th><th>SL</th><th>TP</th><th>Status</th></tr>`;
   $('open-thead').innerHTML=th;
-  $('open-tbody').innerHTML=open.length?open.map(p=>`<tr><td>${p.id}</td><td class="label">${p.cls}</td><td class="label">${p.ticker}</td><td>${badge(p.side.toUpperCase(),p.side==='Long'?'green':'red')}</td><td style="color:var(--muted)">${p.date||'—'}</td><td>${p.entry}</td><td>${p.exit||'—'}</td><td>${(p.qty/1e6).toFixed(2)}M</td><td>${p.lev}×</td><td id="pnl-${p.id}" style="color:${clr(p.pnl)}">${sgn(p.pnl)}$${fmtM(p.pnl)}</td><td style="color:var(--red)">${p.sl||'—'}</td><td style="color:var(--green)">${p.tp||'—'}</td><td>${badge('ACTIVE','blue')}</td></tr>`).join(''):'<tr><td colspan="13" style="color:var(--muted);text-align:center;padding:16px;">No open positions</td></tr>';
+  $('open-tbody').innerHTML=open.length?open.map(p=>`<tr><td>${p.id}</td><td class="label">${p.cls}</td><td class="label">${p.ticker}</td><td>${badge(p.side.toUpperCase(),p.side==='Long'?'green':'red')}</td><td style="color:var(--muted)">${p.date||'—'}</td><td id="dur-${p.id}" style="color:var(--muted);font-family:var(--mono)">${fmtDuration(null,p.date)}</td><td>${p.entry}</td><td>${p.exit||'—'}</td><td>${(p.qty/1e6).toFixed(2)}M</td><td>${p.lev}×</td><td id="pnl-${p.id}" style="color:${clr(p.pnl)}">${sgn(p.pnl)}$${fmtM(p.pnl)}</td><td style="color:var(--red)">${p.sl||'—'}</td><td style="color:var(--green)">${p.tp||'—'}</td><td>${badge('ACTIVE','blue')}</td></tr>`).join(''):'<tr><td colspan="14" style="color:var(--muted);text-align:center;padding:16px;">No open positions</td></tr>';
   $('closed-thead').innerHTML=`<tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Entry Date</th><th>Exit Date</th><th>Entry</th><th>Exit</th><th>Hold</th><th>P&L</th><th>Result</th></tr>`;
   $('closed-tbody').innerHTML=closed.map(p=>{
     const rb=p.result==='TAKE PROFIT HIT'?'green':p.result==='STOP LOSS HIT'?'red':'blue';
@@ -2365,6 +2436,211 @@ function renderSparklines(investors, txnsByName) {
   });
 }
 
+
+// ── DARK/LIGHT THEME ─────────────────────────────────────────────
+let isLightTheme = false;
+function toggleTheme() {
+  isLightTheme = !isLightTheme;
+  const btn = document.getElementById('theme-btn');
+  if (isLightTheme) {
+    document.documentElement.style.setProperty('--bg',     '#f4f5f7');
+    document.documentElement.style.setProperty('--bg2',    '#ffffff');
+    document.documentElement.style.setProperty('--bg3',    '#eef0f3');
+    document.documentElement.style.setProperty('--border', 'rgba(0,0,0,0.08)');
+    document.documentElement.style.setProperty('--border2','rgba(0,0,0,0.15)');
+    document.documentElement.style.setProperty('--text',   '#1a1d23');
+    document.documentElement.style.setProperty('--muted',  '#6b7380');
+    if (btn) btn.innerHTML = '&#9728;';
+  } else {
+    document.documentElement.style.setProperty('--bg',     '#0a0c0f');
+    document.documentElement.style.setProperty('--bg2',    '#0f1318');
+    document.documentElement.style.setProperty('--bg3',    '#151b24');
+    document.documentElement.style.setProperty('--border', 'rgba(255,255,255,0.07)');
+    document.documentElement.style.setProperty('--border2','rgba(255,255,255,0.13)');
+    document.documentElement.style.setProperty('--text',   '#e8e6df');
+    document.documentElement.style.setProperty('--muted',  '#6b7380');
+    if (btn) btn.innerHTML = '&#9790;';
+  }
+}
+
+// ── LIVE POSITION DURATION ───────────────────────────────────────
+function fmtDuration(entryDate, entryDateStr) {
+  if (!entryDateStr || entryDateStr === '—') return '—';
+  const parts = entryDateStr.split('/');
+  if (parts.length !== 3) return entryDateStr;
+  const d = new Date(+parts[2], +parts[1]-1, +parts[0]);
+  if (isNaN(d)) return entryDateStr;
+  const diff = Date.now() - d.getTime();
+  const days  = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  const mins  = Math.floor((diff % 3600000) / 60000);
+  if (days > 0) return days + 'd ' + hours + 'h';
+  if (hours > 0) return hours + 'h ' + mins + 'm';
+  return mins + 'm';
+}
+
+function updateOpenDurations() {
+  const d = window.lastData;
+  if (!d || !d.positions) return;
+  d.positions.filter(p => p.status === 'Open').forEach(p => {
+    const el = document.getElementById('dur-' + p.id);
+    if (el) el.textContent = fmtDuration(null, p.date);
+  });
+}
+setInterval(updateOpenDurations, 60000);
+
+// ── POSITIONS SEARCH/FILTER ──────────────────────────────────────
+function filterPositions() {
+  const query   = (document.getElementById('pos-search')?.value || '').toLowerCase();
+  const status  = document.getElementById('pos-filter-status')?.value || 'all';
+  const result  = document.getElementById('pos-filter-result')?.value || 'all';
+  const d = window.lastData;
+  if (!d || !d.positions) return;
+
+  const filtered = d.positions.filter(p => {
+    const matchQuery  = !query ||
+      p.ticker.toLowerCase().includes(query) ||
+      p.cls.toLowerCase().includes(query) ||
+      p.side.toLowerCase().includes(query) ||
+      String(p.id).includes(query);
+    const matchStatus = status === 'all' || p.status === status;
+    const matchResult = result === 'all' || p.result === result || (result === 'Active' && p.status === 'Open');
+    return matchQuery && matchStatus && matchResult;
+  });
+
+  renderPositions(filtered);
+}
+
+// ── TRADE CALENDAR ───────────────────────────────────────────────
+let calYear  = new Date().getFullYear();
+let calMonth = new Date().getMonth(); // 0-indexed
+
+function calNav(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0;  calYear++; }
+  if (calMonth < 0)  { calMonth = 11; calYear--; }
+  renderCalendar(window.lastData?.positions || []);
+}
+
+function renderCalendar(positions) {
+  const titleEl = document.getElementById('cal-title');
+  const gridEl  = document.getElementById('cal-grid');
+  const listEl  = document.getElementById('cal-trade-list');
+  if (!titleEl || !gridEl) return;
+
+  const monthNames = ['January','February','March','April','May','June',
+                      'July','August','September','October','November','December'];
+  titleEl.textContent = monthNames[calMonth] + ' ' + calYear;
+
+  // Build trade map keyed by exit date
+  const tradeMap = {};
+  (positions || []).forEach(p => {
+    const dateStr = p.status === 'Open' ? p.date : (p.exitDate || p.date);
+    if (!dateStr || dateStr === '—') return;
+    const parts = dateStr.split('/');
+    if (parts.length !== 3) return;
+    const key = parts[2] + '-' + parts[1].padStart(2,'0') + '-' + parts[0].padStart(2,'0');
+    if (!tradeMap[key]) tradeMap[key] = [];
+    tradeMap[key].push(p);
+  });
+
+  // Calendar grid
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const daysInPrev  = new Date(calYear, calMonth, 0).getDate();
+  const today = new Date();
+  const dayHeaders = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  let html = '<div class="cal-grid">';
+  // Headers
+  dayHeaders.forEach(d => { html += `<div class="cal-day-header">${d}</div>`; });
+
+  // Leading blanks from prev month
+  for (let i = 0; i < firstDay; i++) {
+    const d = daysInPrev - firstDay + i + 1;
+    html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
+  }
+
+  // Current month days
+  for (let day = 1; day <= daysInMonth; day++) {
+    const mm  = String(calMonth+1).padStart(2,'0');
+    const dd  = String(day).padStart(2,'0');
+    const key = calYear + '-' + mm + '-' + dd;
+    const trades = tradeMap[key] || [];
+    const isToday = today.getFullYear()===calYear && today.getMonth()===calMonth && today.getDate()===day;
+    const totalPnl = trades.reduce((s,t) => s+(t.pnl||0), 0);
+    const pnlStr = trades.length > 0
+      ? `<div class="cal-pnl" style="color:${totalPnl>=0?'var(--green)':'var(--red)'}">${totalPnl>=0?'+':''}$${fmtM(totalPnl)}</div>`
+      : '';
+    const dots = trades.map(t => {
+      const col = t.status==='Open' ? 'rgba(200,169,110,0.7)'
+                : t.result==='TAKE PROFIT HIT' ? '#3ecf8e'
+                : t.result==='STOP LOSS HIT'   ? '#e8534a' : '#4a9eff';
+      const entry = t.date || '—';
+      const tip = encodeURIComponent(t.ticker + ' ' + t.side + ' | Entry: ' + entry + ' | ' + (t.pnl>=0?'+':'') + '$' + fmtM(t.pnl));
+      return `<span class="cal-trade-dot" style="background:${col}" title="${t.ticker}" onclick="showCalTip(event,'${tip}')"></span>`;
+    }).join('');
+
+    html += `<div class="cal-day${isToday?' today':''}${trades.length?' has-trades':''}" >
+      <div class="cal-day-num">${day}</div>
+      <div>${dots}</div>
+      ${pnlStr}
+    </div>`;
+  }
+
+  // Trailing blanks
+  const totalCells = firstDay + daysInMonth;
+  const remainder  = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+  for (let i = 1; i <= remainder; i++) {
+    html += `<div class="cal-day other-month"><div class="cal-day-num">${i}</div></div>`;
+  }
+  html += '</div>';
+  gridEl.innerHTML = html;
+
+  // Trade list for this month
+  const monthTrades = (positions||[]).filter(p => {
+    const dateStr = p.status==='Open' ? p.date : (p.exitDate||p.date);
+    if (!dateStr || dateStr==='—') return false;
+    const parts = dateStr.split('/');
+    return +parts[2]===calYear && +parts[1]-1===calMonth;
+  }).sort((a,b) => {
+    const da = (a.exitDate||a.date||'').split('/').reverse().join('');
+    const db = (b.exitDate||b.date||'').split('/').reverse().join('');
+    return db.localeCompare(da);
+  });
+
+  if (listEl) {
+    listEl.innerHTML = monthTrades.length === 0
+      ? '<div style="color:var(--muted);font-size:12px;padding:8px 0;">No trades this month</div>'
+      : monthTrades.map(p => {
+          const rb = p.result==='TAKE PROFIT HIT'?'green':p.result==='STOP LOSS HIT'?'red':p.status==='Open'?'blue':'gray';
+          const rl = p.result==='TAKE PROFIT HIT'?'TP HIT':p.result==='STOP LOSS HIT'?'SL HIT':p.status==='Open'?'ACTIVE':'CLOSED';
+          return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:12px;">
+            <span style="color:var(--muted);font-family:var(--mono);width:80px;">${p.exitDate||p.date||'—'}</span>
+            <span style="font-weight:500;">${p.ticker}</span>
+            <span>${badge(p.side.toUpperCase(),p.side==='Long'?'green':'red')}</span>
+            <span style="color:var(--muted);">${p.cls}</span>
+            <span style="font-family:var(--mono);color:${p.pnl>=0?'var(--green)':'var(--red)'};margin-left:auto;">${p.pnl>=0?'+':''}$${fmtM(p.pnl)}</span>
+            <span>${badge(rl,rb)}</span>
+          </div>`;
+        }).join('');
+  }
+}
+
+function showCalTip(e, encoded) {
+  // Decode and show brief tooltip
+  e.stopPropagation();
+  const msg = decodeURIComponent(encoded);
+  const tip = document.createElement('div');
+  tip.style.cssText = 'position:fixed;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;font-size:11px;z-index:9999;pointer-events:none;color:var(--text);';
+  tip.style.left = (e.clientX+8)+'px';
+  tip.style.top  = (e.clientY+8)+'px';
+  tip.textContent = msg;
+  document.body.appendChild(tip);
+  setTimeout(() => tip.remove(), 2000);
+}
+
+
 // ── RENDER ALL ───────────────────────────────────────────────────
 function renderAll(d) {
   window.lastData = d;
@@ -2380,6 +2656,7 @@ function renderAll(d) {
   renderMilestones(d);
   renderProjections(d);
   renderRiskMeter(d.positions||[]);
+  renderCalendar(d.positions||[]);
   renderRecentTrades(d.positions||[]);
 }
 
@@ -2899,6 +3176,9 @@ function exportPDF() {
     +'<td style="color:'+(p.pnl>=0?'#22c55e':'#ef4444')+'">'+s(p.pnl)+'</td></tr>'
   ).join('');
 
+  // Get BSC logo base64 from existing img
+  const logoEl = document.querySelector('#pw-logo-wrap img');
+  const logoSrc = logoEl ? logoEl.src : '';
   win.document.write(`<!DOCTYPE html><html><head><title>Black-Sky Capital — Fund Report</title>
   <style>
     body{font-family:'DM Sans',sans-serif;background:#fff;color:#111;margin:0;padding:32px;font-size:12px;}
@@ -2965,6 +3245,7 @@ function exportPDF() {
   <table><thead><tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Entry</th><th>Lev</th><th>Unrealised P&amp;L</th></tr></thead><tbody>${posRows||'<tr><td colspan=7 style="color:#aaa">No open positions</td></tr>'}</tbody></table>
   <h2>Recent Closed Trades (last 10)</h2>
   <table><thead><tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Result</th><th>P&amp;L</th></tr></thead><tbody>${closedRows}</tbody></table>
+  <div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-30deg);opacity:0.04;pointer-events:none;z-index:0;"><img src="\${logoSrc}" style="width:300px;height:300px;"></div>
   <div class="footer"><span>&copy; 2026 Black Sky Capital &mdash; KFC Hedge Fund</span><span>Restricted &mdash; Authorised investors only</span></div>
   </body></html>`);
   win.document.close();
