@@ -1600,8 +1600,17 @@ function renderInvestors(investors, transactions) {
       }).join('')}</div>`
     : `<div style="color:var(--muted);font-size:12px;padding:16px 0;">No transaction data available</div>`;
 
-  // ── Withdrawal tracker table ──
-  $('withdrawal-tbody').innerHTML = investors.map(inv => {
+  // ── Withdrawal tracker table — unlocked first, then locked ──
+  const sortedForWithdrawal = [...investors].sort((a,b) => {
+    if (a.status === b.status) {
+      // Within same status, sort by deposit size descending
+      const depA = txnsByName[a.name]?.totalDeposit || a.deposited;
+      const depB = txnsByName[b.name]?.totalDeposit || b.deposited;
+      return depB - depA;
+    }
+    return a.status === 'UNLOCKED' ? -1 : 1;
+  });
+  $('withdrawal-tbody').innerHTML = sortedForWithdrawal.map(inv => {
     const invT = txnsByName[inv.name] || { totalDeposit: 0, totalWithdrawal: 0 };
     const dep = invT.totalDeposit || inv.deposited;
     const wdr = invT.totalWithdrawal || inv.withdrawn;
