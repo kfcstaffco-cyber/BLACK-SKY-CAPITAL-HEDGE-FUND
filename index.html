@@ -1107,29 +1107,30 @@ function renderAnalytics(d) {
 }
 
 function renderAll(d) {
-  if (!d) return;
-  window.lastData = d; // Saves for fluctuations
+  if (!d) return; 
+  window.lastData = d; 
 
-  // Update the date at the top
+  // 1. Update Date
   if ($('live-date')) {
     $('live-date').textContent = new Date().toLocaleDateString('en-GB', {
-      day: '2-digit', month: 'short', year: 'numeric'
+      day: '2-digit', 
+      month: 'short', 
+      year: 'numeric'
     }).toUpperCase();
   }
 
-  // UPDATED: Pass both the investor summary AND the transaction log
-  renderInvestors(d.investors || [], d.transactions || []);
-  
-  // Standard renders
+  // 2. Core Renders (Note: we pass d.transactions to Investors)
   renderOverview(d); 
   renderPositions(d.positions || []); 
+  renderInvestors(d.investors || [], d.transactions || []); 
   renderAnalytics(d);
 
-  // Fluctuations
+  // 3. Fluctuation Engine
   seedFluctuations(d);
-  if (!window.fluctTimer) startMicroFluctuations();
-}
-
+  if (!window.fluctTimer) {
+    startMicroFluctuations();
+  }
+} // <--- Make sure this brace exists!
 // ── LAUNCH ───────────────────────────────────────────────────────
 async function launchDashboard(sheetId, apiKey) {
   $('loading-screen').style.display = 'flex';
