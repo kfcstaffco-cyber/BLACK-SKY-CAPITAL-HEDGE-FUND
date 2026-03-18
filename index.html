@@ -856,23 +856,33 @@ function parsePositions(rows) {
 }
 
 function parseInvestors(rows) {
-  if (!rows || rows.length < 2) return [];
-  const grouped = {};
-  
-  rows.slice(1).forEach(row => {
-    const name = row[0];
-    const date = row[1];
-    const amount = parseFloat(String(row[2]).replace(/[^0-9.-]+/g, "")) || 0;
+    // If the sheet has fewer than 5 rows, there's no data to show
+    if (!rows || rows.length < 5) return [];
+    
+    const grouped = {};
+    
+    // CHANGE IS HERE: .slice(4) skips the first 4 rows of your sheet
+    rows.slice(4).forEach(row => {
+        const name = row[0];   // Column A
+        const date = row[1];   // Column B
+        const amount = parseFloat(String(row[2]).replace(/[^0-9.-]+/g, "")) || 0; // Column C
 
-    if (!name) return;
+        // Only process the row if there is actually a name in Column A
+        if (!name || name.trim() === "") return;
 
-    if (!grouped[name]) {
-      grouped[name] = { 
-        name: name, 
-        totalBalance: 0, 
-        history: [] 
-      };
-    }
+        if (!grouped[name]) {
+            grouped[name] = { 
+                name: name, 
+                totalBalance: 0, 
+                history: [] 
+            };
+        }
+        grouped[name].totalBalance += amount;
+        grouped[name].history.push({ date, amount });
+    });
+
+    return Object.values(grouped);
+}
     grouped[name].totalBalance += amount;
     grouped[name].history.push({ date, amount });
   });
@@ -961,74 +971,65 @@ function renderPositions(positions) {
 }
 
 function renderInvestors(investors) {
-  const rosterContainer = document.getElementById('investor-list');
-  const ownershipContainer = document.getElementById('ownership-stats');
-  
-  // If the container doesn't exist, stop here so we don't crash the script
-  if (!rosterContainer) {
-    console.error("Could not find element with ID 'investor-list'");
-    return;
-  }
+    const roster = $('investor-list');
+    const ownership = $('ownership-stats');
+    if (!roster) return;
 
-  // Calculate Grand Total for the Ownership percentages
-  const grandTotal = investors.reduce((sum, inv) => sum + inv.totalBalance, 0);
+    // Calculate Total Fund Value for Percentage Math
+    const grandTotal = investors.reduce((sum, inv) => sum + inv.totalBalance, 0);
 
-  rosterContainer.innerHTML = '';
-  if (ownershipContainer) ownershipContainer.innerHTML = '';
+    roster.innerHTML = '';
+    if (ownership) ownership.innerHTML = '';
 
-  investors.forEach((inv, index) => {
-    const id = `inv-details-${index}`;
-    const totalShare = grandTotal > 0 ? ((inv.totalBalance / grandTotal) * 100).toFixed(2) : "0.00";
+    investors.forEach((inv, index) => {
+        const id = `inv-details-${index}`;
+        const totalShare = grandTotal > 0 ? ((inv.totalBalance / grandTotal) * 100).toFixed(2) : "0.00";
 
-    // 1. Build the Roster Card
-    rosterContainer.innerHTML += `
-      <div class="investor-card-wrapper" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding: 10px 0;">
-        <div class="player-row" onclick="toggleTrans('${id}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
-          <div style="display:flex; align-items:center; gap:12px;">
-            <div class="avatar" style="background:#222; border:1px solid #444; width:35px; height:35px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:gold;">
-              ${inv.name.charAt(0)}
-            </div>
-            <div class="player-info">
-              <div class="player-name" style="color:white; font-weight:bold;">${inv.name}</div>
-              <div style="font-size:9px; color:#666;">${inv.history.length} DEPOSITS</div>
-            </div>
-          </div>
-          <div style="text-align:right;">
-            <div class="metric-value gold" style="font-weight:bold; color:gold;">$${(inv.totalBalance / 1e9).toFixed(2)}B</div>
-            <div style="font-size:9px; color:#555;">AGGREGATE CAPITAL</div>
-          </div>
-        </div>
-
-        <div id="${id}" style="display:none; padding: 15px 0 10px 47px; border-left: 1px solid gold; margin-left: 17px; margin-top: 10px;">
-          ${inv.history.map(t => {
-            const indShare = grandTotal > 0 ? ((t.amount / grandTotal) * 100).toFixed(2) : "0.00";
-            return `
-              <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.02); padding-bottom:5px;">
-                <div>
-                  <div style="font-size:11px; color:#aaa;">Dep: ${t.date}</div>
-                  <div style="font-size:9px; color:#555;">● Od Lockup</div>
+        // Main Roster Item
+        roster.innerHTML += `
+            <div class="investor-card-wrapper" style="border-bottom: 1px solid var(--border); padding: 12px 0;">
+                <div class="player-row" onclick="toggleTrans('${id}')" style="cursor:pointer">
+                    <div class="avatar">${inv.name.charAt(0)}</div>
+                    <div class="player-info">
+                        <div class="player-name">${inv.name}</div>
+                        <div style="font-size: 10px; color: var(--text-dim); text-transform: uppercase;">${inv.history.length} DEPOSITS</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div class="metric-value gold" style="font-weight:bold;">$${(inv.totalBalance / 1e9).toFixed(2)}B</div>
+                        <div style="font-size: 10px; color: var(--text-dim);">AGGREGATE CAPITAL</div>
+                    </div>
                 </div>
-                <div style="text-align:right;">
-                  <div style="color:gold; font-size:11px;">$${(t.amount / 1e9).toFixed(2)}B</div>
-                  <div style="font-size:9px; color:#555;">${indShare}% share</div>
+
+                <div id="${id}" style="display:none; padding: 15px 10px 10px 50px; background: rgba(255,215,0,0.02); margin-top: 10px; border-left: 1px solid var(--gold);">
+                    ${inv.history.map(t => {
+                        const indShare = grandTotal > 0 ? ((t.amount / grandTotal) * 100).toFixed(2) : "0.00";
+                        return `
+                            <div style="display:flex; justify-content:space-between; margin-bottom: 10px;">
+                                <div>
+                                    <div style="font-size: 12px; color: var(--text-bright);">Dep: ${t.date}</div>
+                                    <div style="font-size: 10px; color: var(--text-dim);"><span style="color:#4caf50">●</span> Od Lockup</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="color: var(--gold); font-size: 12px;">$${(t.amount / 1e9).toFixed(2)}B</div>
+                                    <div style="font-size: 10px; color: var(--text-dim);">${indShare}% share</div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
                 </div>
-              </div>
+            </div>
+        `;
+
+        // Update Ownership Card
+        if (ownership) {
+            ownership.innerHTML += `
+                <div class="row-label" style="display:flex; justify-content:space-between; padding: 5px 0;">
+                    <span class="stat-key">${inv.name}</span>
+                    <span class="stat-value gold">${totalShare}%</span>
+                </div>
             `;
-          }).join('')}
-        </div>
-      </div>
-    `;
-
-    // 2. Build the Ownership List
-    if (ownershipContainer) {
-      ownershipContainer.innerHTML += `
-        <div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #111;">
-          <span style="color:#888; font-size:11px;">${inv.name}</span>
-          <span style="color:gold; font-size:11px; font-weight:bold;">${totalShare}%</span>
-        </div>
-      `;
-    }
-  });
+        }
+    });
 }
 function renderAnalytics(d) {
   $('trade-stats').innerHTML=[
@@ -1060,39 +1061,46 @@ function renderAll(d) {
 
 // ── LAUNCH ───────────────────────────────────────────────────────
 async function launchDashboard(sheetId, apiKey) {
-  $('loading-screen').style.display = 'flex';
-  try {
-    const [measureRows, posRows, invRows] = await Promise.all([
-      fetchSheet(sheetId, apiKey, SHEET_TABS.fundMeasures),
-      fetchSheet(sheetId, apiKey, SHEET_TABS.positions),
-      fetchSheet(sheetId, apiKey, SHEET_TABS.investors),
-    ]);
-    const measures  = parseFundMeasures(measureRows);
-    measures.positions = parsePositions(posRows);
-    measures.investors = parseInvestors(invRows);
-    $('loading-screen').style.display = 'none';
-    $('app').style.display = 'block';
-    renderAll(measures);
-    setInterval(async () => {
-      try {
-        const [mr,pr,ir] = await Promise.all([
-          fetchSheet(sheetId,apiKey,SHEET_TABS.fundMeasures),
-          fetchSheet(sheetId,apiKey,SHEET_TABS.positions),
-          fetchSheet(sheetId,apiKey,SHEET_TABS.investors),
+    $('loading-screen').style.display = 'flex';
+    try {
+        const [measureRows, posRows, invRows] = await Promise.all([
+            fetchSheet(sheetId, apiKey, SHEET_TABS.fundMeasures),
+            fetchSheet(sheetId, apiKey, SHEET_TABS.positions),
+            fetchSheet(sheetId, apiKey, SHEET_TABS.investors),
         ]);
-        const m=parseFundMeasures(mr); m.positions=parsePositions(pr); m.investors=parseInvestors(ir);
-        renderAll(m);
-      } catch(e) { console.warn('Refresh failed:', e); }
-    }, REFRESH_INTERVAL);
-  } catch(err) {
-    $('loading-screen').style.display = 'none';
-    $('error-banner').style.display = 'block';
-    $('error-banner').textContent = '⚠ Could not connect to Google Sheets: ' + err.message + ' — check your Sheet ID and API key.';
-    $('app').style.display = 'block';
-    renderAll({...DEMO, investors: DEMO.investors});
-    sessionStorage.removeItem('bsc_sheet_id');
-    sessionStorage.removeItem('bsc_api_key');
-  }
+
+        const measures = parseFundMeasures(measureRows);
+        measures.positions = parsePositions(posRows);
+        measures.investors = parseInvestors(invRows);
+
+        $('loading-screen').style.display = 'none';
+        $('app').style.display = 'block';
+        renderAll(measures);
+
+        // Auto-refresh loop
+        setInterval(async () => {
+            try {
+                const [mr, pr, ir] = await Promise.all([
+                    fetchSheet(sheetId, apiKey, SHEET_TABS.fundMeasures),
+                    fetchSheet(sheetId, apiKey, SHEET_TABS.positions),
+                    fetchSheet(sheetId, apiKey, SHEET_TABS.investors),
+                ]);
+                const m = parseFundMeasures(mr);
+                m.positions = parsePositions(pr);
+                m.investors = parseInvestors(ir);
+                renderAll(m);
+            } catch (e) {
+                console.warn('Refresh failed:', e);
+            }
+        }, REFRESH_INTERVAL);
+
+    } catch (err) {
+        $('loading-screen').style.display = 'none';
+        $('error-banner').style.display = 'block';
+        $('error-banner').textContent = '⚠ Connection failed: ' + err.message;
+        $('app').style.display = 'block';
+        renderAll({ ...DEMO, investors: DEMO.investors });
+    }
 }
 // 3. General Price Fluctuation Simulation
   function simulateLivePrices() {
