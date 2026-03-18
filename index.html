@@ -833,7 +833,14 @@ function parseInvestors(rows) {
 function parseTransactionLog(rows) {
   let hi = rows.findIndex(r => r[0]==='#'); if(hi<0) return [];
   const clean = v => parseFloat((v||'0').toString().replace(/[,$%\s()]/g,'').replace(/'/g,''))||0;
-  return rows.slice(hi+1).filter(r=>r[0]&&!isNaN(parseInt(r[0]))).map(r=>({
+  return rows.slice(hi+1).filter(r => {
+    if (!r[0] || isNaN(parseInt(r[0]))) return false; // must have a numeric ID
+    if (!r[2] || !r[2].trim()) return false;           // must have a player name
+    if (!r[3] || !r[3].trim()) return false;           // must have a type
+    const dep = parseFloat((r[4]||'0').toString().replace(/[,$%\s()]/g,''))||0;
+    const wdr = parseFloat((r[5]||'0').toString().replace(/[,$%\s()]/g,''))||0;
+    return dep > 0 || wdr > 0;                        // must have an actual amount
+  }).map(r=>({
     id:          parseInt(r[0]),
     date:        r[1]||'',
     name:        (r[2]||'').trim(),
@@ -945,9 +952,10 @@ function renderInvestors(investors, transactions) {
   });
 
   // ── Investor summary metric cards ──
-  const totalCapital = investors.reduce((s,i)=>s+i.deposited,0);
-  const totalWithdrawn = investors.reduce((s,i)=>s+i.withdrawn,0);
-  const totalPnlShared = investors.reduce((s,i)=>s+i.pnlShare,0);
+  // Use transaction log as source of truth for capital totals to avoid double-counting
+  const totalCapital   = investors.reduce((s,i) => s + (txnsByName[i.name]?.totalDeposit || i.deposited), 0);
+  const totalWithdrawn = investors.reduce((s,i) => s + (txnsByName[i.name]?.totalWithdrawal || i.withdrawn), 0);
+  const totalPnlShared = investors.reduce((s,i) => s + i.pnlShare, 0);
   const metricsEl = $('investor-metrics');
   metricsEl.innerHTML = [
     {label:'Total Capital',   val:'$'+fmtM(totalCapital),   cls:'gold',  sub:investors.length+' investors'},
@@ -973,6 +981,8 @@ function renderInvestors(investors, transactions) {
     const aggDeposited  = invTxns.totalDeposit    || inv.deposited;
     const aggWithdrawn  = invTxns.totalWithdrawal || inv.withdrawn;
     const netCapital    = aggDeposited - aggWithdrawn;
+    // Recalculate ownership % from transaction totals to avoid doubled sheet values
+    const ownershipPct  = totalCapital > 0 ? (aggDeposited / totalCapital) * 100 : 0;
 
     const depositRows = invTxns.deposits.length > 0
       ? invTxns.deposits.map(t => `
@@ -992,13 +1002,13 @@ function renderInvestors(investors, transactions) {
             <div class="avatar-lg" style="${avStyle}">${inv.name[0]}</div>
             <div>
               <div class="investor-name">${inv.name}</div>
-              <div class="investor-meta">${(inv.pct*100).toFixed(4)}% ownership · ${daysText}</div>
+              <div class="investor-meta">${ownershipPct.toFixed(4)}% ownership · ${daysText}</div>
             </div>
           </div>
           <div class="investor-right">
             ${statusBadge}
             <div style="text-align:right">
-              <div class="investor-total">$${fmtM(inv.deposited)}</div>
+              <div class="investor-total">$${fmtM(aggDeposited)}</div>
               <div style="font-size:10px;color:var(--muted);">Total deposited</div>
             </div>
             <div style="text-align:right">
@@ -1040,16 +1050,20 @@ function renderInvestors(investors, transactions) {
   // ── Ownership bars — one bar per unique investor ──
   const OWNER_COLORS = { 'Kimmo':'var(--accent2)', 'Andre':'var(--blue)', 'Veronica':'var(--red)', 'Elyes':'var(--green)' };
   const getOwnerColor = name => OWNER_COLORS[name] || 'var(--accent)';
-  $('ownership-bars').innerHTML = investors.map(inv => `
+  $('ownership-bars').innerHTML = investors.map(inv => {
+    const dep = txnsByName[inv.name]?.totalDeposit || inv.deposited;
+    const ownerPct = totalCapital > 0 ? (dep / totalCapital) * 100 : 0;
+    return `
     <div style="margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
         <span style="color:var(--muted)">${inv.name}</span>
-        <span style="font-family:var(--mono);color:${getOwnerColor(inv.name)}">${(inv.pct*100).toFixed(4)}%</span>
+        <span style="font-family:var(--mono);color:${getOwnerColor(inv.name)}">${ownerPct.toFixed(4)}%</span>
       </div>
       <div class="bar-track" style="height:6px">
-        <div class="bar-fill" style="width:${Math.min(inv.pct*100,100).toFixed(4)}%;background:${getOwnerColor(inv.name)}"></div>
+        <div class="bar-fill" style="width:${Math.min(ownerPct,100).toFixed(4)}%;background:${getOwnerColor(inv.name)}"></div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   // ── P&L shares — expandable per investor ──
   $('pnl-shares').innerHTML = investors.map((inv, idx) => {
