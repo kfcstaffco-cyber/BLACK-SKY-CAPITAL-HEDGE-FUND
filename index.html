@@ -966,34 +966,48 @@ function renderInvestors(investors, transactions) {
   const container = $('investor-roster');
   if (!container) return;
 
-  // Group logs by Name (Column A)
-  const logsByName = transactions.reduce((acc, row) => {
+  // Group the Transaction Log by Name
+  const logsByName = (transactions || []).slice(1).reduce((acc, row) => {
     const name = (row[0] || "").toString().trim();
-    if (!acc[name]) acc[name] = [];
-    acc[name].push(row);
+    if (name) {
+      if (!acc[name]) acc[name] = [];
+      acc[name].push(row);
+    }
     return acc;
   }, {});
 
   container.innerHTML = investors.map(inv => {
-    const name = (inv.name || "").trim();
-    const myLogs = logsByName[name] || [];
+    const myLogs = logsByName[inv.name.trim()] || [];
 
-    // Build the "Recent Activity" rows for each card
-    const historyHtml = myLogs.slice(0, 3).map(row => `
-      <div style="display:flex; justify-content:space-between; padding:4px 0; border-top:1px solid var(--border); font-size:10px;">
-        <span style="color:var(--muted)">${row[1] || 'Deposit'}</span>
-        <span style="color:var(--green)">+$${parseFloat(row[2] || 0).toLocaleString()}</span>
+    // Create the history rows using columns from 'Transaction Log'
+    const historyHtml = myLogs.map(log => `
+      <div style="display:flex; justify-content:space-between; padding:4px 0; border-top:1px solid var(--border); font-family:var(--mono); font-size:10px;">
+        <span style="color:var(--muted)">${log[1] || 'Deposit'}</span> 
+        <span style="color:var(--green)">+$${parseFloat(log[2] || 0).toLocaleString()}</span>
       </div>
     `).join('');
 
     return `
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-          <span style="font-weight:600;">${name}</span>
-          <span style="color:var(--accent); font-family:var(--mono);">$${inv.deposited.toLocaleString()}</span>
+      <div class="card" style="margin-bottom:15px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+          <div>
+            <div style="font-size:14px; font-weight:600; color:var(--text);">${inv.name}</div>
+            <div style="font-size:10px; color:var(--muted); text-transform:uppercase;">
+              ${inv.status || 'Active'} • ${inv.lockDays}D LOCK
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="color:var(--accent); font-family:var(--mono); font-size:16px; font-weight:500;">
+              $${inv.balance.toLocaleString()}
+            </div>
+            <div style="font-size:10px; color:var(--green); opacity:0.8;">
+              Alloc: ${(inv.pct * 100).toFixed(2)}%
+            </div>
+          </div>
         </div>
-        <div class="activity-list">
-          ${historyHtml || '<div style="color:var(--muted); font-size:10px;">No recent activity</div>'}
+        <div style="background:rgba(0,0,0,0.15); padding:8px; border-radius:6px; border:1px solid var(--border);">
+          <div style="font-size:9px; color:var(--muted); text-transform:uppercase; margin-bottom:4px;">Activity Log</div>
+          ${historyHtml || '<div style="color:var(--muted); font-size:10px;">No recent transactions</div>'}
         </div>
       </div>
     `;
