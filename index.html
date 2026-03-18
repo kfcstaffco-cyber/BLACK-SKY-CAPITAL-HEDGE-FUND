@@ -961,112 +961,61 @@ function renderPositions(positions) {
   $('closed-tbody').innerHTML=closed.map(p=>{const rb=p.result==='TAKE PROFIT HIT'?'green':p.result==='STOP LOSS HIT'?'red':'blue';const rl=p.result==='TAKE PROFIT HIT'?'TP HIT':p.result==='STOP LOSS HIT'?'SL HIT':'CLOSED';return`<tr><td>${p.id}</td><td class="label">${p.cls}</td><td class="label">${p.ticker}</td><td>${badge(p.side.toUpperCase(),p.side==='Long'?'green':'red')}</td><td>${p.entry}</td><td>${p.exit}</td><td>${p.hold}d</td><td id="pnl-${p.id}" style="color:${clr(p.pnl)}">${sgn(p.pnl)}$${fmtM(p.pnl)}</td><td>${badge(rl,rb)}</td></tr>`;}).join('');
 }
 
-function renderInvestors(investors, d) {
-  // DEBUG: Open your browser console (F12) to see if the API is sending individual rows
-  console.log("Raw Investors Data:", investors);
+function renderInvestors(investors, transactions) {
+  if (!investors || !transactions) return;
 
-  if (!investors || investors.length === 0) return;
-
-  // 1. GROUP DATA & CALCULATE AGGREGATES
-  const grouped = investors.reduce((acc, inv, index) => {
-    const name = (inv.name || "Unknown").trim();
-    if (!acc[name]) {
-      acc[name] = {
-        name: name,
-        totalDeposited: 0,
-        totalPct: 0,
-        totalPnlShare: 0,
-        entries: [] 
-      };
-    }
-    
-    // Use a temporary variable to ensure we are grabbing the row-level data
-    const rowAmount = Number(inv.deposited) || 0;
-    const rowPct = Number(inv.pct) || 0;
-    const rowPnl = Number(inv.pnlShare) || 0;
-
-    acc[name].totalDeposited += rowAmount;
-    acc[name].totalPct += rowPct;
-    acc[name].totalPnlShare += rowPnl;
-    
-    // We create a new object copy to ensure no reference interference
-    acc[name].entries.push({
-        amount: rowAmount,
-        date: inv.depositDate || 'N/A',
-        lock: inv.lockDays || 0,
-        pct: rowPct,
-        pnl: rowPnl,
-        status: inv.status,
-        days: inv.daysToUnlock
-    }); 
+  // 1. Group the Transactions by Name first
+  // This creates a "bucket" of deposits for every person
+  const txnGrouped = transactions.reduce((acc, t) => {
+    const name = (t.name || t.Investor || "").trim();
+    if (!acc[name]) acc[name] = [];
+    acc[name].push(t);
     return acc;
   }, {});
 
-  const groupedArray = Object.values(grouped);
-
-  // 2. INVESTOR ROSTER (THE FIX)
-  $('investor-roster').innerHTML = groupedArray.map(group => {
+  // 2. Render the Roster
+  $('investor-roster').innerHTML = investors.map(inv => {
+    const name = inv.name.trim();
+    const myTxns = txnGrouped[name] || []; // Get this person's specific logs
     
-    // We map through the 'entries' we just pushed
-    const entryRows = group.entries.map(entry => {
-      const lb = entry.status === 'UNLOCKED' 
-        ? `<span style="color:var(--green)">●</span>` 
-        : `<span style="color:var(--red)">●</span>`;
+    // Calculate Total from the Log (to ensure accuracy)
+    const totalCap = myTxns.reduce((sum, t) => sum + (Number(t.deposited) || 0), 0);
 
-      return `
-        <div style="display:flex; justify-content:space-between; padding: 10px 0; border-top: 1px solid rgba(255,255,255,0.05);">
-          <div>
-            <div style="font-size:12px; color:var(--white)">Dep: ${entry.date}</div>
-            <div style="font-size:10px; color:var(--muted)">${entry.lock}d Lockup ${lb}</div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-family:var(--mono); font-size:13px; color:var(--accent)">$${fmtM(entry.amount)}</div>
-            <div style="font-size:10px; color:var(--muted)">${(entry.pct * 100).toFixed(2)}% share</div>
-          </div>
-        </div>`;
-    }).join('');
+    // Create the individual sub-rows from the Transaction Log
+    const subRows = myTxns.map(t => `
+      <div style="display:flex; justify-content:space-between; padding: 8px 0; border-top: 1px solid rgba(255,255,255,0.05);">
+        <div style="font-size:11px; color:var(--muted)">${t.depositDate || 'N/A'}</div>
+        <div style="text-align:right">
+          <div style="font-family:var(--mono); font-size:12px; color:var(--white)">$${fmtM(t.deposited)}</div>
+          <div style="font-size:10px; color:var(--muted)">Individual Entry</div>
+        </div>
+      </div>`).join('');
 
     return `
-      <div class="player-card" style="margin-bottom:20px; background:rgba(255,255,255,0.03); border-radius:12px; padding:16px; border:1px solid rgba(255,255,255,0.08)">
+      <div class="player-card" style="margin-bottom:20px; background:rgba(255,255,255,0.02); border-radius:12px; padding:15px; border:1px solid rgba(255,255,255,0.1)">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
           <div style="display:flex; align-items:center;">
-            <div class="avatar" style="background:var(--gold); color:black;">${group.name[0]}</div>
-            <div style="margin-left:12px; font-weight:bold; font-size:16px;">${group.name}</div>
+             <div class="avatar">${name[0]}</div>
+             <div style="margin-left:12px; font-weight:bold; font-size:16px;">${name}</div>
           </div>
           <div style="text-align:right">
-            <div style="font-size:15px; font-weight:bold; color:var(--gold)">$${fmtM(group.totalDeposited)}</div>
-            <div style="font-size:9px; color:var(--muted); text-transform:uppercase;">Aggregate Capital</div>
+            <div style="color:var(--gold); font-size:15px; font-weight:bold;">$${fmtM(totalCap)}</div>
+            <div style="font-size:9px; color:var(--muted)">TOTAL CAPITAL</div>
           </div>
         </div>
-        ${entryRows}
+        ${subRows || '<div style="font-size:11px; color:var(--muted)">No transactions found</div>'}
       </div>`;
   }).join('');
 
-  // 3. OWNERSHIP BARS (Aggregated)
-  $('ownership-bars').innerHTML = groupedArray.map(group => `
-    <div style="margin-bottom:16px">
-      <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px">
-        <span style="color:var(--muted)">${group.name}</span>
-        <span style="font-family:var(--mono); color:var(--gold)">${(group.totalPct * 100).toFixed(2)}%</span>
+  // 3. Ownership Bars (Using the Summary sheet 'inv' values)
+  $('ownership-bars').innerHTML = investors.map(inv => `
+    <div style="margin-bottom:15px">
+      <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:5px">
+        <span>${inv.name}</span>
+        <span style="font-family:var(--mono); color:var(--gold)">${(inv.pct * 100).toFixed(2)}%</span>
       </div>
-      <div class="bar-track" style="height:6px; background:rgba(255,255,255,0.05)">
-        <div class="bar-fill" style="width:${(group.totalPct * 100).toFixed(2)}%; background:var(--gold)"></div>
-      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(inv.pct * 100).toFixed(2)}%"></div></div>
     </div>`).join('');
-
-  // 4. P&L SHARES (Grouped Sections)
-  $('pnl-shares').innerHTML = groupedArray.map(group => {
-    const head = `<div style="padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.1); margin-top:20px; display:flex; justify-content:space-between; align-items:flex-end;">
-      <span style="color:var(--white); font-weight:bold; font-size:13px;">${group.name}</span>
-      <span style="color:var(--green); font-family:var(--mono); font-size:14px;">Total P&L: ${sgn(group.totalPnlShare)}$${fmtM(group.totalPnlShare)}</span>
-    </div>`;
-    
-    const rows = group.entries.map(e => 
-      rowLabel(e.date + ' Allocation', sgn(e.pnl) + '$' + fmtM(e.pnl), 'color:var(--muted); font-size:11px;')
-    ).join('');
-
-    return `<div>${head}${rows}</div>`;
-  }).join('');
 }
 function renderAnalytics(d) {
   $('trade-stats').innerHTML=[
@@ -1104,6 +1053,7 @@ async function launchDashboard(sheetId, apiKey) {
       fetchSheet(sheetId, apiKey, SHEET_TABS.fundMeasures),
       fetchSheet(sheetId, apiKey, SHEET_TABS.positions),
       fetchSheet(sheetId, apiKey, SHEET_TABS.investors),
+      fetchSheet(sheetId, apiKey, SHEET_TABS.transaction)
     ]);
     const measures  = parseFundMeasures(measureRows);
     measures.positions = parsePositions(posRows);
