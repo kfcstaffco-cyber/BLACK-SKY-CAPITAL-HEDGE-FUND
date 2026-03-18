@@ -961,24 +961,42 @@ function renderPositions(positions) {
   $('closed-tbody').innerHTML=closed.map(p=>{const rb=p.result==='TAKE PROFIT HIT'?'green':p.result==='STOP LOSS HIT'?'red':'blue';const rl=p.result==='TAKE PROFIT HIT'?'TP HIT':p.result==='STOP LOSS HIT'?'SL HIT':'CLOSED';return`<tr><td>${p.id}</td><td class="label">${p.cls}</td><td class="label">${p.ticker}</td><td>${badge(p.side.toUpperCase(),p.side==='Long'?'green':'red')}</td><td>${p.entry}</td><td>${p.exit}</td><td>${p.hold}d</td><td id="pnl-${p.id}" style="color:${clr(p.pnl)}">${sgn(p.pnl)}$${fmtM(p.pnl)}</td><td>${badge(rl,rb)}</td></tr>`;}).join('');
 }
 
-function renderInvestors(investors, d) {
-  // DEBUG: Open your browser console (F12) to see if the API is sending individual rows
-  console.log("Raw Investors Data:", investors);
+function renderInvestors(investors, transactions) {
+  const container = document.getElementById('investor-roster'); 
+  if (!container) return;
 
-  if (!investors || investors.length === 0) return;
+  // 1. Group the Transaction Log rows by Name
+  const logsByName = transactions.reduce((acc, row) => {
+    const name = (row[0] || "").toString().trim(); // Assumes Name is Column A
+    if (!acc[name]) acc[name] = [];
+    acc[name].push(row);
+    return acc;
+  }, {});
 
-  // 1. GROUP DATA & CALCULATE AGGREGATES
-  const grouped = investors.reduce((acc, inv, index) => {
-    const name = (inv.name || "Unknown").trim();
-    if (!acc[name]) {
-      acc[name] = {
-        name: name,
-        totalDeposited: 0,
-        totalPct: 0,
-        totalPnlShare: 0,
-        entries: [] 
-      };
-    }
+  // 2. Build the HTML
+  container.innerHTML = investors.map(inv => {
+    const name = (inv.name || "").trim();
+    const myLogs = logsByName[name] || [];
+
+    // Create the HTML for the individual deposits
+    const historyHtml = myLogs.map(row => `
+      <div style="display:flex; justify-content:space-between; padding:4px 0; font-family:var(--mono); font-size:10px; border-top:1px solid var(--border);">
+        <span style="color:var(--muted)">${row[1] || 'Deposit'}</span> <span style="color:var(--green)">+$${parseFloat(row[2] || 0).toLocaleString()}</span> </div>
+    `).join('');
+
+    return `
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+          <span style="font-weight:600;">${name}</span>
+          <span style="color:var(--accent); font-family:var(--mono);">$${inv.deposited.toLocaleString()}</span>
+        </div>
+        <div class="transaction-history">
+          ${historyHtml || '<div style="color:var(--muted); font-size:10px;">No recent deposits</div>'}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
     
     // Use a temporary variable to ensure we are grabbing the row-level data
     const rowAmount = Number(inv.deposited) || 0;
@@ -1089,39 +1107,70 @@ function renderAnalytics(d) {
 }
 
 function renderAll(d) {
-  window.lastData = d; // Saves the current data globally for the fluctuation script
-  $('live-date').textContent=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();
-  renderOverview(d); renderPositions(d.positions); renderInvestors(d.investors,d); renderAnalytics(d);
+  if (!d) return;
+  window.lastData = d; // Saves for fluctuations
+
+  // Update the date at the top
+  if ($('live-date')) {
+    $('live-date').textContent = new Date().toLocaleDateString('en-GB', {
+      day: '2-digit', month: 'short', year: 'numeric'
+    }).toUpperCase();
+  }
+
+  // UPDATED: Pass both the investor summary AND the transaction log
+  renderInvestors(d.investors || [], d.transactions || []);
+  
+  // Standard renders
+  renderOverview(d); 
+  renderPositions(d.positions || []); 
+  renderAnalytics(d);
+
+  // Fluctuations
   seedFluctuations(d);
-  if (!fluctTimer) startMicroFluctuations();
+  if (!window.fluctTimer) startMicroFluctuations();
 }
 
 // ── LAUNCH ───────────────────────────────────────────────────────
 async function launchDashboard(sheetId, apiKey) {
   $('loading-screen').style.display = 'flex';
   try {
-    const [measureRows, posRows, invRows] = await Promise.all([
+    // We fetch 4 items. The variables in [ ] MUST match the order of fetchSheet calls.
+    const [measureRows, posRows, invRows, txnRows] = await Promise.all([
       fetchSheet(sheetId, apiKey, SHEET_TABS.fundMeasures),
       fetchSheet(sheetId, apiKey, SHEET_TABS.positions),
       fetchSheet(sheetId, apiKey, SHEET_TABS.investors),
+      fetchSheet(sheetId, apiKey, SHEET_TABS.transactions)
     ]);
-    const measures  = parseFundMeasures(measureRows);
-    measures.positions = parsePositions(posRows);
-    measures.investors = parseInvestors(invRows);
+
+    const d = parseFundMeasures(measureRows);
+    d.positions = parsePositions(posRows);
+    d.investors = parseInvestors(invRows);
+    
+    // NEW: Attach the raw Transaction Log rows to the data object
+    d.transactions = txnRows; 
+
     $('loading-screen').style.display = 'none';
     $('app').style.display = 'block';
-    renderAll(measures);
+
+    renderAll(d);
+
+    // Refresh interval - keep all 4 in sync
     setInterval(async () => {
       try {
-        const [mr,pr,ir] = await Promise.all([
-          fetchSheet(sheetId,apiKey,SHEET_TABS.fundMeasures),
-          fetchSheet(sheetId,apiKey,SHEET_TABS.positions),
-          fetchSheet(sheetId,apiKey,SHEET_TABS.investors),
+        const [mr, pr, ir, tr] = await Promise.all([
+          fetchSheet(sheetId, apiKey, SHEET_TABS.fundMeasures),
+          fetchSheet(sheetId, apiKey, SHEET_TABS.positions),
+          fetchSheet(sheetId, apiKey, SHEET_TABS.investors),
+          fetchSheet(sheetId, apiKey, SHEET_TABS.transactions)
         ]);
-        const m=parseFundMeasures(mr); m.positions=parsePositions(pr); m.investors=parseInvestors(ir);
+        const m = parseFundMeasures(mr);
+        m.positions = parsePositions(pr);
+        m.investors = parseInvestors(ir);
+        m.transactions = tr;
         renderAll(m);
       } catch(e) { console.warn('Refresh failed:', e); }
     }, REFRESH_INTERVAL);
+
   } catch(err) {
     $('loading-screen').style.display = 'none';
     $('error-banner').style.display = 'block';
