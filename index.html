@@ -129,16 +129,26 @@
     /* METRIC CARDS */
     .metric-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-bottom: 22px; }
     .metric-card {
-      background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
-      padding: 14px 16px; transition: border-color 0.15s, transform 0.15s;
+      background: rgba(15,19,24,0.6);
+      backdrop-filter: blur(12px) saturate(1.4);
+      -webkit-backdrop-filter: blur(12px) saturate(1.4);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 14px 16px;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
       position: relative; overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06);
     }
     .metric-card::before {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-      background: linear-gradient(90deg, transparent, rgba(200,169,110,0.3), transparent);
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(200,169,110,0.5), transparent);
       opacity: 0; transition: opacity 0.3s;
     }
-    .metric-card:hover { border-color: var(--border2); transform: translateY(-1px); }
+    .metric-card:hover {
+      border-color: rgba(200,169,110,0.25);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
     .metric-card:hover::before { opacity: 1; }
     .metric-label { font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
     .metric-value { font-size: 21px; font-weight: 500; color: var(--text); font-family: var(--mono); line-height: 1.2; transition: color 0.4s; }
@@ -159,7 +169,14 @@
     .flash-red   { animation: flashRed   0.6s ease; }
 
     /* CARDS */
-    .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 14px; }
+    .card {
+      background: rgba(15,19,24,0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px; padding: 18px 20px; margin-bottom: 14px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04);
+    }
     .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
     .card-title { font-size: 12px; font-weight: 500; letter-spacing: 0.02em; }
     .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
@@ -393,12 +410,15 @@
       .ticker-item { padding: 0 20px; font-size: 10px; }
       table { font-size: 10px; }
       tbody td { padding: 7px 8px 7px 0; }
-      .footer-inner { grid-template-columns: 1fr; gap: 20px; }
-      .footer-contact { align-items: flex-start; }
-      .footer-bottom { flex-direction: column; gap: 6px; }
       .pw-box { padding: 28px 20px; }
       .chart-wrap { height: 180px; }
       .chart-wrap.tall { height: 220px; }
+      /* Mobile footer — compact single column */
+      .site-footer { padding: 16px 16px; }
+      .footer-inner { grid-template-columns: 1fr; gap: 14px; }
+      .footer-center { display: none; }
+      .footer-contact { align-items: flex-start; }
+      .footer-bottom { flex-direction: column; gap: 4px; font-size: 9px; }
     }
 
 
@@ -504,6 +524,34 @@
     .privacy-toggle .pt-icon { font-size:13px; }
     /* privacy handled via JS encryption */
 
+
+    /* ── PARTICLE BACKGROUND ── */
+    #particle-canvas {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 0; opacity: 0;
+      transition: opacity 1s ease;
+    }
+    #particle-canvas.visible { opacity: 1; }
+    #page-overview { position: relative; z-index: 1; }
+
+
+    /* ── COLLAPSIBLE SECTIONS ── */
+    .section-toggle {
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; user-select: none; padding: 2px 0;
+    }
+    .section-toggle:hover .card-title { color: var(--accent); }
+    .section-toggle .toggle-icon {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--bg3); border: 1px solid var(--border2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; color: var(--muted); transition: transform 0.25s, background 0.15s;
+      flex-shrink: 0;
+    }
+    .section-toggle.collapsed .toggle-icon { transform: rotate(-90deg); }
+    .collapsible-body { overflow: hidden; transition: max-height 0.3s ease, opacity 0.25s ease; }
+    .collapsible-body.collapsed { max-height: 0 !important; opacity: 0; }
+
     /* TICKER */
     .ticker-wrap { background: var(--bg2); border-bottom: 1px solid var(--border); overflow: hidden; padding: 12px 0; display: flex; width: 100%; }
     .ticker-move { display: flex; white-space: nowrap; animation: ticker-loop 60s linear infinite; }
@@ -542,6 +590,7 @@
 <body>
 
 <!-- PASSWORD SCREEN -->
+<canvas id="particle-canvas"></canvas>
 <div id="pw-screen">
   <div class="pw-box">
     <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
@@ -1102,6 +1151,14 @@ Chart.defaults.color = '#6b7380';
 Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
 Chart.defaults.font.family = "'DM Mono', monospace";
 Chart.defaults.font.size = 11;
+Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(10,12,15,0.95)';
+Chart.defaults.plugins.tooltip.borderColor = 'rgba(255,255,255,0.1)';
+Chart.defaults.plugins.tooltip.borderWidth = 1;
+Chart.defaults.plugins.tooltip.padding = 10;
+Chart.defaults.plugins.tooltip.cornerRadius = 8;
+Chart.defaults.plugins.tooltip.titleColor = '#e8e6df';
+Chart.defaults.plugins.tooltip.bodyColor = '#6b7380';
+Chart.defaults.plugins.tooltip.displayColors = true;
 
 function switchTab(name, el) {
   const current = document.querySelector('.page.active');
@@ -1116,6 +1173,7 @@ function switchTab(name, el) {
       current.style.animation = '';
       next.classList.add('active');
       next.style.animation = 'pageIn 0.22s ease forwards';
+      showParticles(name === 'overview');
       setTimeout(() => { next.style.animation = ''; }, 250);
     }, 160);
   } else {
@@ -1337,7 +1395,9 @@ function renderOverview(d) {
     metrics.forEach(c=>{
       const card=$('mc-'+c.key); if(!card) return;
       const old=prevMetrics[c.key];
-      if(old!==undefined&&old!==c.val){ animateMetricCard(card,d[c.key],old,()=>c.val); card.querySelector('.metric-value').textContent=c.val; }
+      const valStr = String(c.val);
+      if(old!==undefined&&old!==d[c.key]){ animateMetricRefresh(c.key, d[c.key], ()=>valStr); }
+      else { card.querySelector('.metric-value').textContent=c.val; }
       card.querySelector('.metric-sub').textContent=c.sub;
     });
   }
@@ -1743,8 +1803,57 @@ function renderAnalytics(d) {
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.y+'%'}}},scales:{x:{grid:{display:false},ticks:{color:'#6b7380',maxTicksLimit:8}},y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#6b7380',callback:v=>v+'%'}}}}
   });
   // Render new charts
+
+  // ── Historical NAV chart ──
+  destroyChart('navChart');
+  const navCanvas = document.getElementById('navChart');
+  if (navCanvas && d.positions) {
+    let cumPnl = 0;
+    const closedPos = d.positions.filter(p=>p.status==='Closed');
+    const navLabels = closedPos.map(p => p.exitDate || p.date || '#'+p.id);
+    const navData   = closedPos.map(p => {
+      cumPnl += p.pnl;
+      return +((d.totalDeposited + cumPnl)/1e9).toFixed(3);
+    });
+    charts.navChart = new Chart(navCanvas, {
+      type: 'line',
+      data: { labels: navLabels, datasets: [{
+        data: navData,
+        borderColor: '#c8a96e',
+        backgroundColor: 'rgba(200,169,110,0.06)',
+        borderWidth: 2.5, pointRadius: 3, pointHoverRadius: 6,
+        pointBackgroundColor: '#c8a96e', fill: true, tension: 0.4,
+      }]},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(15,19,24,0.95)',
+            borderColor: 'rgba(200,169,110,0.3)', borderWidth: 1,
+            padding: 12, cornerRadius: 8,
+            callbacks: {
+              title: ctx => 'Trade #' + (ctx[0].dataIndex+1) + ' — ' + ctx[0].label,
+              label: ctx => ' NAV: $' + ctx.parsed.y.toFixed(2) + 'B',
+              afterLabel: ctx => {
+                const p = closedPos[ctx.dataIndex];
+                if (!p) return '';
+                return ' P&L: ' + (p.pnl>=0?'+':'') + '$' + fmtM(p.pnl) + '  ' + p.ticker;
+              }
+            }
+          }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: '#6b7380', maxTicksLimit: 8 } },
+          y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#6b7380', callback: v => '$'+v+'B' } }
+        }
+      }
+    });
+  }
+
   renderNewAnalytics(d.positions);
   renderStreaks(d.positions||[]);
+  setTimeout(initCollapsibles, 100);
 }
 
 
@@ -1967,6 +2076,146 @@ function renderAvatars() {
   });
 }
 
+
+// ── COLLAPSIBLE ANALYTICS SECTIONS ───────────────────────────────
+function initCollapsibles() {
+  // Make all cards in analytics tab collapsible
+  const analyticsPage = document.getElementById('page-analytics');
+  if (!analyticsPage) return;
+  analyticsPage.querySelectorAll('.card').forEach((card, i) => {
+    const header = card.querySelector('.card-header');
+    const body   = card.querySelector('.chart-wrap, table, canvas, #trade-stats, #stake-table, #heatmap-container, #streak-display, #recent-trades-tbody');
+    if (!header) return;
+
+    // Find the actual content (everything after card-header)
+    const children = Array.from(card.children);
+    const headerIdx = children.indexOf(header);
+    const contentEls = children.slice(headerIdx + 1);
+    if (!contentEls.length) return;
+
+    // Wrap content in collapsible div
+    const wrapper = document.createElement('div');
+    wrapper.className = 'collapsible-body';
+    wrapper.id = 'analytics-section-' + i;
+    wrapper.style.maxHeight = wrapper.scrollHeight + 'px';
+    contentEls.forEach(el => wrapper.appendChild(el));
+    card.appendChild(wrapper);
+
+    // Add toggle icon to header
+    const icon = document.createElement('div');
+    icon.className = 'toggle-icon';
+    icon.innerHTML = '&#9660;';
+    header.classList.add('section-toggle');
+    header.appendChild(icon);
+
+    // Set max-height after append
+    setTimeout(() => { wrapper.style.maxHeight = wrapper.scrollHeight + 'px'; }, 50);
+
+    header.addEventListener('click', () => {
+      const isCollapsed = wrapper.classList.contains('collapsed');
+      if (isCollapsed) {
+        wrapper.classList.remove('collapsed');
+        wrapper.style.maxHeight = wrapper.scrollHeight + 'px';
+        header.classList.remove('collapsed');
+      } else {
+        wrapper.style.maxHeight = wrapper.scrollHeight + 'px';
+        requestAnimationFrame(() => {
+          wrapper.classList.add('collapsed');
+          header.classList.add('collapsed');
+        });
+      }
+    });
+  });
+}
+
+// ── PARTICLE BACKGROUND ──────────────────────────────────────────
+let particleAnimFrame = null;
+function initParticles() {
+  const canvas = document.getElementById('particle-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W = canvas.width  = window.innerWidth;
+  let H = canvas.height = window.innerHeight;
+  window.addEventListener('resize', () => {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  });
+
+  // Grid dots
+  const COLS = Math.floor(W / 40);
+  const ROWS = Math.floor(H / 40);
+  const dots = [];
+  for (let x = 0; x < W; x += 40) {
+    for (let y = 0; y < H; y += 40) {
+      dots.push({ x, y, ox: x, oy: y, vx: 0, vy: 0,
+        phase: Math.random() * Math.PI * 2 });
+    }
+  }
+
+  let t = 0;
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    t += 0.008;
+    dots.forEach(d => {
+      d.x = d.ox + Math.sin(t + d.phase) * 3;
+      d.y = d.oy + Math.cos(t + d.phase * 0.7) * 2;
+      const alpha = 0.08 + Math.sin(t + d.phase) * 0.04;
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, 1, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(200,169,110,${alpha})`;
+      ctx.fill();
+    });
+    // Draw connections between nearby dots
+    for (let i = 0; i < dots.length; i++) {
+      for (let j = i+1; j < dots.length; j++) {
+        const dx = dots[i].x - dots[j].x;
+        const dy = dots[i].y - dots[j].y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 45) {
+          ctx.beginPath();
+          ctx.moveTo(dots[i].x, dots[i].y);
+          ctx.lineTo(dots[j].x, dots[j].y);
+          ctx.strokeStyle = `rgba(200,169,110,${0.04 * (1 - dist/45)})`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    }
+    particleAnimFrame = requestAnimationFrame(draw);
+  }
+  canvas.classList.add('visible');
+  draw();
+}
+
+function showParticles(show) {
+  const canvas = document.getElementById('particle-canvas');
+  if (!canvas) return;
+  if (show) {
+    canvas.classList.add('visible');
+    if (!particleAnimFrame) initParticles();
+  } else {
+    canvas.classList.remove('visible');
+    if (particleAnimFrame) { cancelAnimationFrame(particleAnimFrame); particleAnimFrame = null; }
+  }
+}
+
+// ── ANIMATED COUNTER ON REFRESH ──────────────────────────────────
+function animateMetricRefresh(key, newVal, formatter) {
+  const card = document.getElementById('mc-' + key);
+  if (!card) return;
+  const valEl = card.querySelector('.metric-value');
+  if (!valEl) return;
+  const oldNum = parseFloat(String(valEl.textContent).replace(/[^0-9.\-]/g,'')) || 0;
+  const newNum = parseFloat(String(formatter(newVal)).replace(/[^0-9.\-]/g,'')) || 0;
+  if (Math.abs(newNum - oldNum) < 0.01) return;
+  const dir = newNum > oldNum ? 'tick-up' : 'tick-down';
+  valEl.classList.remove('tick-up','tick-down'); void valEl.offsetWidth; valEl.classList.add(dir);
+  card.classList.remove('flash-green','flash-red'); void card.offsetWidth;
+  card.classList.add(newNum > oldNum ? 'flash-green' : 'flash-red');
+  animateCounter(valEl, oldNum, newNum, () => formatter(newVal), 800);
+  setTimeout(() => { valEl.classList.remove('tick-up','tick-down'); card.classList.remove('flash-green','flash-red'); }, 900);
+}
+
 // ── RENDER ALL ───────────────────────────────────────────────────
 function renderAll(d) {
   window.lastData = d;
@@ -2002,6 +2251,7 @@ async function launchDashboard(sheetId, apiKey) {
     $('loading-screen').style.display = 'none';
     $('app').style.display = 'block';
     renderAll(measures);
+    initParticles();
     applyAccessLevel();
     setInterval(async () => {
       try {
@@ -2024,6 +2274,7 @@ async function launchDashboard(sheetId, apiKey) {
     $('error-banner').textContent = '⚠ Could not connect to Google Sheets: '+err.message+' — using demo data.';
     $('app').style.display = 'block';
     renderAll({...DEMO});
+    initParticles();
   }
   applyAccessLevel();
 }
