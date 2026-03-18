@@ -962,23 +962,89 @@ function renderPositions(positions) {
 }
 
 function renderInvestors(investors, d) {
-  const tot=investors.reduce((s,i)=>s+i.deposited,0);
-  $('investor-metrics').innerHTML=[
-    {label:'Total Deposits',val:'$'+fmtM(tot),cls:'gold'},
-    {label:'Total Withdrawals',val:'$0',cls:''},
-    {label:'Investors',val:investors.length,cls:''},
-    {label:'Transactions',val:'4',cls:''},
-  ].map(c=>`<div class="metric-card"><div class="metric-label">${c.label}</div><div class="metric-value ${c.cls}">${c.val}</div></div>`).join('');
-  $('investor-roster').innerHTML=investors.map(inv=>{
-    const lb=inv.status==='UNLOCKED'?badge('UNLOCKED','green'):badge('LOCKED · '+inv.daysToUnlock+'d','red');
-    return`<div class="player-row"><div class="avatar">${inv.name[0]}</div><div class="player-info"><div class="player-name">${inv.name}</div><div class="player-meta">Deposited ${inv.depositDate} · Lockup ${inv.lockDays}d</div></div><div style="text-align:right"><div style="font-family:var(--mono);font-size:13px;color:var(--accent)">$${fmtM(inv.deposited)}</div><div style="font-size:11px;color:var(--muted)">${(inv.pct*100).toFixed(2)}% of fund</div><div style="margin-top:4px">${lb}</div></div></div>`;
+  // 1. GROUP THE DATA BY NAME
+  const grouped = investors.reduce((acc, inv) => {
+    const name = inv.name.trim();
+    if (!acc[name]) {
+      acc[name] = {
+        name: name,
+        totalDeposited: 0,
+        totalPct: 0,
+        totalPnlShare: 0,
+        deposits: []
+      };
+    }
+    acc[name].totalDeposited += inv.deposited;
+    acc[name].totalPct += inv.pct;
+    acc[name].totalPnlShare += (inv.pnlShare || 0);
+    acc[name].deposits.push(inv);
+    return acc;
+  }, {});
+
+  const groupedArray = Object.values(grouped);
+  const totalFundDeposits = investors.reduce((s, i) => s + i.deposited, 0);
+
+  // 2. INVESTOR METRICS (Top Cards)
+  $('investor-metrics').innerHTML = [
+    { label: 'Total Deposits', val: '$' + fmtM(totalFundDeposits), cls: 'gold' },
+    { label: 'Total Withdrawals', val: '$0', cls: '' },
+    { label: 'Investors', val: groupedArray.length, cls: '' },
+    { label: 'Total Entries', val: investors.length, cls: '' },
+  ].map(c => `<div class="metric-card"><div class="metric-label">${c.label}</div><div class="metric-value ${c.cls}">${c.val}</div></div>`).join('');
+
+  // 3. INVESTOR ROSTER (Grouped Entries)
+  $('investor-roster').innerHTML = groupedArray.map(inv => {
+    // Sub-rows for each specific deposit under this name
+    const depositListHtml = inv.deposits.map(dep => {
+      const lb = dep.status === 'UNLOCKED' 
+        ? `<span style="color:var(--green); font-size:10px;">● UNLOCKED</span>` 
+        : `<span style="color:var(--red); font-size:10px;">● LOCKED (${dep.daysToUnlock}d)</span>`;
+      
+      return `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding: 4px 0; border-top:1px solid rgba(255,255,255,0.05); margin-top:4px;">
+          <div style="font-size:11px; color:var(--muted)">
+            Dep: ${dep.depositDate} · ${dep.lockDays}d Lock
+          </div>
+          <div style="text-align:right;">
+            <div style="font-family:var(--mono); font-size:12px; color:var(--accent)">$${fmtM(dep.deposited)}</div>
+            ${lb}
+          </div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="player-row" style="display:block; padding:12px;">
+        <div style="display:flex; align-items:center; margin-bottom:8px;">
+          <div class="avatar">${inv.name[0]}</div>
+          <div class="player-info">
+            <div class="player-name">${inv.name}</div>
+            <div style="font-size:11px; color:var(--gold)">Aggregate Share: ${(inv.totalPct * 100).toFixed(2)}%</div>
+          </div>
+        </div>
+        ${depositListHtml}
+      </div>`;
   }).join('');
-  $('ownership-bars').innerHTML=investors.map(inv=>`<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--muted)">${inv.name}</span><span style="font-family:var(--mono)">${(inv.pct*100).toFixed(2)}%</span></div><div class="bar-track"><div class="bar-fill" style="width:${(inv.pct*100).toFixed(2)}%"></div></div></div>`).join('');
-  $('pnl-shares').innerHTML=investors.map(inv=>[
-    [inv.name+' P&L Share',sgn(inv.pnlShare)+'$'+fmtM(inv.pnlShare),'color:var(--green)'],
-    inv.netPayout?[inv.name+' Net Payout','$'+fmtM(inv.netPayout),'color:var(--accent)']:null,
-    inv.status==='LOCKED'?[inv.name+' Unlock Date',inv.daysToUnlock+'d remaining','']:null,
-  ].filter(Boolean).map(([k,v,s])=>rowLabel(k,v,s)).join('')).join('');
+
+  // 4. OWNERSHIP BARS (One bar per unique Investor)
+  $('ownership-bars').innerHTML = groupedArray.map(inv => `
+    <div style="margin-bottom:14px">
+      <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:5px">
+        <span style="color:var(--muted)">${inv.name}</span>
+        <span style="font-family:var(--mono)">${(inv.totalPct * 100).toFixed(2)}%</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${(inv.totalPct * 100).toFixed(2)}%"></div>
+      </div>
+    </div>`).join('');
+
+  // 5. P&L SHARES (Aggregated)
+  $('pnl-shares').innerHTML = groupedArray.map(inv => {
+    return [
+      [inv.name + ' Total P&L Share', sgn(inv.totalPnlShare) + '$' + fmtM(inv.totalPnlShare), 'color:var(--green)'],
+      // Only show payout if the first deposit has one (or you can sum them)
+      inv.deposits[0].netPayout ? [inv.name + ' Total Net Payout', '$' + fmtM(inv.deposits.reduce((s,d)=>s+(d.netPayout||0),0)), 'color:var(--accent)'] : null,
+    ].filter(Boolean).map(([k, v, s]) => rowLabel(k, v, s)).join('');
+  }).join('');
 }
 
 function renderAnalytics(d) {
