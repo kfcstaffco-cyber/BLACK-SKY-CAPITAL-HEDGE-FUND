@@ -1172,6 +1172,44 @@
     </div>
   </div>
 
+  
+  <!-- STATEMENT REQUEST MODAL (standard users) -->
+  <div class="modal-overlay" id="stmt-req-modal" onclick="closeStmtReqModal(event)">
+    <div class="modal-box" style="position:relative;max-width:460px;">
+      <button class="modal-close" onclick="closeStmtReqModal(null,true)">&#x2715;</button>
+      <div class="modal-title">Request Account Statement</div>
+      <div class="modal-sub" style="margin-bottom:20px;">Submit your details and the fund manager will send your statement directly.</div>
+      <label style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Your Name</label>
+      <input class="modal-input" id="stmt-req-name" type="text" placeholder="e.g. Gustavo Fring" />
+      <label style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Note (optional)</label>
+      <input class="modal-input" id="stmt-req-note" type="text" placeholder="e.g. Please include March transactions" style="margin-bottom:6px;" />
+      <div id="stmt-req-error" style="font-size:11px;color:var(--red);min-height:16px;margin-bottom:10px;"></div>
+      <button class="modal-btn" style="margin-bottom:0;width:100%;" onclick="submitStmtRequest()">Send Request &rarr;</button>
+
+      <!-- Success state -->
+      <div id="stmt-req-success" style="display:none;text-align:center;padding:20px 0;">
+        <div style="font-size:36px;margin-bottom:12px;">&#10003;</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:8px;">Request Sent</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.7;">Your statement request has been submitted.<br>The fund manager will be in touch shortly.</div>
+        <button class="modal-btn" style="margin-top:20px;" onclick="closeStmtReqModal(null,true)">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATEMENT REQUEST FLOAT BUTTON (standard users only) -->
+  <button class="dw-float-btn" id="stmt-req-float" onclick="openStmtReqModal()"
+    style="bottom:160px;background:linear-gradient(135deg,#4a9eff,#1a5ca8);box-shadow:0 4px 20px rgba(74,158,255,0.3);display:none;"
+    title="Request Statement">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="16" y1="13" x2="8" y2="13"/>
+      <line x1="16" y1="17" x2="8" y2="17"/>
+      <polyline points="10 9 9 9 8 9"/>
+    </svg>
+  </button>
+  <div class="dw-float-tooltip" style="bottom:222px;right:90px;">Request Statement</div>
+
   <footer class="site-footer">
     <div class="footer-inner">
       <!-- LEFT: KFC affiliation -->
@@ -1732,6 +1770,21 @@ function renderOverview(d) {
     {label:'Unrealised P&L', val:sgn(d.unrealisedPnl)+'$'+fmtM(d.unrealisedPnl), cls:'green', sub:'Open positions',         key:'unrealisedPnl'},
     {label:'Margin Deployed',val:'$'+fmtM(d.marginDeployed), cls:'blue',  sub:'Active positions',                          key:'marginDeployed'},
     {label:'Notional Exp.',  val:'$'+fmtM(d.notional),       cls:'blue',  sub:'Total leveraged',                           key:'notional'},
+    {label:'Fund Age',       val:(()=>{
+      const txns=(d.transactions||[]).filter(t=>t.type==='Deposit');
+      if(!txns.length) return '—';
+      const pd=s=>{const[dd,mm,yy]=s.split('/');return new Date(+yy,+mm-1,+dd);};
+      const first=txns.reduce((a,b)=>pd(a.date)<pd(b.date)?a:b);
+      const days=Math.round((Date.now()-pd(first.date))/(1000*60*60*24));
+      return days+'d';
+    })(), cls:'blue', sub:(()=>{
+      const txns=(d.transactions||[]).filter(t=>t.type==='Deposit');
+      if(!txns.length) return 'Since fund inception';
+      const pd=s=>{const[dd,mm,yy]=s.split('/');return new Date(+yy,+mm-1,+dd);};
+      const first=txns.reduce((a,b)=>pd(a.date)<pd(b.date)?a:b);
+      const days=Math.max(1,Math.round((Date.now()-pd(first.date))/(1000*60*60*24)));
+      return 'Since '+first.date+' · '+((d.totalTrades||0)/(days/7)).toFixed(1)+' trades/wk';
+    })(), key:'inception'},
   ];
   const grid = $('overview-metrics');
   const isFirstRender = !grid.children.length || grid.querySelector('.skeleton') !== null;
@@ -2988,23 +3041,14 @@ function renderInceptionStats(d) {
   if (!txns.length) return;
   const parseD = s => { const [dd,mm,yy]=s.split('/'); return new Date(+yy,+mm-1,+dd); };
   const first  = txns.reduce((a,b) => parseD(a.date)<parseD(b.date)?a:b);
-  const daysOld= Math.round((Date.now()-parseD(first.date))/(1000*60*60*24));
-  const weeksOld = (daysOld/7).toFixed(1);
+  const daysOld = Math.round((Date.now()-parseD(first.date))/(1000*60*60*24));
   const tradesPerWeek = daysOld>0 ? ((d.totalTrades||0)/(daysOld/7)).toFixed(1) : '—';
-  // Add inception card to metric grid if not already there
-  const grid = document.getElementById('overview-metrics');
-  if (!grid) return;
-  let inceptionCard = document.getElementById('mc-inception');
-  if (!inceptionCard) {
-    inceptionCard = document.createElement('div');
-    inceptionCard.className = 'metric-card';
-    inceptionCard.id = 'mc-inception';
-    grid.appendChild(inceptionCard);
+  // Update existing card if already rendered, otherwise skip (it's added in metrics array)
+  const card = document.getElementById('mc-inception');
+  if (card) {
+    card.querySelector('.metric-value').textContent = daysOld + 'd';
+    card.querySelector('.metric-sub').textContent = 'Since ' + first.date + ' · ' + tradesPerWeek + ' trades/wk';
   }
-  inceptionCard.innerHTML = `
-    <div class="metric-label">Fund Age</div>
-    <div class="metric-value blue">${daysOld}<span style="font-size:13px;">d</span></div>
-    <div class="metric-sub">Since ${first.date} · ${tradesPerWeek} trades/wk</div>`;
 }
 
 // ── SKELETON LOADING ─────────────────────────────────────────────
@@ -3247,6 +3291,65 @@ function generateStatement() {
   document.getElementById('statement-modal').classList.remove('open');
 }
 
+
+
+// ── STATEMENT REQUEST (standard users) ───────────────────────────
+function openStmtReqModal() {
+  document.getElementById('stmt-req-name').value = '';
+  document.getElementById('stmt-req-note').value = '';
+  document.getElementById('stmt-req-error').textContent = '';
+  document.getElementById('stmt-req-modal').querySelector('.modal-box').querySelectorAll(':not(#stmt-req-success)').forEach(el => el.style.display = '');
+  document.getElementById('stmt-req-success').style.display = 'none';
+  document.getElementById('stmt-req-modal').classList.add('open');
+  setTimeout(() => document.getElementById('stmt-req-name').focus(), 200);
+}
+
+function closeStmtReqModal(e, force) {
+  if (force || (e && e.target === document.getElementById('stmt-req-modal')))
+    document.getElementById('stmt-req-modal').classList.remove('open');
+}
+
+async function submitStmtRequest() {
+  const name  = (document.getElementById('stmt-req-name').value || '').trim();
+  const note  = (document.getElementById('stmt-req-note').value || '').trim();
+  const errEl = document.getElementById('stmt-req-error');
+  errEl.textContent = '';
+  if (!name) { errEl.textContent = 'Please enter your name.'; return; }
+
+  const timestamp = new Date().toLocaleString('en-GB');
+  const message = 'Statement request received.\n\nInvestor: ' + name + '\nNote: ' + (note||'—') + '\nTime: ' + timestamp;
+
+  // Show loading
+  const btn = document.querySelector('#stmt-req-modal .modal-btn');
+  const origText = btn.textContent;
+  btn.textContent = 'Sending...'; btn.disabled = true;
+
+  try {
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      type: 'Statement Request',
+      investor_name: name,
+      amount: '—',
+      note: note || '—',
+      timestamp: timestamp,
+      message: message,
+      reply_to: 'kfcstaffco@gmail.com',
+    });
+  } catch(e) { console.warn('EmailJS error:', e); }
+
+  // Show success regardless
+  btn.textContent = origText; btn.disabled = false;
+  // Hide form fields, show success
+  const box = document.getElementById('stmt-req-modal').querySelector('.modal-box');
+  box.querySelectorAll(':scope > *:not(#stmt-req-success):not(.modal-close)').forEach(el => el.style.display = 'none');
+  document.getElementById('stmt-req-success').style.display = 'block';
+}
+
+// Show/hide statement request button based on access level
+function updateStmtReqButton() {
+  const btn = document.getElementById('stmt-req-float');
+  if (btn) btn.style.display = (!isMasterAccess) ? 'flex' : 'none';
+}
 
 // ── RENDER ALL ───────────────────────────────────────────────────
 function renderAll(d) {
