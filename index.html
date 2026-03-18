@@ -1181,8 +1181,7 @@
       <div class="modal-sub" style="margin-bottom:20px;">Submit your details and the fund manager will send your statement directly.</div>
       <label style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Your Name</label>
       <input class="modal-input" id="stmt-req-name" type="text" placeholder="e.g. Gustavo Fring" />
-      <label style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Note (optional)</label>
-      <input class="modal-input" id="stmt-req-note" type="text" placeholder="e.g. Please include March transactions" style="margin-bottom:6px;" />
+
       <div id="stmt-req-error" style="font-size:11px;color:var(--red);min-height:16px;margin-bottom:10px;"></div>
       <button class="modal-btn" style="margin-bottom:0;width:100%;" onclick="submitStmtRequest()">Send Request &rarr;</button>
 
@@ -1505,6 +1504,17 @@ function startMicroFluctuations() {
           valEl.classList.remove('tick-up','tick-down');
           card.classList.remove('flash-green','flash-red');
         }, 500);
+        // Sync hero NAV in lockstep
+        if (key === 'nav') {
+          const heroEl = document.getElementById('hero-nav-val');
+          if (heroEl) {
+            heroEl.classList.remove('tick-up','tick-down');
+            void heroEl.offsetWidth;
+            heroEl.classList.add(direction > 0 ? 'tick-up' : 'tick-down');
+            heroEl.textContent = '$' + fmtM(newVal);
+            setTimeout(() => heroEl.classList.remove('tick-up','tick-down'), 500);
+          }
+        }
       });
       // Open position P&L rows
       if (window.lastData && window.lastData.positions) {
@@ -1771,7 +1781,6 @@ function parseTransactionLog(rows) {
 // ── RENDER OVERVIEW ──────────────────────────────────────────────
 function renderOverview(d) {
   const metrics = [
-    {label:'Fund NAV',       val:'$'+fmtM(d.nav),                          cls:'gold',  sub:'Net asset value',              key:'nav'},
     {label:'Total P&L',      val:sgn(d.totalPnl)+'$'+fmtM(d.totalPnl),    cls:'green', sub:'Realised + Unrealised',         key:'totalPnl'},
     {label:'Total Return',   val:sgn(d.totalReturn)+fmtPct(d.totalReturn), cls:'green', sub:'On capital deposited',          key:'totalReturn'},
     {label:'Win Rate',       val:(d.winRate*100).toFixed(2)+'%',           cls:'gold',  sub:d.winTrades+' wins / '+d.lossTrades+' losses', key:'winRate'},
@@ -3032,7 +3041,17 @@ function renderHeroNav(d) {
   const subEl  = document.getElementById('hero-nav-sub');
   const statsEl= document.getElementById('hero-stats');
 
-  if (navEl)  navEl.textContent  = '$' + fmtM(d.nav);
+  if (navEl) {
+    const oldNavNum = parseFloat(navEl.getAttribute('data-raw')||'0');
+    navEl.setAttribute('data-raw', d.nav);
+    if (oldNavNum > 0 && Math.abs(d.nav - oldNavNum) > 1) {
+      navEl.classList.remove('tick-up','tick-down');
+      void navEl.offsetWidth;
+      navEl.classList.add(d.nav > oldNavNum ? 'tick-up' : 'tick-down');
+      setTimeout(() => navEl.classList.remove('tick-up','tick-down'), 600);
+    }
+    navEl.textContent = '$' + fmtM(d.nav);
+  }
   if (subEl)  subEl.innerHTML    = `<span style="color:${d.totalPnl>=0?'var(--green)':'var(--red)'}">${sgn(d.totalPnl)}$${fmtM(d.totalPnl)}</span> total P&amp;L &nbsp;·&nbsp; <span style="color:var(--green)">${sgn(d.totalReturn)}${(d.totalReturn*100).toFixed(2)}%</span> return`;
   if (statsEl) statsEl.innerHTML = [
     {label:'Win Rate',  val:(d.winRate*100).toFixed(1)+'%',    cls:'var(--accent2)'},
@@ -3320,7 +3339,7 @@ function closeStmtReqModal(e, force) {
 
 async function submitStmtRequest() {
   const name  = (document.getElementById('stmt-req-name').value || '').trim();
-  const note  = (document.getElementById('stmt-req-note').value || '').trim();
+  const note  = '';
   const errEl = document.getElementById('stmt-req-error');
   errEl.textContent = '';
   if (!name) { errEl.textContent = 'Please enter your name.'; return; }
