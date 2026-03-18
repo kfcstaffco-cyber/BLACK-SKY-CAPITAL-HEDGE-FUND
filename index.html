@@ -985,14 +985,20 @@ function renderInvestors(investors, transactions) {
     const ownershipPct  = totalCapital > 0 ? (aggDeposited / totalCapital) * 100 : 0;
 
     const depositRows = invTxns.deposits.length > 0
-      ? invTxns.deposits.map(t => `
-        <div class="deposit-row">
-          <div class="deposit-date">${t.date}</div>
-          <div class="deposit-amount" style="color:var(--green)">+$${fmtM(t.deposit)}</div>
-          <div class="deposit-note">${t.note}</div>
-          <div>${t.verified ? badge('VERIFIED','green') : badge('PENDING','gold')}</div>
-          <div style="color:var(--muted);font-size:10px;">Bal: $${fmtM(t.balanceAfter)}</div>
-        </div>`).join('')
+      ? (() => {
+          let running = 0;
+          return invTxns.deposits.map(t => {
+            running += t.deposit;
+            return `
+            <div class="deposit-row">
+              <div class="deposit-date">${t.date}</div>
+              <div class="deposit-amount" style="color:var(--green)">+$${fmtM(t.deposit)}</div>
+              <div class="deposit-note">${t.note}</div>
+              <div>${t.verified ? badge('VERIFIED','green') : badge('PENDING','gold')}</div>
+              <div style="color:var(--muted);font-size:10px;">Total: $${fmtM(running)}</div>
+            </div>`;
+          }).join('');
+        })()
       : `<div style="padding:12px 0;color:var(--muted);font-size:11px;">No transaction records found</div>`;
 
     return `
@@ -1068,13 +1074,13 @@ function renderInvestors(investors, transactions) {
   // ── P&L shares — expandable per investor ──
   $('pnl-shares').innerHTML = investors.map((inv, idx) => {
     const invTxnsForPnl = txnsByName[inv.name] || { deposits:[] };
-    const totalFundDeposited = investors.reduce((s,i)=>s+i.deposited, 0);
-    // Per-deposit P&L allocation = (deposit / total fund) * total P&L
-    const totalPnlPool = totalPnlShared;
+    const investorTotal = invTxnsForPnl.deposits.reduce((s,t) => s + t.deposit, 0);
+    // Each deposit's P&L = (that deposit / investor's total deposits) * investor's total P&L share
+    // This guarantees sub-rows always sum exactly to inv.pnlShare
     const depositBreakdown = invTxnsForPnl.deposits.map(t => {
-      const share = totalFundDeposited > 0 ? (t.deposit / totalFundDeposited) * totalPnlPool : 0;
+      const share = investorTotal > 0 ? (t.deposit / investorTotal) * inv.pnlShare : 0;
       return `<div style="display:flex;justify-content:space-between;padding:6px 0 6px 12px;border-top:1px solid var(--border);font-size:11px;">
-        <span style="color:var(--muted)">${t.date} · $${fmtM(t.deposit)}</span>
+        <span style="color:var(--muted)">${t.date} · +$${fmtM(t.deposit)}</span>
         <span style="font-family:var(--mono);color:var(--green)">${sgn(share)}$${fmtM(share)}</span>
       </div>`;
     }).join('');
