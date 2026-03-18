@@ -1062,6 +1062,7 @@ function renderAnalytics(d) {
 }
 
 function renderAll(d) {
+  renderInvestors(d.investors || [], d.transactions || []);
   if (!d) return; 
   window.lastData = d; 
 
