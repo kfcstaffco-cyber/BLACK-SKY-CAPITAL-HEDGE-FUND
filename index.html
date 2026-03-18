@@ -397,6 +397,30 @@
       .chart-wrap.tall { height: 220px; }
     }
 
+
+    /* STREAK */
+    .streak-box { display:flex; gap:10px; flex-wrap:wrap; margin-top:4px; }
+    .streak-badge { display:flex; flex-direction:column; align-items:center; justify-content:center; background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:10px 16px; flex:1; min-width:90px; }
+    .streak-num   { font-size:22px; font-weight:600; font-family:var(--mono); color:var(--green); }
+    .streak-label { font-size:9px; text-transform:uppercase; letter-spacing:0.07em; color:var(--muted); margin-top:3px; }
+    /* MILESTONES */
+    .milestone-item { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); }
+    .milestone-item:last-child { border-bottom:none; }
+    .milestone-locked { opacity:0.3; }
+    /* PROJECTIONS */
+    .proj-row  { padding:10px 0; border-bottom:1px solid var(--border); }
+    .proj-row:last-child { border-bottom:none; }
+    .proj-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:6px; }
+    .proj-cell { background:var(--bg3); border-radius:6px; padding:6px 10px; }
+    .proj-period { font-size:9px; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); }
+    .proj-val    { font-size:13px; font-family:var(--mono); color:var(--green); margin-top:2px; }
+    /* RISK METER */
+    .risk-bar-wrap  { margin-bottom:16px; }
+    .risk-track { height:8px; background:rgba(255,255,255,0.06); border-radius:4px; position:relative; overflow:visible; }
+    .risk-fill-sl  { position:absolute; left:0; top:0; height:100%; border-radius:4px 0 0 4px; background:rgba(232,83,74,0.5); }
+    .risk-fill-tp  { position:absolute; top:0; height:100%; border-radius:0 4px 4px 0; background:rgba(62,207,142,0.5); }
+    .risk-marker   { position:absolute; top:-3px; width:3px; height:14px; background:var(--accent); border-radius:2px; }
+
     /* TICKER */
     .ticker-wrap { background: var(--bg2); border-bottom: 1px solid var(--border); overflow: hidden; padding: 12px 0; display: flex; width: 100%; }
     .ticker-move { display: flex; white-space: nowrap; animation: ticker-loop 60s linear infinite; }
@@ -489,6 +513,7 @@
     <div class="nav-tab"        onclick="switchTab('positions',this)">Positions</div>
     <div class="nav-tab"        onclick="switchTab('investors',this)">Investors</div>
     <div class="nav-tab"        onclick="switchTab('analytics',this)">Analytics</div>
+    <div class="nav-tab" onclick="exportPDF()" style="color:var(--accent);">&#8681; Export PDF</div>
   </div>
 
   <!-- OVERVIEW -->
@@ -577,10 +602,33 @@
       <div class="card">
         <div class="card-header"><span class="card-title">Trade Statistics</span></div>
         <div id="trade-stats"></div>
+        <div id="streak-display" style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px;"></div>
       </div>
       <div class="card">
-        <div class="card-header"><span class="card-title">Stake Factor Scale</span></div>
-        <div id="stake-table"></div>
+        <div class="card-header"><span class="card-title">Win Rate by Asset Class</span></div>
+        <div class="chart-wrap"><canvas id="winRateChart"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">P&L by Asset Class</span></div>
+      <div class="chart-wrap"><canvas id="assetPnlChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Trade P&L Heatmap</span><span style="font-size:10px;color:var(--muted);">Hover for details</span></div>
+      <div id="heatmap-container"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Rolling 7-Trade P&L Momentum</span><span style="font-size:10px;color:var(--muted);">7-trade rolling average</span></div>
+      <div class="chart-wrap tall"><canvas id="momentumChart"></canvas></div>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Cumulative P&L</span><span style="font-size:10px;color:var(--muted);">Closed trades</span></div>
+        <div class="chart-wrap tall"><canvas id="cumulativePnlChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Drawdown</span><span style="font-size:10px;color:var(--muted);">From peak</span></div>
+        <div class="chart-wrap tall"><canvas id="drawdownChart"></canvas></div>
       </div>
     </div>
     <div class="card">
@@ -588,43 +636,26 @@
       <div class="chart-wrap tall"><canvas id="plBarChart"></canvas></div>
     </div>
     <div class="card">
-      <div class="card-header"><span class="card-title">P&L by Asset Class</span></div>
-      <div class="chart-wrap"><canvas id="assetPnlChart"></canvas></div>
+      <div class="card-header"><span class="card-title">Investor Capital Over Time</span></div>
+      <div class="chart-wrap"><canvas id="investorCapitalChart"></canvas></div>
     </div>
-
-    <!-- NEW CHARTS -->
-    <div class="three-col">
-      <div class="card">
-        <div class="card-header"><span class="card-title">Cumulative P&L</span><span style="font-size:10px;color:var(--muted);">Closed trades</span></div>
-        <div class="chart-wrap tall"><canvas id="cumulativePnlChart"></canvas></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><span class="card-title">Investor Capital</span><span style="font-size:10px;color:var(--muted);">Over time</span></div>
-        <div class="chart-wrap tall"><canvas id="investorCapitalChart"></canvas></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><span class="card-title">Drawdown</span><span style="font-size:10px;color:var(--muted);">From peak</span></div>
-        <div class="chart-wrap tall"><canvas id="drawdownChart"></canvas></div>
-      </div>
-    </div>
-
-    <!-- NEW ANALYTICS CHARTS ROW 2 -->
     <div class="two-col">
       <div class="card">
-        <div class="card-header"><span class="card-title">Win Rate by Asset Class</span></div>
-        <div class="chart-wrap"><canvas id="winRateChart"></canvas></div>
+        <div class="card-header"><span class="card-title">&#127942; Fund Milestones</span></div>
+        <div id="milestones-container"></div>
       </div>
       <div class="card">
-        <div class="card-header"><span class="card-title">Rolling 7-Trade P&L Momentum</span><span style="font-size:10px;color:var(--muted);">7-trade average</span></div>
-        <div class="chart-wrap"><canvas id="momentumChart"></canvas></div>
+        <div class="card-header"><span class="card-title">&#128200; Investor Projections</span><span style="font-size:10px;color:var(--muted);">At current annualised rate</span></div>
+        <div id="projections-container"></div>
       </div>
     </div>
     <div class="card">
-      <div class="card-header">
-        <span class="card-title">Trade P&L Heatmap</span>
-        <span style="font-size:10px;color:var(--muted);">By date — darker = larger move</span>
-      </div>
-      <div id="heatmap-container"></div>
+      <div class="card-header"><span class="card-title">&#9888; Position Risk Meter</span><span style="font-size:10px;color:var(--muted);">Open positions vs SL/TP</span></div>
+      <div id="risk-meter-container"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Stake Factor Scale</span></div>
+      <div id="stake-table"></div>
     </div>
   </div>
 
@@ -678,7 +709,7 @@
       <div class="footer-contact">
         <div class="footer-contact-item">
           <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-          <a href="mailto:kfcstaffco@gmail.com">kfcstaffco@gmail.com</a>
+          <a href="/cdn-cgi/l/email-protection#dfb4b9bcacabbeb9b9bcb09fb8b2beb6b3f1bcb0b2"><span class="__cf_email__" data-cfemail="81eae7e2f2f5e0e7e7e2eec1e6ece0e8edafe2eeec">[email&#160;protected]</span></a>
         </div>
         <div class="footer-contact-item">
           <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
@@ -692,7 +723,7 @@
   </footer>
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ── PASSWORD ────────────────────────────────────────────────────
 const _h = '105f30404ab7b6785fdbaee01e4a7b35965cae0b412f21eb082bc6c786836a68';
 async function _digest(str) {
@@ -1487,6 +1518,7 @@ function renderAnalytics(d) {
   });
   // Render new charts
   renderNewAnalytics(d.positions);
+  renderStreaks(d.positions||[]);
 }
 
 
@@ -1680,6 +1712,9 @@ function renderAll(d) {
   renderAnalytics(d);
   seedFluctuations(d);
   if (!fluctTimer) startMicroFluctuations();
+  renderMilestones(d);
+  renderProjections(d);
+  renderRiskMeter(d.positions||[]);
 }
 
 // ── LAUNCH ───────────────────────────────────────────────────────
@@ -1787,10 +1822,206 @@ function positionHeatTip(e) {
 }
 document.addEventListener('mousemove', function(e) {
   const tip = document.getElementById('heatmap-tooltip');
-  if (tip && tip.classList.contains('visible')) positionHeatTip(e);
-});
-</script>
+  if (tip && tip.classList.contains('visible')) po
+// ── STREAK TRACKER ────────────────────────────────────────────────
+function calcStreaks(positions) {
+  const closed = positions.filter(p=>p.status==='Closed');
+  let cur=0, best=0, tmp=0;
+  closed.forEach(p=>{
+    if(p.pnl>0){ tmp++; if(tmp>best) best=tmp; } else tmp=0;
+  });
+  // Current streak (from end)
+  for(let i=closed.length-1;i>=0;i--){
+    if(closed[i].pnl>0) cur++; else break;
+  }
+  return {current:cur, best:best};
+}
 
-<div id="heatmap-tooltip"><div class="ht-date" id="ht-date"></div><div class="ht-pnl" id="ht-pnl"></div><div class="ht-count" id="ht-count"></div><div class="ht-trades" id="ht-trades"></div></div>
-</body>
-</html>
+function renderStreaks(positions) {
+  const {current,best} = calcStreaks(positions);
+  const el = document.getElementById('streak-display');
+  if(!el) return;
+  el.innerHTML = '<div class="section-title" style="margin-bottom:8px;">Win Streaks</div>'
+    + '<div class="streak-box">'
+    + '<div class="streak-badge"><div class="streak-num" style="color:'+(current>=5?'var(--accent2)':'var(--green)')+'">'+current+'</div><div class="streak-label">Current Streak</div></div>'
+    + '<div class="streak-badge"><div class="streak-num" style="color:var(--accent2)">'+best+'</div><div class="streak-label">Best Streak</div></div>'
+    + '</div>';
+}
+
+// ── MILESTONES ────────────────────────────────────────────────────
+const MILESTONES = [
+  { id:'pnl_100m',  icon:'💰', name:'$100M P&L',           sub:'Crossed $100M in total returns',        check: d => d.totalPnl >= 1e8 },
+  { id:'pnl_1b',    icon:'🏆', name:'$1B P&L',             sub:'Legendary — crossed $1B in returns',    check: d => d.totalPnl >= 1e9 },
+  { id:'pnl_10b',   icon:'🚀', name:'$10B P&L',            sub:'Stratospheric returns',                 check: d => d.totalPnl >= 1e10 },
+  { id:'win20',     icon:'🔥', name:'20-Trade Win Streak',  sub:'Won 20 trades in a row',                check: d => calcStreaks(d.positions||[]).best >= 20 },
+  { id:'win10',     icon:'⚡', name:'10-Trade Win Streak',  sub:'10 consecutive winning trades',         check: d => calcStreaks(d.positions||[]).best >= 10 },
+  { id:'wr80',      icon:'🎯', name:'80%+ Win Rate',        sub:'Sustained win rate above 80%',          check: d => d.winRate >= 0.80 },
+  { id:'pf5',       icon:'📈', name:'Profit Factor 5×+',   sub:'Exceptional risk/reward ratio',         check: d => d.profitFactor >= 5 },
+  { id:'trades20',  icon:'🏅', name:'20 Closed Trades',    sub:'Completed 20 trades',                   check: d => d.totalTrades >= 20 },
+];
+
+function renderMilestones(d) {
+  const el = document.getElementById('milestones-container');
+  if(!el) return;
+  el.innerHTML = MILESTONES.map(m => {
+    const unlocked = m.check(d);
+    return '<div class="milestone-item'+(unlocked?'':' milestone-locked')+'">'
+      + '<div class="milestone-icon">'+m.icon+'</div>'
+      + '<div><div class="milestone-name">'+m.name+(unlocked?' <span style="color:var(--green);font-size:9px;">✓ UNLOCKED</span>':'')+'</div>'
+      + '<div class="milestone-sub">'+m.sub+'</div></div>'
+      + '</div>';
+  }).join('');
+}
+
+// ── INVESTOR PROJECTIONS ──────────────────────────────────────────
+function renderProjections(d) {
+  const el = document.getElementById('projections-container');
+  if(!el||!d.investors) return;
+  // Annualised return = totalReturn / (days traded / 365)
+  // Estimate days traded from avg hold * total trades as rough proxy
+  // Better: use fund age in days — approximate from first transaction
+  const txns = (d.transactions||[]).filter(t=>t.type==='Deposit');
+  let fundAgeDays = 30; // default
+  if(txns.length>0){
+    const parseD = s=>{const[dd,mm,yy]=s.split('/');return new Date(+yy,+mm-1,+dd);};
+    const first = txns.reduce((a,b)=>parseD(a.date)<parseD(b.date)?a:b);
+    fundAgeDays = Math.max(1, Math.round((Date.now()-parseD(first.date))/(1000*60*60*24)));
+  }
+  const annRate = d.totalReturn / (fundAgeDays / 365);
+  const txMap = {};
+  (d.transactions||[]).forEach(t=>{
+    if(!txMap[t.name]) txMap[t.name]=0;
+    if(t.type==='Deposit') txMap[t.name]+=t.deposit;
+    else if(t.type==='Withdrawal') txMap[t.name]-=t.withdrawal;
+  });
+  const totalCap = Object.values(txMap).reduce((s,v)=>s+v,0);
+
+  const rows = d.investors.map(inv=>{
+    const cap = txMap[inv.name]||inv.deposited;
+    const pct = totalCap>0?cap/totalCap:inv.pct;
+    const proj = (m) => {
+      const r = annRate * (m/12);
+      const gain = cap * r * pct;
+      return (gain>=0?'+':'')+fmtM(gain);
+    };
+    return '<div class="proj-row">'
+      + '<div class="proj-name">'+inv.name+'</div>'
+      + '<div class="proj-grid">'
+      + '<div class="proj-cell"><div class="proj-period">3 months</div><div class="proj-val">'+proj(3)+'</div></div>'
+      + '<div class="proj-cell"><div class="proj-period">6 months</div><div class="proj-val">'+proj(6)+'</div></div>'
+      + '<div class="proj-cell"><div class="proj-period">12 months</div><div class="proj-val">'+proj(12)+'</div></div>'
+      + '</div></div>';
+  }).join('');
+  const rateStr = (annRate*100).toFixed(1);
+  el.innerHTML = '<div style="font-size:10px;color:var(--muted);margin-bottom:12px;">Annualised rate: <span style="color:var(--accent2);font-family:var(--mono);">'+rateStr+'%</span> · Fund age: <span style="color:var(--accent2);font-family:var(--mono);">'+fundAgeDays+'d</span></div>'+rows;
+}
+
+// ── POSITION RISK METER ───────────────────────────────────────────
+function renderRiskMeter(positions) {
+  const el = document.getElementById('risk-meter-container');
+  if(!el) return;
+  const open = positions.filter(p=>p.status==='Open'&&p.sl&&p.tp&&p.entry);
+  if(!open.length){
+    el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px 0;">No open positions with SL/TP set</div>';
+    return;
+  }
+  el.innerHTML = open.map(p=>{
+    const isLong = p.side==='Long';
+    const slDist = Math.abs(p.entry - p.sl);
+    const tpDist = Math.abs(p.tp   - p.entry);
+    const curDist= Math.abs((p.exit||p.entry) - p.entry);
+    const total  = slDist + tpDist;
+    const slPct  = total>0 ? (slDist/total*100).toFixed(1) : 50;
+    const tpPct  = total>0 ? (tpDist/total*100).toFixed(1) : 50;
+    // How far current price has moved as % of SL distance (for danger indicator)
+    const danger = slDist>0 ? Math.min(curDist/slDist*100,100) : 0;
+    const curPosLeft = isLong
+      ? ( (p.exit||p.entry) >= p.entry ? slPct : Math.max(0, slPct - danger*slPct/100) )
+      : ( (p.exit||p.entry) <= p.entry ? slPct : Math.max(0, slPct - danger*slPct/100) );
+    const pnlClr = p.pnl>=0?'var(--green)':'var(--red)';
+    return '<div class="risk-bar-wrap">'
+      + '<div class="risk-bar-header">'
+      + '<span><b>'+p.ticker+'</b> <span style="opacity:0.6">'+badge(p.side.toUpperCase(),p.side==='Long'?'green':'red')+'</span></span>'
+      + '<span style="font-family:var(--mono);font-size:11px;color:'+pnlClr+'">'+(p.pnl>=0?'+':'')+fmtM(p.pnl)+'</span>'
+      + '</div>'
+      + '<div style="display:flex;gap:6px;font-size:10px;color:var(--muted);margin-bottom:4px;">'
+      + '<span>SL: <b style="color:var(--red)">'+p.sl+'</b></span>'
+      + '<span>Entry: <b style="color:var(--text)">'+p.entry+'</b></span>'
+      + '<span>Cur: <b style="color:'+pnlClr+'">'+(p.exit||p.entry)+'</b></span>'
+      + '<span>TP: <b style="color:var(--green)">'+p.tp+'</b></span>'
+      + '</div>'
+      + '<div class="risk-track">'
+      + '<div class="risk-fill-sl" style="width:'+slPct+'%"></div>'
+      + '<div class="risk-fill-tp" style="width:'+tpPct+'%;left:'+slPct+'%"></div>'
+      + '<div class="risk-marker" style="left:'+slPct+'%"></div>'
+      + '</div>'
+      + '<div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-top:3px;">'
+      + '<span style="color:var(--red)">SL '+(slDist.toFixed(2))+'pts away</span>'
+      + '<span style="color:var(--green)">TP '+(tpDist.toFixed(2))+'pts away</span>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+// ── PDF EXPORT ────────────────────────────────────────────────────
+function exportPDF() {
+  const d = window.lastData;
+  if(!d){ alert('No data loaded yet'); return; }
+  const win = window.open('','_blank');
+  const positions = (d.positions||[]).filter(p=>p.status==='Open');
+  const closed    = (d.positions||[]).filter(p=>p.status==='Closed').slice(-10);
+
+  const fmt = n => fmtM(n);
+  const s   = n => (n>=0?'+':'')+fmt(n);
+
+  const posRows = positions.map(p=>
+    '<tr><td>#'+p.id+'</td><td>'+p.cls+'</td><td>'+p.ticker+'</td><td>'+p.side+'</td>'
+    +'<td>'+p.entry+'</td><td>'+p.lev+'x</td>'
+    +'<td style="color:'+(p.pnl>=0?'#22c55e':'#ef4444')+'">'+s(p.pnl)+'</td></tr>'
+  ).join('');
+  const closedRows = closed.map(p=>
+    '<tr><td>#'+p.id+'</td><td>'+p.cls+'</td><td>'+p.ticker+'</td><td>'+p.side+'</td>'
+    +'<td>'+p.result.replace(' HIT','')+'</td>'
+    +'<td style="color:'+(p.pnl>=0?'#22c55e':'#ef4444')+'">'+s(p.pnl)+'</td></tr>'
+  ).join('');
+
+  win.document.write(`<!DOCTYPE html><html><head><title>Black-Sky Capital — Fund Report</title>
+  <style>
+    body{font-family:'DM Sans',sans-serif;background:#fff;color:#111;margin:0;padding:32px;font-size:12px;}
+    h1{font-size:22px;font-weight:700;margin:0 0 4px;}
+    .sub{color:#666;font-size:11px;margin-bottom:24px;}
+    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
+    .card{border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;}
+    .card-label{font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:#888;margin-bottom:4px;}
+    .card-val{font-size:18px;font-weight:600;font-family:monospace;}
+    .green{color:#16a34a;} .red{color:#dc2626;} .gold{color:#b45309;}
+    table{width:100%;border-collapse:collapse;margin-bottom:24px;}
+    th{text-align:left;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:#888;padding:0 8px 8px 0;border-bottom:1px solid #e5e7eb;}
+    td{padding:8px 8px 8px 0;border-bottom:1px solid #f3f4f6;font-family:monospace;font-size:11px;}
+    h2{font-size:13px;font-weight:600;margin:20px 0 10px;text-transform:uppercase;letter-spacing:0.06em;color:#444;}
+    .footer{margin-top:32px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:10px;color:#aaa;display:flex;justify-content:space-between;}
+    @media print{body{padding:16px;}.no-print{display:none;}}
+  </style></head><body>
+  <button class="no-print" onclick="window.print()" style="margin-bottom:20px;padding:8px 16px;background:#92400e;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;">Print / Save PDF</button>
+  <h1>Black-Sky Capital</h1>
+  <div class="sub">KFC Hedge Fund &mdash; Fund Report &mdash; Generated ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</div>
+  <div class="grid">
+    <div class="card"><div class="card-label">Fund NAV</div><div class="card-val gold">$${fmt(d.nav)}</div></div>
+    <div class="card"><div class="card-label">Total P&amp;L</div><div class="card-val green">${s(d.totalPnl)}</div></div>
+    <div class="card"><div class="card-label">Total Return</div><div class="card-val green">${s(d.totalReturn*100)}%</div></div>
+    <div class="card"><div class="card-label">Win Rate</div><div class="card-val">${(d.winRate*100).toFixed(1)}%</div></div>
+    <div class="card"><div class="card-label">Realised P&amp;L</div><div class="card-val green">${s(d.realisedPnl)}</div></div>
+    <div class="card"><div class="card-label">Unrealised P&amp;L</div><div class="card-val green">${s(d.unrealisedPnl)}</div></div>
+    <div class="card"><div class="card-label">Profit Factor</div><div class="card-val">${d.profitFactor.toFixed(2)}x</div></div>
+    <div class="card"><div class="card-label">Sharpe Ratio</div><div class="card-val">${d.sharpe.toFixed(2)}</div></div>
+  </div>
+  <h2>Open Positions</h2>
+  <table><thead><tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Entry</th><th>Lev</th><th>Unrealised P&amp;L</th></tr></thead><tbody>${posRows||'<tr><td colspan=7 style="color:#aaa">No open positions</td></tr>'}</tbody></table>
+  <h2>Recent Closed Trades (last 10)</h2>
+  <table><thead><tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Result</th><th>P&amp;L</th></tr></thead><tbody>${closedRows}</tbody></table>
+  <div class="footer"><span>&copy; 2026 Black Sky Capital &mdash; KFC Hedge Fund</span><span>Restricted &mdash; Authorised investors only</span></div>
+  </body></html>`);
+  win.document.close();
+}
+
+s
