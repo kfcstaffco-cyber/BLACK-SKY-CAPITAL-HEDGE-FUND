@@ -1452,9 +1452,20 @@ function renderInvestors(investors, transactions) {
           let running = 0;
           return invTxns.deposits.map(t => {
             running += t.deposit;
-            const lockLabel = inv.status === 'LOCKED'
-              ? `<span style="color:var(--red);font-size:10px;font-family:var(--mono);">${inv.daysToUnlock}d to unlock</span>`
-              : `<span style="color:var(--green);font-size:10px;">Unlocked</span>`;
+            const lockLabel = (() => {
+              // Calculate days remaining for THIS specific deposit tranche
+              if (!inv.lockDays || inv.lockDays === 0) {
+                return `<span style="color:var(--green);font-size:10px;">Unlocked</span>`;
+              }
+              const parseD = s => { const [dd,mm,yy] = s.split('/'); return new Date(+yy,+mm-1,+dd); };
+              const depositDate = parseD(t.date);
+              const unlockDate  = new Date(depositDate.getTime() + inv.lockDays * 24*60*60*1000);
+              const daysLeft    = Math.ceil((unlockDate - Date.now()) / (24*60*60*1000));
+              if (daysLeft <= 0) {
+                return `<span style="color:var(--green);font-size:10px;">Unlocked</span>`;
+              }
+              return `<span style="color:var(--red);font-size:10px;font-family:var(--mono);">${daysLeft}d to unlock</span>`;
+            })();
             return `
             <div class="deposit-row">
               <div class="deposit-date">${t.date}</div>
