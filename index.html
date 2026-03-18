@@ -2610,7 +2610,7 @@ function renderProjections(d) {
     const proj = (m) => {
       const r = annRate * (m/12);
       const gain = cap * r * pct;
-      return (gain>=0?'+':'')+fmtM(gain);
+      return (gain>=0?'+':'-')+'$'+fmtM(Math.abs(gain));
     };
     return '<div class="proj-row">'
       + '<div class="proj-name">'+getDisplayName(inv.name)+'</div>'
