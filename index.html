@@ -975,16 +975,37 @@ const clr = n => n>=0?'var(--green)':'var(--red)';
 const badge = (t,c) => `<span class="badge badge-${c}">${t}</span>`;
 const rowLabel = (k,v,s='') => `<div class="row-label"><span class="stat-key">${k}</span><span style="font-family:var(--mono);font-size:11px;${s}">${v}</span></div>`;
 
-// Avatar color palette per investor
-const AVATAR_COLORS = {
-  'Kimmo':   {bg:'linear-gradient(135deg,#c8a96e,#8b6d3a)',fg:'#0a0c0f'},
-  'Andre':   {bg:'linear-gradient(135deg,#4a9eff,#1a5ca8)',fg:'#ffffff'},
-  'Veronica':{bg:'linear-gradient(135deg,#e8534a,#8b2a24)',fg:'#ffffff'},
-  'Elyes':   {bg:'linear-gradient(135deg,#3ecf8e,#1a7a52)',fg:'#0a0c0f'},
-};
+// Avatar color palette — auto-assigns to investors in order, supports unlimited investors
+const INVESTOR_PALETTE = [
+  { bg:'linear-gradient(135deg,#4a9eff,#1a5ca8)', fg:'#ffffff', bar:'var(--blue)'    },  // blue
+  { bg:'linear-gradient(135deg,#e8534a,#8b2a24)', fg:'#ffffff', bar:'var(--red)'     },  // red
+  { bg:'linear-gradient(135deg,#3ecf8e,#1a7a52)', fg:'#0a0c0f', bar:'var(--green)'   },  // green
+  { bg:'linear-gradient(135deg,#9b8dd4,#5a4a9b)', fg:'#ffffff', bar:'#9b8dd4'        },  // purple
+  { bg:'linear-gradient(135deg,#f97316,#c2410c)', fg:'#ffffff', bar:'#f97316'        },  // orange
+  { bg:'linear-gradient(135deg,#06b6d4,#0e7490)', fg:'#0a0c0f', bar:'#06b6d4'        },  // cyan
+  { bg:'linear-gradient(135deg,#ec4899,#9d174d)', fg:'#ffffff', bar:'#ec4899'        },  // pink
+  { bg:'linear-gradient(135deg,#84cc16,#3f6212)', fg:'#0a0c0f', bar:'#84cc16'        },  // lime
+  { bg:'linear-gradient(135deg,#f59e0b,#92400e)', fg:'#0a0c0f', bar:'#f59e0b'        },  // amber
+];
+
+// Cache so same investor always gets same colour within a session
+const _investorColorCache = {};
+function getInvestorColor(name) {
+  if (name === 'Kimmo') return { bg:'linear-gradient(135deg,#c8a96e,#8b6d3a)', fg:'#0a0c0f', bar:'var(--accent2)' };
+  if (!_investorColorCache[name]) {
+    // Skip index 0 (gold) for all other investors
+    const takenSlots = Object.keys(_investorColorCache).length;
+    const idx = (takenSlots % (INVESTOR_PALETTE.length - 1)) + 1;
+    _investorColorCache[name] = INVESTOR_PALETTE[idx];
+  }
+  return _investorColorCache[name];
+}
 function getAvatarStyle(name) {
-  const c = AVATAR_COLORS[name] || {bg:'linear-gradient(135deg,#2a3a52,#1a2a3c)',fg:'var(--accent)'};
+  const c = getInvestorColor(name);
   return `background:${c.bg};color:${c.fg};`;
+}
+function getOwnerColor(name) {
+  return getInvestorColor(name).bar;
 }
 
 let charts = {};
@@ -1468,8 +1489,6 @@ function renderInvestors(investors, transactions) {
   }).join('');
 
   // ── Ownership bars — sorted largest to smallest ──
-  const OWNER_COLORS = { 'Kimmo':'var(--accent2)', 'Andre':'var(--blue)', 'Veronica':'var(--red)', 'Elyes':'var(--green)' };
-  const getOwnerColor = name => OWNER_COLORS[name] || 'var(--accent)';
   const sortedByOwnership = [...investors].sort((a,b) => {
     const depA = txnsByName[a.name]?.totalDeposit || a.deposited;
     const depB = txnsByName[b.name]?.totalDeposit || b.deposited;
@@ -1490,8 +1509,9 @@ function renderInvestors(investors, transactions) {
     </div>`;
   }).join('');
 
-  // ── P&L shares — expandable per investor ──
-  $('pnl-shares').innerHTML = investors.map((inv, idx) => {
+  // ── P&L shares — sorted largest to smallest, expandable per investor ──
+  const sortedByPnl = [...investors].sort((a,b) => b.pnlShare - a.pnlShare);
+  $('pnl-shares').innerHTML = sortedByPnl.map((inv, idx) => {
     const invTxnsForPnl = txnsByName[inv.name] || { deposits:[] };
     const investorTotal = invTxnsForPnl.deposits.reduce((s,t) => s + t.deposit, 0);
     // Each deposit's P&L = (that deposit / investor's total deposits) * investor's total P&L share
