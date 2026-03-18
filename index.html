@@ -342,14 +342,30 @@
     /* ── HEATMAP ── */
     .heatmap-grid { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 8px; }
     .heatmap-cell {
-      width: 28px; height: 28px; border-radius: 4px; display: flex;
+      width: 36px; height: 36px; border-radius: 5px; display: flex;
       align-items: center; justify-content: center; font-size: 8px;
-      font-family: var(--mono); color: rgba(255,255,255,0.7);
-      cursor: default; transition: transform 0.1s;
+      font-family: var(--mono); color: rgba(255,255,255,0.8);
+      cursor: pointer; transition: transform 0.12s, box-shadow 0.12s;
       position: relative;
     }
-    .heatmap-cell:hover { transform: scale(1.15); z-index: 2; }
+    .heatmap-cell:hover { transform: scale(1.18); z-index: 10; box-shadow: 0 0 8px rgba(255,255,255,0.15); }
     .heatmap-legend { display: flex; gap: 12px; margin-top: 10px; font-size: 10px; color: var(--muted); align-items: center; }
+
+    /* Custom heatmap tooltip */
+    #heatmap-tooltip {
+      position: fixed; z-index: 9000; pointer-events: none;
+      background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: 8px; padding: 10px 14px; font-size: 11px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      opacity: 0; transition: opacity 0.1s;
+      min-width: 160px;
+    }
+    #heatmap-tooltip.visible { opacity: 1; }
+    .ht-date  { font-size: 10px; color: var(--muted); margin-bottom: 5px; letter-spacing: 0.04em; }
+    .ht-pnl   { font-size: 15px; font-family: var(--mono); font-weight: 500; margin-bottom: 4px; }
+    .ht-count { font-size: 10px; color: var(--muted); }
+    .ht-trades { margin-top: 6px; border-top: 1px solid var(--border); padding-top: 6px; }
+    .ht-trade-row { font-size: 10px; color: var(--muted); padding: 2px 0; display: flex; justify-content: space-between; gap: 12px; }
 
     /* ── MOBILE ── */
     @media (max-width: 600px) {
@@ -612,7 +628,33 @@
     </div>
   </div>
 
-  <footer class="site-footer">
+    <!-- ── PAYOUT CALCULATOR MODAL ── -->
+  <div class="modal-overlay" id="payout-modal" onclick="closePayoutModal(event)">
+    <div class="modal-box" style="position:relative;">
+      <button class="modal-close" onclick="closePayoutModal(null,true)">&#x2715;</button>
+      <div class="modal-title">Payout Calculator</div>
+      <div class="modal-sub">Simulate a fund distribution &mdash; see what each investor receives</div>
+      <label style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Distribution Amount ($)</label>
+      <input class="modal-input" id="payout-input" type="text" placeholder="e.g. 1,000,000,000" oninput="calcPayout()" />
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+        <button class="modal-btn" style="margin-bottom:0;font-size:10px;padding:7px 12px;" onclick="setPayoutPreset('nav')">Fund NAV</button>
+        <button class="modal-btn" style="margin-bottom:0;font-size:10px;padding:7px 12px;" onclick="setPayoutPreset('pnl')">Total P&amp;L</button>
+        <button class="modal-btn" style="margin-bottom:0;font-size:10px;padding:7px 12px;" onclick="setPayoutPreset('half')">50% of NAV</button>
+      </div>
+      <div id="payout-results"><div style="color:var(--muted);font-size:12px;">Enter an amount above to see payouts</div></div>
+    </div>
+  </div>
+
+  <!-- ── FLOAT BUTTON ── -->
+  <button class="float-btn" onclick="openPayoutModal()" title="Payout Calculator">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
+      <line x1="6" y1="15" x2="8" y2="15"/><line x1="11" y1="15" x2="16" y2="15"/>
+    </svg>
+  </button>
+  <div class="float-tooltip">Payout Calculator</div>
+
+<footer class="site-footer">
     <div class="footer-inner">
       <!-- LEFT: KFC affiliation -->
       <div style="display:flex;flex-direction:column;align-items:flex-start;gap:8px;justify-content:center;">
@@ -1613,7 +1655,8 @@ function renderNewAnalytics(positions) {
     const r = isWin ? [62,207,142] : [232,83,74];
     const bg = `rgba(${r[0]},${r[1]},${r[2]},${0.15 + intensity*0.75})`;
     const shortDate = date.length >= 8 ? date.slice(0,5) : date;
-    return `<div class="heatmap-cell" style="background:${bg};" title="${date}: ${count} trade(s), ${pnl>=0?'+':''}\$${fmtM(pnl)}">${shortDate}</div>`;
+    const tradeList = trades.map(t=>'<div class="ht-trade-row"><span>#'+t.id+' '+t.ticker+'</span><span style="color:'+(t.pnl>=0?'var(--green)':'var(--red)')+'">'+(t.pnl>=0?'+':'')+'$'+fmtM(t.pnl)+'</span></div>').join('');
+    return '<div class="heatmap-cell" style="background:'+bg+';" onmouseenter="showHeatTip(event,\''+date+'\','+count+','+pnl+',\''+encodeURIComponent(tradeList)+'\')" onmouseleave="hideHeatTip()">'+shortDate+'</div>';
   }).join('');
 
   $('heatmap-container').innerHTML = dates.length > 0
@@ -1713,6 +1756,41 @@ async function syncTickerWithSheet() {
 }
 syncTickerWithSheet();
 setInterval(syncTickerWithSheet,60000);
+
+// ── HEATMAP TOOLTIP ──────────────────────────────────────────────
+function showHeatTip(e, date, count, pnl, encodedTrades) {
+  const tip = document.getElementById('heatmap-tooltip');
+  if (!tip) return;
+  document.getElementById('ht-date').textContent = date;
+  document.getElementById('ht-pnl').textContent  = (pnl>=0?'+':'') + '$' + fmtM(pnl);
+  document.getElementById('ht-pnl').style.color  = pnl>=0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('ht-count').textContent = count + (count==1?' trade':' trades') + ' on this day';
+  try { document.getElementById('ht-trades').innerHTML = decodeURIComponent(encodedTrades); }
+  catch(e) { document.getElementById('ht-trades').innerHTML = ''; }
+  positionHeatTip(e);
+  tip.classList.add('visible');
+}
+function hideHeatTip() {
+  const tip = document.getElementById('heatmap-tooltip');
+  if (tip) tip.classList.remove('visible');
+}
+function positionHeatTip(e) {
+  const tip = document.getElementById('heatmap-tooltip');
+  if (!tip) return;
+  const margin = 14;
+  let x = e.clientX + margin;
+  let y = e.clientY + margin;
+  if (x + 190 > window.innerWidth)  x = e.clientX - 190 - margin;
+  if (y + 150 > window.innerHeight) y = e.clientY - 150 - margin;
+  tip.style.left = x + 'px';
+  tip.style.top  = y + 'px';
+}
+document.addEventListener('mousemove', function(e) {
+  const tip = document.getElementById('heatmap-tooltip');
+  if (tip && tip.classList.contains('visible')) positionHeatTip(e);
+});
 </script>
+
+<div id="heatmap-tooltip"><div class="ht-date" id="ht-date"></div><div class="ht-pnl" id="ht-pnl"></div><div class="ht-count" id="ht-count"></div><div class="ht-trades" id="ht-trades"></div></div>
 </body>
 </html>
