@@ -1252,56 +1252,148 @@ const FLUCT_RANGES = {
 let fluctBase = {};
 let fluctTimer = null;
 
+
+// ── MARKET HOURS CHECKER ─────────────────────────────────────────
+// Returns true if at least one open position is in an active market
+function isAnyMarketOpen() {
+  const d = window.lastData;
+  if (!d || !d.positions) return true; // default to on if no data
+
+  const open = d.positions.filter(p => p.status === 'Open');
+  if (!open.length) return false;
+
+  // Current time in ET (UTC-5 standard, UTC-4 daylight)
+  const now = new Date();
+  const etOffset = isEDT(now) ? -4 : -5;
+  const etNow = new Date(now.getTime() + (now.getTimezoneOffset() + etOffset * 60) * 60000);
+  const etDay  = etNow.getDay();    // 0=Sun, 1=Mon ... 6=Sat
+  const etHour = etNow.getHours();
+  const etMin  = etNow.getMinutes();
+  const etMins = etHour * 60 + etMin; // minutes since midnight ET
+
+  function isEDT(d) {
+    // EDT runs second Sunday of March to first Sunday of November
+    const y = d.getFullYear();
+    const start = nthSunday(y, 2, 2);  // 2nd Sunday of March
+    const end   = nthSunday(y, 10, 1); // 1st Sunday of November
+    return d >= start && d < end;
+  }
+
+  function nthSunday(year, month, n) {
+    // month: 1-12
+    const d = new Date(year, month-1, 1);
+    let count = 0;
+    while (true) {
+      if (d.getDay() === 0) { count++; if (count === n) return d; }
+      d.setDate(d.getDate() + 1);
+    }
+  }
+
+  // Check each open position's asset class
+  return open.some(p => {
+    const cls = (p.cls || '').toLowerCase();
+
+    // Crypto — always open
+    if (cls === 'crypto') return true;
+
+    // Forex & COMEX (Gold, Oil, Silver) — open Mon 00:00 to Fri 17:00 ET
+    if (cls === 'forex' || cls === 'futures' || cls === 'commodity') {
+      if (etDay === 0) return false; // Sunday always closed
+      if (etDay === 6) return false; // Saturday always closed
+      if (etDay === 5 && etMins >= 17*60) return false; // Friday after 5pm ET
+      return true;
+    }
+
+    // Stocks, ETFs, Indices — Mon-Fri 9:30am-4:00pm ET only
+    if (cls === 'stock' || cls === 'etf' || cls === 'index') {
+      if (etDay === 0 || etDay === 6) return false;
+      return etMins >= 9*60+30 && etMins < 16*60;
+    }
+
+    // Default: treat as always open (e.g. unknown asset class)
+    return true;
+  });
+}
+
+// Wrap startMicroFluctuations to respect market hours
+const _origStartMicroFluctuations = startMicroFluctuations;
 function startMicroFluctuations() {
   if (fluctTimer) clearTimeout(fluctTimer);
   function tick() {
-    // NAV, totalPnl, unrealisedPnl are mathematically linked — always move together
-    // Pick a single direction for this tick cycle
-    const direction = Math.random() > 0.5 ? 1 : -1;
-    const LINKED = ['nav', 'totalPnl', 'unrealisedPnl', 'totalReturn'];
-    LINKED.forEach(key => {
-      const card = document.getElementById('mc-'+key);
-      if (!card) return;
-      const cfg = FLUCT_RANGES[key], base = fluctBase[key];
-      if (base == null) return;
-      // All three move in the same direction, with their own scale magnitude
-      const newVal = base + (base * cfg.scale * direction * (0.5 + Math.random() * 0.5));
-      const valEl = card.querySelector('.metric-value');
-      if (!valEl) return;
-      valEl.classList.remove('tick-up','tick-down');
-      void valEl.offsetWidth;
-      valEl.classList.add(direction > 0 ? 'tick-up' : 'tick-down');
-      card.classList.remove('flash-green','flash-red');
-      void card.offsetWidth;
-      card.classList.add(direction > 0 ? 'flash-green' : 'flash-red');
-      valEl.textContent = cfg.fmt(newVal);
-      setTimeout(() => {
+    if (isAnyMarketOpen()) {
+      // Run the normal fluctuation logic inline
+      const direction = Math.random() > 0.5 ? 1 : -1;
+      const LINKED = ['nav', 'totalPnl', 'unrealisedPnl', 'totalReturn'];
+      LINKED.forEach(key => {
+        const card = document.getElementById('mc-'+key);
+        if (!card) return;
+        const cfg = FLUCT_RANGES[key], base = fluctBase[key];
+        if (base == null) return;
+        const newVal = base + (base * cfg.scale * direction * (0.5 + Math.random() * 0.5));
+        const valEl = card.querySelector('.metric-value');
+        if (!valEl) return;
         valEl.classList.remove('tick-up','tick-down');
+        void valEl.offsetWidth;
+        valEl.classList.add(direction > 0 ? 'tick-up' : 'tick-down');
         card.classList.remove('flash-green','flash-red');
-      }, 500);
-    });
-    // Open position P&L rows — staggered popcorn effect
-    if (window.lastData && window.lastData.positions) {
-      window.lastData.positions.filter(p=>p.status==='Open').forEach(p => {
-        setTimeout(()=>{
-          const el = document.getElementById(`pnl-${p.id}`);
-          if (!el) return;
-          const nudge = (p.pnl*0.006)*(Math.random()*2-1);
-          const simVal = (p.pnl||0)+nudge;
-          const formatted = sgn(simVal)+'$'+fmtM(simVal);
-          const oldNum = parseFloat(String(el.textContent).replace(/[^0-9.\-]/g,''))||0;
-          el.classList.remove('tick-up','tick-down');
-          void el.offsetWidth;
-          el.classList.add(simVal>=oldNum?'tick-up':'tick-down');
-          el.textContent = formatted;
-          setTimeout(()=>el.classList.remove('tick-up','tick-down'),500);
-        }, Math.random()*2000);
+        void card.offsetWidth;
+        card.classList.add(direction > 0 ? 'flash-green' : 'flash-red');
+        valEl.textContent = cfg.fmt(newVal);
+        setTimeout(() => {
+          valEl.classList.remove('tick-up','tick-down');
+          card.classList.remove('flash-green','flash-red');
+        }, 500);
       });
+      // Open position P&L rows
+      if (window.lastData && window.lastData.positions) {
+        window.lastData.positions.filter(p => p.status === 'Open').forEach(p => {
+          const cls = (p.cls||'').toLowerCase();
+          // Only animate this specific position if its market is open
+          const isThisMarketOpen = () => {
+            if (cls === 'crypto') return true;
+            // Get current ET time
+            const now = new Date();
+            function isEDT(d) {
+              const y = d.getFullYear();
+              const nthSun = (yr, mo, n) => { const dt = new Date(yr, mo-1, 1); let c=0; while(true){if(dt.getDay()===0){c++;if(c===n)return new Date(dt);}dt.setDate(dt.getDate()+1);} };
+              return d >= nthSun(y,3,2) && d < nthSun(y,11,1);
+            }
+            const etOffset = isEDT(now) ? -4 : -5;
+            const etNow = new Date(now.getTime() + (now.getTimezoneOffset() + etOffset*60)*60000);
+            const etDay  = etNow.getDay();
+            const etMins = etNow.getHours()*60 + etNow.getMinutes();
+            if (cls === 'forex' || cls === 'futures' || cls === 'commodity') {
+              if (etDay === 0 || etDay === 6) return false;
+              if (etDay === 5 && etMins >= 17*60) return false;
+              return true;
+            }
+            if (cls === 'stock' || cls === 'etf' || cls === 'index') {
+              if (etDay === 0 || etDay === 6) return false;
+              return etMins >= 9*60+30 && etMins < 16*60;
+            }
+            return true; // unknown class — always on
+          };
+          if (!isThisMarketOpen()) return;
+          setTimeout(() => {
+            const el = document.getElementById('pnl-'+p.id);
+            if (!el) return;
+            const nudge = (p.pnl*0.006)*(Math.random()*2-1);
+            const simVal = (p.pnl||0)+nudge;
+            el.classList.remove('tick-up','tick-down');
+            void el.offsetWidth;
+            el.classList.add(simVal>=0?'tick-up':'tick-down');
+            el.textContent = sgn(simVal)+'$'+fmtM(simVal);
+            setTimeout(()=>el.classList.remove('tick-up','tick-down'),500);
+          }, Math.random()*2000);
+        });
+      }
     }
-    fluctTimer = setTimeout(tick, 2000+Math.random()*1000);
+    // Always reschedule — check again next tick even if paused
+    fluctTimer = setTimeout(tick, 2000 + Math.random()*1000);
   }
-  fluctTimer = setTimeout(tick, 2500+Math.random()*1000);
+  fluctTimer = setTimeout(tick, 2500 + Math.random()*1000);
 }
+
 function seedFluctuations(d) { FLUCT_CARDS.forEach(k=>{if(d[k]!=null) fluctBase[k]=d[k];}); }
 function destroyChart(id) { if(charts[id]){charts[id].destroy();delete charts[id];} }
 
