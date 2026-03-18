@@ -1004,7 +1004,7 @@ function renderInvestors(investors, d) {
   $('investor-roster').innerHTML = groupedArray.map(group => {
     
     // We map through the 'entries' we just pushed
-     const entryRows = group.deposits.map(entry => {
+     const entryRows = (group.deposits || []).map(...)
       const lb = entry.status === 'UNLOCKED' 
         ? `<span style="color:var(--green)">●</span>` 
         : `<span style="color:var(--red)">●</span>`;
@@ -1013,7 +1013,7 @@ function renderInvestors(investors, d) {
         <div style="display:flex; justify-content:space-between; padding: 10px 0; border-top: 1px solid rgba(255,255,255,0.05);">
           <div>
             <div style="font-size:12px; color:var(--white)">Dep: ${entry.date}</div>
-            <div style="font-size:10px; color:var(--muted)">$${entry.lock || 0}d Lockup ${lb}</div>
+            <div style="font-size:10px; color:var(--muted)">${entry.lock || 0}d Lockup ${lb}</div>
           </div>
           <div style="text-align:right">
             <div style="font-family:var(--mono); font-size:13px; color:var(--accent)">$${fmtM(entry.amount)}</div>
@@ -1023,7 +1023,7 @@ function renderInvestors(investors, d) {
     }).join('');
 
     return `
-      <div class="player-card" style="margin-bottom:20px; background:rgba(255,255,255,0.03); border-radius:12px; padding:16px; border:1px solid rgba(255,255,255,0.08)">
+      <div class="player-card" style="margin-bottom:20px; background:rgba(255,255,255,0.03); border-radius:12px; padding:16px; border:1px solid rgba(255,255,255,0.08)">>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
           <div style="display:flex; align-items:center;">
             <div class="avatar" style="background:var(--gold); color:black;">${group.name[0]}</div>
