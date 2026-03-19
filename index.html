@@ -577,14 +577,14 @@
     .ticker-item:first-child { padding-left: 20px; }
 
     /* ── NAV TAB SLIDE INDICATOR ── */
-    .nav-tabs { position: relative; }
     .nav-tab {
       padding: 13px 18px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
       color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent;
       white-space: nowrap; transition: color 0.2s; user-select: none; position: relative;
+      overflow: hidden;
     }
     .nav-tab::after {
-      content: ''; position: absolute; bottom: -1px; left: 50%; right: 50%;
+      content: ''; position: absolute; bottom: 0; left: 50%; right: 50%;
       height: 2px; background: var(--accent);
       transition: left 0.25s ease, right 0.25s ease;
     }
@@ -2099,7 +2099,6 @@ function renderOverview(d) {
 // ── RENDER POSITIONS ─────────────────────────────────────────────
 function renderPositions(positions) {
   const open=positions.filter(p=>p.status==='Open'), closed=positions.filter(p=>p.status==='Closed');
-  renderChips(positions);
   $('pos-badges').innerHTML=badge(open.length+' OPEN','blue')+' '+badge(closed.length+' CLOSED','gray')+`<span style="font-size:11px;color:var(--muted);margin-left:8px;">${positions.length} total trades</span>`;
   const th=`<tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Entry Date</th><th>Duration</th><th>Entry</th><th>Cur/Exit</th><th>Qty</th><th>Lev</th><th>Unrealised P&L</th><th>SL</th><th>TP</th><th>Status</th></tr>`;
   $('open-thead').innerHTML=th;
@@ -3875,6 +3874,7 @@ function renderAll(d) {
   window.lastData = d;
   $('live-date').textContent = new Date().toLocaleString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}).replace(/\//g,'.');
   renderOverview(d);
+  renderChips(d.positions||[]);
   renderPositions(d.positions||[]);
   checkForNewTP(d.positions||[]);
   setTimeout(colorPositionRows, 50);
