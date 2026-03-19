@@ -3173,9 +3173,9 @@ function initParticles() {
     dots.forEach(d => {
       d.x = d.ox + Math.sin(t + d.phase) * 3;
       d.y = d.oy + Math.cos(t + d.phase * 0.7) * 2;
-      const alpha = 0.08 + Math.sin(t + d.phase) * 0.04;
+      const alpha = 0.2 + Math.sin(t + d.phase) * 0.08;
       ctx.beginPath();
-      ctx.arc(d.x, d.y, 1, 0, Math.PI * 2);
+      ctx.arc(d.x, d.y, 1.5, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(200,169,110,${alpha})`;
       ctx.fill();
     });
@@ -3189,7 +3189,7 @@ function initParticles() {
           ctx.beginPath();
           ctx.moveTo(dots[i].x, dots[i].y);
           ctx.lineTo(dots[j].x, dots[j].y);
-          ctx.strokeStyle = `rgba(200,169,110,${0.04 * (1 - dist/45)})`;
+          ctx.strokeStyle = `rgba(200,169,110,${0.12 * (1 - dist/45)})`;
           ctx.lineWidth = 0.5;
           ctx.stroke();
         }
