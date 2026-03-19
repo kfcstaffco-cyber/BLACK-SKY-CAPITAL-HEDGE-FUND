@@ -797,6 +797,50 @@
     .chart-dl-btn:hover { color: var(--accent); border-color: var(--accent); }
     .chart-wrap { position: relative; }
 
+
+    /* ── POSITION SIZING CALCULATOR ── */
+    .calc-modal { max-width: 480px; }
+    .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0; }
+    .calc-result-box {
+      background: var(--bg3); border: 1px solid var(--border2); border-radius: 10px;
+      padding: 14px 16px; margin-top: 10px;
+    }
+    .calc-result-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 4px; }
+    .calc-result-val { font-size: 22px; font-weight: 600; font-family: var(--mono); color: var(--accent2); }
+
+    /* ── ACTIVITY LOG ── */
+    .activity-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-icon {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 11px;
+    }
+    .activity-body { flex: 1; }
+    .activity-title { font-size: 12px; font-weight: 500; }
+    .activity-meta  { font-size: 10px; color: var(--muted); margin-top: 2px; }
+    .activity-amount { font-family: var(--mono); font-size: 12px; margin-left: auto; white-space: nowrap; }
+
+    /* ── HERO SPARKLINE ── */
+    #hero-sparkline { height: 40px; width: 140px; }
+
+    /* ── LIVE TIMER ── */
+    .pos-timer { font-family: var(--mono); font-size: 10px; color: var(--accent); }
+
+    /* ── TYPING ANIMATION ── */
+    @keyframes typing {
+      from { width: 0; }
+      to   { width: 100%; }
+    }
+    @keyframes blink { 50% { border-color: transparent; } }
+    .pw-sub-typed {
+      overflow: hidden; white-space: nowrap; border-right: 2px solid var(--accent);
+      width: 0; animation: typing 1.8s steps(35,end) 0.8s forwards, blink 0.8s step-end infinite;
+      display: inline-block;
+    }
+
     /* TICKER */
     .ticker-move { display: flex; white-space: nowrap; animation: ticker-loop 60s linear infinite; }
     @keyframes ticker-loop { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
@@ -1176,7 +1220,7 @@
       </div>
       <div class="pw-title">Black-Sky Capital</div>
       <div style="height:4px;"></div>
-      <div class="pw-sub">KFC Hedge Fund · Restricted Access</div>
+      <div class="pw-sub"><span class="pw-sub-typed">KFC Hedge Fund · Restricted Access</span></div>
     </div>
     <div style="height:8px;"></div>
     <input type="password" class="pw-input" id="pw-input" placeholder="Enter password" autocomplete="off" />
@@ -1236,6 +1280,7 @@
     <div class="nav-tab"        onclick="switchTab('investors',this)">Investors</div>
     <div class="nav-tab"        onclick="switchTab('analytics',this)">Analytics</div>
     <div class="nav-tab" onclick="switchTab('calendar',this)">Calendar</div>
+    <div class="nav-tab" onclick="switchTab('activity',this)">Activity</div>
     <div class="nav-tab" onclick="exportPDF()" style="color:var(--accent);">&#8681; Export PDF</div>
   </div>
 
@@ -1358,6 +1403,7 @@
 
   <!-- ANALYTICS -->
   <div class="page" id="page-analytics">
+    <div id="calc-btn-wrap" style="display:none;margin-bottom:14px;"><button class="modal-btn" style="margin:0;width:auto;padding:10px 20px;" onclick="openCalcModal()">&#9881; Position Sizing Calculator</button></div>
     <div class="two-col">
       <div class="card">
         <div class="card-header"><span class="card-title">Trade Statistics</span></div>
@@ -1649,6 +1695,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       Calendar
     </div>
+    <div class="mobile-nav-item" onclick="switchTab('activity',null,this)" data-tab="activity">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Activity
+    </div>
   </div>
   
   <!-- LIVE P&L TICKER -->
@@ -1660,6 +1710,59 @@
     <button onclick="document.getElementById('pnl-live-ticker').style.display='none'"
       style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 0 0 6px;line-height:1;"
       title="Dismiss">&#x2715;</button>
+  </div>
+
+  
+  <!-- ACTIVITY LOG -->
+  <div class="page" id="page-activity">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div>
+        <div style="font-size:14px;font-weight:600;">Fund Activity Log</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;" id="activity-count">—</div>
+      </div>
+      <select id="activity-filter" onchange="renderActivityLog()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:6px 12px;font-size:11px;color:var(--text);outline:none;cursor:pointer;">
+        <option value="all">All Events</option>
+        <option value="trade">Trades Only</option>
+        <option value="deposit">Deposits Only</option>
+      </select>
+    </div>
+    <div class="card">
+      <div id="activity-list"></div>
+    </div>
+  </div>
+  
+  <!-- POSITION SIZING CALCULATOR MODAL -->
+  <div class="modal-overlay" id="calc-modal" onclick="closeCalcModal(event)">
+    <div class="modal-box calc-modal" style="position:relative;">
+      <button class="modal-close" onclick="closeCalcModal(null,true)">&#x2715;</button>
+      <div class="modal-title">&#9881; Position Sizing Calculator</div>
+      <div class="modal-sub" style="margin-bottom:16px;">Based on current NAV and stake factor scale</div>
+      <label style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Stake Level (1–8)</label>
+      <input type="range" id="calc-level" min="1" max="8" value="3" oninput="updateCalc()" style="width:100%;accent-color:var(--accent);margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:16px;">
+        <span>Level 1 — 1×</span><span id="calc-level-label" style="color:var(--accent2);font-weight:600;">Level 3 — 100×</span><span>Level 8 — 10M×</span>
+      </div>
+      <label style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Leverage</label>
+      <input type="number" id="calc-lev" value="20" min="1" max="100" oninput="updateCalc()" class="modal-input" style="margin-bottom:4px;">
+      <div class="calc-grid">
+        <div class="calc-result-box">
+          <div class="calc-result-label">Recommended Size</div>
+          <div class="calc-result-val" id="calc-size">—</div>
+        </div>
+        <div class="calc-result-box">
+          <div class="calc-result-label">Notional Exposure</div>
+          <div class="calc-result-val" id="calc-notional" style="color:var(--blue);">—</div>
+        </div>
+        <div class="calc-result-box">
+          <div class="calc-result-label">% of Fund NAV</div>
+          <div class="calc-result-val" id="calc-pct" style="color:var(--muted);">—</div>
+        </div>
+        <div class="calc-result-box">
+          <div class="calc-result-label">Min Deposit Required</div>
+          <div class="calc-result-val" id="calc-min" style="color:var(--accent);">—</div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <footer class="site-footer">
@@ -2361,7 +2464,7 @@ function renderOverview(d) {
 function renderPositions(positions) {
   const open=positions.filter(p=>p.status==='Open'), closed=positions.filter(p=>p.status==='Closed');
   $('pos-badges').innerHTML=badge(open.length+' OPEN','blue')+' '+badge(closed.length+' CLOSED','gray')+`<span style="font-size:11px;color:var(--muted);margin-left:8px;">${positions.length} total trades</span>`;
-  const th=`<tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Entry Date</th><th>Duration</th><th>Entry</th><th>Cur/Exit</th><th>Qty</th><th>Lev</th><th>Unrealised P&L</th><th>SL</th><th>TP</th><th>Status</th></tr>`;
+  const th=`<tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Entry Date</th><th>Duration</th><th>Timer</th><th>Entry</th><th>Cur/Exit</th><th>Qty</th><th>Lev</th><th>Unrealised P&L</th><th>SL</th><th>TP</th><th>Status</th></tr>`;
   $('open-thead').innerHTML=th;
   $('open-tbody').innerHTML=open.length?open.map(p=>`
     <tr class="pos-row" style="${getPnlRowStyle(p.pnl, window.lastData?.positions||[])}" onclick="togglePosRow(${p.id})">
@@ -2376,7 +2479,7 @@ function renderPositions(positions) {
       <td style="color:var(--green)">${p.tp||'—'}</td>
       <td>${badge('ACTIVE','blue')}</td>
     </tr>
-    ${buildExpandRow(p,14)}`).join(''):'<tr><td colspan="14" style="color:var(--muted);text-align:center;padding:16px;">No open positions</td></tr>';
+    ${buildExpandRow(p,14)}`).join(''):'<tr><td colspan="15" style="color:var(--muted);text-align:center;padding:16px;">No open positions</td></tr>';
   $('closed-thead').innerHTML=`<tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Entry Date</th><th>Exit Date</th><th>Entry</th><th>Exit</th><th>Hold</th><th>P&L</th><th>Result</th></tr>`;
   $('closed-tbody').innerHTML=closed.map(p=>{
     const rb=p.result==='TAKE PROFIT HIT'?'green':p.result==='STOP LOSS HIT'?'red':'blue';
@@ -4454,6 +4557,221 @@ function getPnlRowStyle(pnl, positions) {
   return 'background:rgba(232,83,74,' + alpha.toFixed(3) + ');';
 }
 
+
+// ── KEYBOARD SHORTCUTS ───────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+  if (document.getElementById('pw-screen').style.display !== 'none') return;
+  const map = { o:'overview', p:'positions', i:'investors', a:'analytics', c:'calendar', l:'activity' };
+  const tab = map[e.key.toLowerCase()];
+  if (tab) {
+    const el = document.querySelector(`.nav-tab[onclick*="'${tab}'"]`);
+    if (el) { el.click(); }
+  }
+});
+
+// ── POSITION SIZING CALCULATOR ───────────────────────────────────
+const STAKE_FACTORS = [
+  {level:1, mult:1,        minDeposit:5},
+  {level:2, mult:10,       minDeposit:50},
+  {level:3, mult:100,      minDeposit:500},
+  {level:4, mult:1000,     minDeposit:5000},
+  {level:5, mult:10000,    minDeposit:50000},
+  {level:6, mult:100000,   minDeposit:500000},
+  {level:7, mult:1000000,  minDeposit:5000000},
+  {level:8, mult:10000000, minDeposit:50000000},
+];
+const MULT_LABELS = ['1×','10×','100×','1,000×','10,000×','100,000×','1,000,000×','10,000,000×'];
+
+function openCalcModal() {
+  document.getElementById('calc-modal').classList.add('open');
+  updateCalc();
+}
+function closeCalcModal(e, force) {
+  if (force || (e && e.target === document.getElementById('calc-modal')))
+    document.getElementById('calc-modal').classList.remove('open');
+}
+function updateCalc() {
+  const level = parseInt(document.getElementById('calc-level').value) || 3;
+  const lev   = parseFloat(document.getElementById('calc-lev').value) || 20;
+  const nav   = window.lastData?.nav || 0;
+  const sf    = STAKE_FACTORS[level-1];
+
+  document.getElementById('calc-level-label').textContent = `Level ${level} — ${MULT_LABELS[level-1]}`;
+
+  if (!nav || !sf) return;
+  const baseUnit  = nav * 0.00001; // 0.001% of NAV as base unit
+  const size      = baseUnit * sf.mult;
+  const notional  = size * lev;
+  const pct       = (size / nav * 100).toFixed(4);
+
+  document.getElementById('calc-size').textContent    = '$' + fmtM(size);
+  document.getElementById('calc-notional').textContent = '$' + fmtM(notional);
+  document.getElementById('calc-pct').textContent     = pct + '%';
+  document.getElementById('calc-min').textContent     = '$' + fmtM(sf.minDeposit);
+}
+
+// ── ROLLING WIN RATE CHART ────────────────────────────────────────
+function renderRollingWinRate(positions) {
+  const closed = (positions||[]).filter(p => p.status === 'Closed');
+  destroyChart('rollingWRChart');
+  const canvas = document.getElementById('rollingWRChart');
+  if (!canvas || closed.length < 2) return;
+
+  const data = closed.map((p, i) => {
+    const window10 = closed.slice(0, i+1);
+    const wins = window10.filter(t => t.pnl > 0).length;
+    return +((wins / window10.length) * 100).toFixed(1);
+  });
+
+  charts.rollingWRChart = new Chart(canvas, {
+    type: 'line',
+    data: { labels: closed.map((_,i) => '#'+(i+1)), datasets: [{
+      data,
+      borderColor: '#c8a96e',
+      backgroundColor: 'rgba(200,169,110,0.06)',
+      borderWidth: 2, pointRadius: 2, fill: true, tension: 0.4,
+    }]},
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend:{display:false}, tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.y}%`}}},
+      scales: {
+        x: { grid:{display:false}, ticks:{color:'#6b7380',maxTicksLimit:8} },
+        y: { min:0, max:100, grid:{color:'rgba(255,255,255,0.05)'},
+             ticks:{color:'#6b7380', callback:v=>v+'%'} }
+      }
+    }
+  });
+}
+
+// ── HERO SPARKLINE ────────────────────────────────────────────────
+function renderHeroSparkline(positions, totalDeposited) {
+  const canvas = document.getElementById('hero-sparkline');
+  if (!canvas) return;
+  destroyChart('heroSparkline');
+  const closed = (positions||[]).filter(p => p.status==='Closed').slice(-15);
+  if (closed.length < 2) { canvas.style.display='none'; return; }
+  canvas.style.display = 'block';
+  let cum = 0;
+  const data = closed.map(p => { cum += p.pnl; return +((totalDeposited+cum)/1e9).toFixed(2); });
+  const isUp = data[data.length-1] >= data[0];
+  charts.heroSparkline = new Chart(canvas, {
+    type: 'line',
+    data: { labels: data.map((_,i)=>i), datasets: [{
+      data,
+      borderColor: isUp ? '#3ecf8e' : '#e8534a',
+      backgroundColor: isUp ? 'rgba(62,207,142,0.08)' : 'rgba(232,83,74,0.08)',
+      borderWidth: 1.5, pointRadius: 0, fill: true, tension: 0.4,
+    }]},
+    options: {
+      responsive: false, maintainAspectRatio: false,
+      plugins: { legend:{display:false}, tooltip:{enabled:false} },
+      scales: { x:{display:false}, y:{display:false} },
+      animation: { duration: 600 },
+    }
+  });
+}
+
+// ── LIVE POSITION TIMERS (hh:mm:ss) ──────────────────────────────
+function fmtTimer(dateStr) {
+  if (!dateStr || dateStr === '—') return '—';
+  const parts = dateStr.split('/');
+  if (parts.length !== 3) return '—';
+  const d = new Date(+parts[2], +parts[1]-1, +parts[0]);
+  if (isNaN(d)) return '—';
+  const diff = Math.max(0, Date.now() - d.getTime());
+  const days  = Math.floor(diff / 86400000);
+  const hrs   = Math.floor((diff % 86400000) / 3600000);
+  const mins  = Math.floor((diff % 3600000) / 60000);
+  const secs  = Math.floor((diff % 60000) / 1000);
+  if (days > 0) return `${days}d ${String(hrs).padStart(2,'0')}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+  return `${String(hrs).padStart(2,'0')}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+}
+
+let timerInterval = null;
+function startPositionTimers() {
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    const d = window.lastData;
+    if (!d || !d.positions) return;
+    d.positions.filter(p => p.status==='Open').forEach(p => {
+      const el = document.getElementById('timer-'+p.id);
+      if (el) el.textContent = fmtTimer(p.date);
+    });
+  }, 1000);
+}
+
+// ── FUND ACTIVITY LOG ─────────────────────────────────────────────
+function buildActivityLog(d) {
+  const events = [];
+  // Closed trades
+  (d.positions||[]).filter(p => p.status==='Closed').forEach(p => {
+    const date = p.exitDate || p.date || '';
+    const isTP = p.result === 'TAKE PROFIT HIT';
+    const isSL = p.result === 'STOP LOSS HIT';
+    events.push({
+      date, type: 'trade',
+      icon: isTP ? '✓' : isSL ? '✗' : '●',
+      iconBg: isTP ? 'rgba(62,207,142,0.15)' : isSL ? 'rgba(232,83,74,0.15)' : 'rgba(74,158,255,0.15)',
+      iconColor: isTP ? 'var(--green)' : isSL ? 'var(--red)' : 'var(--blue)',
+      title: (isTP ? 'TP Hit' : isSL ? 'SL Hit' : 'Closed') + ' — ' + p.ticker,
+      meta: p.cls + ' · ' + p.side + ' · Hold: ' + (p.hold||0) + 'd',
+      amount: (p.pnl>=0?'+':'') + '$' + fmtM(p.pnl),
+      amountColor: p.pnl >= 0 ? 'var(--green)' : 'var(--red)',
+    });
+  });
+  // Open positions
+  (d.positions||[]).filter(p => p.status==='Open').forEach(p => {
+    events.push({
+      date: p.date||'', type: 'trade',
+      icon: '▶', iconBg: 'rgba(200,169,110,0.15)', iconColor: 'var(--accent)',
+      title: 'Position Opened — ' + p.ticker,
+      meta: p.cls + ' · ' + p.side + ' · Entry: ' + p.entry,
+      amount: 'ACTIVE', amountColor: 'var(--blue)',
+    });
+  });
+  // Deposits/Withdrawals from transactions
+  (d.transactions||[]).forEach(t => {
+    const isDep = t.type === 'Deposit';
+    events.push({
+      date: t.date||'', type: 'deposit',
+      icon: isDep ? '↓' : '↑',
+      iconBg: isDep ? 'rgba(62,207,142,0.15)' : 'rgba(232,83,74,0.15)',
+      iconColor: isDep ? 'var(--green)' : 'var(--red)',
+      title: (isDep ? 'Deposit' : 'Withdrawal') + ' — ' + getDisplayName(t.name),
+      meta: t.date + (t.note ? ' · ' + t.note : ''),
+      amount: (isDep?'+':'-') + '$' + fmtM(isDep?t.deposit:t.withdrawal),
+      amountColor: isDep ? 'var(--green)' : 'var(--red)',
+    });
+  });
+  // Sort newest first
+  const parseD = s => { if(!s||s==='—') return 0; const [dd,mm,yy]=s.split('/'); return new Date(+yy,+mm-1,+dd).getTime(); };
+  return events.sort((a,b) => parseD(b.date) - parseD(a.date));
+}
+
+function renderActivityLog() {
+  const d = window.lastData;
+  if (!d) return;
+  const filter = document.getElementById('activity-filter')?.value || 'all';
+  const events = buildActivityLog(d).filter(e => filter==='all' || e.type===filter);
+  const countEl = document.getElementById('activity-count');
+  if (countEl) countEl.textContent = events.length + ' events';
+  const listEl = document.getElementById('activity-list');
+  if (!listEl) return;
+  listEl.innerHTML = events.length === 0
+    ? '<div style="color:var(--muted);font-size:12px;padding:16px 0;">No activity found</div>'
+    : events.map(e => `
+      <div class="activity-item">
+        <div class="activity-icon" style="background:${e.iconBg};color:${e.iconColor};">${e.icon}</div>
+        <div class="activity-body">
+          <div class="activity-title">${e.title}</div>
+          <div class="activity-meta">${e.meta}</div>
+        </div>
+        <div class="activity-amount" style="color:${e.amountColor};">${e.amount}</div>
+      </div>`).join('');
+}
+
+
 // ── RENDER ALL ───────────────────────────────────────────────────
 function renderAll(d) {
   window.lastData = d;
@@ -4479,9 +4797,15 @@ function renderAll(d) {
   // Show statement button for master
   const sw = document.getElementById('statement-btn-wrap');
   if (sw) sw.style.display = isMasterAccess ? 'block' : 'none';
+  const cw = document.getElementById('calc-btn-wrap');
+  if (cw) cw.style.display = isMasterAccess ? 'block' : 'none';
   updateStmtReqButton();
   renderCalendar(d.positions||[]);
   updateLiveTicker();
+  renderActivityLog();
+  renderRollingWinRate(d.positions||[]);
+  renderHeroSparkline(d.positions||[], d.totalDeposited||0);
+  startPositionTimers();
   renderRecentTrades(d.positions||[]);
 }
 
