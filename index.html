@@ -848,6 +848,49 @@
     .sort-th:hover { color: var(--accent2) !important; }
     th.sort-th { color: var(--muted); }
 
+
+    /* ── INVESTOR MESSAGE BANNER ── */
+    .investor-msg-banner {
+      display: none;
+      background: linear-gradient(135deg, rgba(200,169,110,0.12), rgba(200,169,110,0.06));
+      border: 1px solid rgba(200,169,110,0.35);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin: 12px 28px 0;
+      position: relative;
+      animation: slideDown 0.3s ease;
+    }
+    @keyframes slideDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+    .investor-msg-banner.visible { display: flex; align-items: flex-start; gap: 12px; }
+    .investor-msg-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .investor-msg-body { flex: 1; }
+    .investor-msg-from { font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+    .investor-msg-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+    .investor-msg-time { font-size: 10px; color: var(--muted); margin-top: 4px; }
+    .investor-msg-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 0; flex-shrink: 0; transition: color 0.15s; }
+    .investor-msg-close:hover { color: var(--text); }
+
+    /* ── FUND HEALTH SCORE ── */
+    .health-score-ring {
+      width: 110px; height: 110px; position: relative; flex-shrink: 0;
+    }
+    .health-score-ring svg { width: 110px; height: 110px; transform: rotate(-90deg); }
+    .health-score-num {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; font-family: var(--mono);
+    }
+    .health-score-val { font-size: 28px; font-weight: 600; line-height: 1; }
+    .health-score-lbl { font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
+    .health-breakdown { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex: 1; }
+    .health-item { background: var(--bg3); border-radius: 8px; padding: 10px 12px; }
+    .health-item-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 4px; }
+    .health-item-val { font-size: 15px; font-weight: 500; font-family: var(--mono); }
+    .health-item-bar { height: 3px; background: rgba(255,255,255,0.07); border-radius: 2px; margin-top: 6px; }
+    .health-item-fill { height: 3px; border-radius: 2px; }
+
+    /* ── LIVE P&L CHART ── */
+    .live-pnl-chart-wrap { position: relative; height: 160px; }
+
     /* TICKER */
     .ticker-move { display: flex; white-space: nowrap; animation: ticker-loop 60s linear infinite; }
     @keyframes ticker-loop { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
@@ -1275,11 +1318,21 @@
         &#128276;
         <div class="notif-badge" id="notif-badge">0</div>
       </button>
+      <button id="broadcast-btn" onclick="openMsgModal()" style="display:none;font-size:10px;color:var(--accent);letter-spacing:0.06em;background:none;border:1px solid rgba(200,169,110,0.3);border-radius:6px;padding:5px 10px;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='rgba(200,169,110,0.3)'">📢</button>
       <button class="logout-btn" onclick="logout()">Lock</button>
     </div>
   </div>
 
   <div id="error-banner"></div>
+  <div class="investor-msg-banner" id="investor-msg-banner">
+    <div class="investor-msg-icon">📢</div>
+    <div class="investor-msg-body">
+      <div class="investor-msg-from">Message from Black-Sky Capital</div>
+      <div class="investor-msg-text" id="investor-msg-text"></div>
+      <div class="investor-msg-time" id="investor-msg-time"></div>
+    </div>
+    <button class="investor-msg-close" onclick="dismissInvestorMsg()">✕</button>
+  </div>
 
   <div class="nav-tabs">
     <div class="nav-tab active" onclick="switchTab('overview',this)">Overview</div>
@@ -1302,6 +1355,16 @@
       <div class="hero-stats" id="hero-stats"></div>
     </div>
     <div class="metric-grid" id="overview-metrics"></div>
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-header"><span class="card-title">Fund Health Score</span><span id="health-grade" style="font-size:11px;font-weight:600;letter-spacing:0.05em;"></span></div>
+      <div style="display:flex;align-items:center;gap:20px;" id="health-score-container">
+        <div class="health-score-ring">
+          <svg viewBox="0 0 110 110"><circle cx="55" cy="55" r="46" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10"/><circle id="health-ring-fill" cx="55" cy="55" r="46" fill="none" stroke="#3ecf8e" stroke-width="10" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="289"/></svg>
+          <div class="health-score-num"><div class="health-score-val" id="health-score-val">—</div><div class="health-score-lbl">/ 100</div></div>
+        </div>
+        <div class="health-breakdown" id="health-breakdown"></div>
+      </div>
+    </div>
     <div class="two-col">
       <div class="card">
         <div class="card-header"><span class="card-title">P&L Breakdown</span></div>
@@ -1333,6 +1396,13 @@
         <div class="card-header"><span class="card-title">Risk Metrics</span></div>
         <div id="risk-metrics"></div>
       </div>
+    </div>
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-header">
+        <span class="card-title">Live Unrealised P&L</span>
+        <span style="font-size:10px;color:var(--muted);">Session track · updates every 3s</span>
+      </div>
+      <div class="live-pnl-chart-wrap"><canvas id="livePnlChart"></canvas></div>
     </div>
   </div>
 
@@ -1783,6 +1853,25 @@
     </div>
   </div>
 
+  
+  <!-- MASTER MESSAGE MODAL -->
+  <div class="modal-overlay" id="msg-modal" onclick="closeMsgModal(event)">
+    <div class="modal-box" style="position:relative;max-width:480px;">
+      <button class="modal-close" onclick="closeMsgModal(null,true)">&#x2715;</button>
+      <div class="modal-title">📢 Broadcast Message</div>
+      <div class="modal-sub" style="margin-bottom:16px;">Shown to all investors on next login. Persists for 24 hours.</div>
+      <label style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Message</label>
+      <textarea id="msg-input" rows="4" placeholder="e.g. New position opened on Oil Futures. Fund is performing well — stay tuned for updates." style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;font-size:13px;font-family:var(--font);color:var(--text);outline:none;resize:vertical;line-height:1.5;"></textarea>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button class="modal-btn" style="margin:0;flex:1;" onclick="broadcastMessage()">Send to All Investors</button>
+        <button onclick="clearBroadcastMessage();closeMsgModal(null,true)" style="padding:10px 16px;background:rgba(232,83,74,0.1);border:1px solid rgba(232,83,74,0.3);border-radius:8px;color:var(--red);font-size:12px;cursor:pointer;">Clear</button>
+      </div>
+      <div id="msg-preview" style="display:none;margin-top:14px;padding:10px 14px;background:rgba(200,169,110,0.08);border:1px solid rgba(200,169,110,0.2);border-radius:8px;font-size:12px;color:var(--muted);">
+        Current message: <span id="msg-preview-text" style="color:var(--text);"></span>
+      </div>
+    </div>
+  </div>
+
   <footer class="site-footer">
     <div class="footer-inner">
       <!-- LEFT: KFC affiliation -->
@@ -1894,7 +1983,8 @@ function logout() {
   document.getElementById('pw-error').textContent = '';
 }
 function showPostAuth() {
-  renderNotifications(); // restore persisted notifications immediately
+  renderNotifications();
+  setTimeout(showInvestorMessage, 800); // show after app loads
   launchDashboard('1ELp_ABRtz_r2PSSQ5sS_AJPdVwFC8RBWY9RLOOR-WEo','AIzaSyCTd5pfr8gZLttk17YDlnWCHpem93IuzsY');
 }
 
@@ -4975,6 +5065,214 @@ function renderActivityLog() {
 }
 
 
+
+// ── INVESTOR BROADCAST MESSAGE ────────────────────────────────────
+const MSG_KEY = 'bsc_broadcast_msg';
+const MSG_TTL = 24 * 60 * 60 * 1000;
+const MSG_DISMISSED_KEY = 'bsc_msg_dismissed';
+
+function openMsgModal() {
+  const existing = getBroadcastMessage();
+  const preview = document.getElementById('msg-preview');
+  const previewText = document.getElementById('msg-preview-text');
+  if (existing && preview && previewText) {
+    previewText.textContent = existing.text;
+    preview.style.display = 'block';
+  } else if (preview) {
+    preview.style.display = 'none';
+  }
+  document.getElementById('msg-modal').classList.add('open');
+  setTimeout(() => document.getElementById('msg-input')?.focus(), 200);
+}
+
+function closeMsgModal(e, force) {
+  if (force || (e && e.target === document.getElementById('msg-modal')))
+    document.getElementById('msg-modal').classList.remove('open');
+}
+
+function broadcastMessage() {
+  const text = (document.getElementById('msg-input')?.value || '').trim();
+  if (!text) return;
+  const msg = { text, ts: Date.now(), from: 'Black-Sky Capital' };
+  localStorage.setItem(MSG_KEY, JSON.stringify(msg));
+  localStorage.removeItem(MSG_DISMISSED_KEY); // reset dismissal so investors see it
+  closeMsgModal(null, true);
+  showInvestorMessage(); // preview for master too
+}
+
+function clearBroadcastMessage() {
+  localStorage.removeItem(MSG_KEY);
+  localStorage.removeItem(MSG_DISMISSED_KEY);
+  hideMsgBanner();
+}
+
+function getBroadcastMessage() {
+  try {
+    const raw = localStorage.getItem(MSG_KEY);
+    if (!raw) return null;
+    const msg = JSON.parse(raw);
+    if (Date.now() - msg.ts > MSG_TTL) { localStorage.removeItem(MSG_KEY); return null; }
+    return msg;
+  } catch(e) { return null; }
+}
+
+function showInvestorMessage() {
+  const msg = getBroadcastMessage();
+  const banner = document.getElementById('investor-msg-banner');
+  if (!msg || !banner) return;
+  // Don't show if dismissed (standard users only)
+  if (!isMasterAccess && localStorage.getItem(MSG_DISMISSED_KEY)) return;
+  document.getElementById('investor-msg-text').textContent = msg.text;
+  const ago = Math.round((Date.now() - msg.ts) / 60000);
+  const timeStr = ago < 1 ? 'Just now' : ago < 60 ? ago + 'm ago' : Math.round(ago/60) + 'h ago';
+  document.getElementById('investor-msg-time').textContent = timeStr;
+  banner.classList.add('visible');
+}
+
+function hideMsgBanner() {
+  const banner = document.getElementById('investor-msg-banner');
+  if (banner) banner.classList.remove('visible');
+}
+
+function dismissInvestorMsg() {
+  localStorage.setItem(MSG_DISMISSED_KEY, '1');
+  hideMsgBanner();
+}
+
+// ── FUND HEALTH SCORE ─────────────────────────────────────────────
+function calcHealthScore(d) {
+  // 4 components, each 0-25 points:
+  // 1. Win Rate (0-25): 100% = 25pts, 50% = 12.5pts
+  const winScore = Math.min((d.winRate || 0) * 25, 25);
+
+  // 2. Profit Factor (0-25): >5 = 25pts, 1 = 0pts, capped at 10
+  const pf = Math.min(d.profitFactor || 0, 10);
+  const pfScore = Math.min((pf / 10) * 25, 25);
+
+  // 3. Drawdown (0-25): 0% drawdown = 25pts, 50%+ = 0pts
+  const nav = Math.max(d.nav || 1, 1);
+  const ddPct = Math.abs(d.drawdown || 0) / nav;
+  const ddScore = Math.max(25 - (ddPct * 100) * 0.5, 0);
+
+  // 4. Sharpe (0-25): >3 = 25pts, 0 = 0pts
+  const sharpe = Math.max(d.sharpe || 0, 0);
+  const sharpeScore = Math.min((sharpe / 3) * 25, 25);
+
+  const total = Math.round(winScore + pfScore + ddScore + sharpeScore);
+  return { total, winScore, pfScore, ddScore, sharpeScore };
+}
+
+function getHealthGrade(score) {
+  if (score >= 90) return { grade: 'EXCEPTIONAL', color: '#3ecf8e' };
+  if (score >= 75) return { grade: 'STRONG',      color: '#c8a96e' };
+  if (score >= 60) return { grade: 'SOLID',       color: '#4a9eff' };
+  if (score >= 45) return { grade: 'MODERATE',    color: '#e8c47a' };
+  return                   { grade: 'WEAK',        color: '#e8534a' };
+}
+
+function renderHealthScore(d) {
+  const { total, winScore, pfScore, ddScore, sharpeScore } = calcHealthScore(d);
+  const { grade, color } = getHealthGrade(total);
+  const CIRCUMFERENCE = 2 * Math.PI * 46; // r=46
+
+  const valEl = document.getElementById('health-score-val');
+  const ringEl = document.getElementById('health-ring-fill');
+  const gradeEl = document.getElementById('health-grade');
+  const breakdown = document.getElementById('health-breakdown');
+  if (!valEl || !ringEl) return;
+
+  // Animate ring
+  const offset = CIRCUMFERENCE - (total / 100) * CIRCUMFERENCE;
+  valEl.textContent = total;
+  valEl.style.color = color;
+  ringEl.style.stroke = color;
+  ringEl.style.transition = 'stroke-dashoffset 1s ease, stroke 0.5s';
+  ringEl.style.strokeDasharray = CIRCUMFERENCE;
+  ringEl.style.strokeDashoffset = offset;
+
+  if (gradeEl) {
+    gradeEl.textContent = grade;
+    gradeEl.style.color = color;
+  }
+
+  const components = [
+    { label: 'Win Rate',      score: winScore,    max: 25, val: (d.winRate*100).toFixed(1)+'%',       color: '#3ecf8e' },
+    { label: 'Profit Factor', score: pfScore,     max: 25, val: (d.profitFactor||0).toFixed(2)+'×',   color: '#c8a96e' },
+    { label: 'Drawdown',      score: ddScore,     max: 25, val: '$'+fmtM(Math.abs(d.drawdown||0)),    color: '#4a9eff' },
+    { label: 'Sharpe Ratio',  score: sharpeScore, max: 25, val: (d.sharpe||0).toFixed(2),             color: '#9b8dd4' },
+  ];
+
+  if (breakdown) {
+    breakdown.innerHTML = components.map(c => `
+      <div class="health-item">
+        <div class="health-item-label">${c.label}</div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;">
+          <div class="health-item-val" style="color:${c.color}">${c.val}</div>
+          <div style="font-size:10px;color:var(--muted);font-family:var(--mono);">${Math.round(c.score)}/${c.max}</div>
+        </div>
+        <div class="health-item-bar">
+          <div class="health-item-fill" style="width:${(c.score/c.max*100).toFixed(1)}%;background:${c.color};transition:width 0.8s ease;"></div>
+        </div>
+      </div>`).join('');
+  }
+}
+
+// ── LIVE UNREALISED P&L CHART ─────────────────────────────────────
+const livePnlHistory = [];
+const LIVE_PNL_MAX = 60; // keep last 60 data points (3 mins at 3s interval)
+
+function updateLivePnlChart(unrealisedPnl) {
+  const now = new Date();
+  const label = now.getHours().toString().padStart(2,'0') + ':' +
+                now.getMinutes().toString().padStart(2,'0') + ':' +
+                now.getSeconds().toString().padStart(2,'0');
+
+  livePnlHistory.push({ label, val: unrealisedPnl });
+  if (livePnlHistory.length > LIVE_PNL_MAX) livePnlHistory.shift();
+
+  const canvas = document.getElementById('livePnlChart');
+  if (!canvas) return;
+
+  const isPositive = unrealisedPnl >= 0;
+  const lineColor = isPositive ? '#3ecf8e' : '#e8534a';
+  const fillColor = isPositive ? 'rgba(62,207,142,0.08)' : 'rgba(232,83,74,0.08)';
+
+  if (!charts.livePnlChart) {
+    charts.livePnlChart = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: livePnlHistory.map(p => p.label),
+        datasets: [{
+          data: livePnlHistory.map(p => +(p.val/1e9).toFixed(3)),
+          borderColor: lineColor,
+          backgroundColor: fillColor,
+          borderWidth: 2, pointRadius: 0, fill: true, tension: 0.4,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        animation: { duration: 300 },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ' $' + fmtM(livePnlHistory[ctx.dataIndex]?.val || 0) } }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: '#6b7380', maxTicksLimit: 6, font: { size: 9 } } },
+          y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#6b7380', callback: v => '$' + v + 'B' } }
+        }
+      }
+    });
+  } else {
+    // Update existing chart
+    charts.livePnlChart.data.labels = livePnlHistory.map(p => p.label);
+    charts.livePnlChart.data.datasets[0].data = livePnlHistory.map(p => +(p.val/1e9).toFixed(3));
+    charts.livePnlChart.data.datasets[0].borderColor = lineColor;
+    charts.livePnlChart.data.datasets[0].backgroundColor = fillColor;
+    charts.livePnlChart.update('none');
+  }
+}
+
+
 // ── RENDER ALL ───────────────────────────────────────────────────
 function renderAll(d) {
   window.lastData = d;
@@ -5002,6 +5300,8 @@ function renderAll(d) {
   if (sw) sw.style.display = isMasterAccess ? 'block' : 'none';
   const cw = document.getElementById('calc-btn-wrap');
   if (cw) cw.style.display = isMasterAccess ? 'block' : 'none';
+  const bb = document.getElementById('broadcast-btn');
+  if (bb) bb.style.display = isMasterAccess ? 'flex' : 'none';
   updateStmtReqButton();
   renderCalendar(d.positions||[]);
   updateLiveTicker();
@@ -5009,6 +5309,8 @@ function renderAll(d) {
   renderRollingWinRate(d.positions||[]);
   renderHeroSparkline(d.positions||[], d.totalDeposited||0);
   startPositionTimers();
+  renderHealthScore(d);
+  updateLivePnlChart(d.unrealisedPnl||0);
   renderRecentTrades(d.positions||[]);
 }
 
