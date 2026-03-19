@@ -785,6 +785,64 @@
       padding: 8px 18px; font-size: 12px; color: var(--text); cursor: pointer; transition: border-color 0.15s; }
     .error-retry:hover { border-color: var(--accent); color: var(--accent); }
 
+
+    /* ── EXPANDABLE POSITION ROWS ── */
+    .pos-row { cursor: pointer; }
+    .pos-row:hover { background: rgba(255,255,255,0.03) !important; }
+    .pos-expand {
+      display: none; background: rgba(255,255,255,0.02);
+      border-bottom: 1px solid var(--border);
+    }
+    .pos-expand.open { display: table-row; }
+    .pos-expand-inner {
+      padding: 14px 16px; display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px,1fr));
+      gap: 12px;
+    }
+    .pos-detail-item { display: flex; flex-direction: column; gap: 3px; }
+    .pos-detail-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
+    .pos-detail-val   { font-size: 12px; font-family: var(--mono); color: var(--text); }
+
+    /* ── ASSET CLASS FILTER CHIPS ── */
+    .chip-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .chip {
+      padding: 4px 12px; border-radius: 20px; font-size: 10px;
+      letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer;
+      border: 1px solid var(--border2); color: var(--muted);
+      background: var(--bg3); transition: all 0.15s; user-select: none;
+      font-family: var(--font);
+    }
+    .chip:hover { border-color: var(--accent); color: var(--accent); }
+    .chip.active { background: rgba(200,169,110,0.15); border-color: var(--accent); color: var(--accent2); }
+
+    /* ── LIVE P&L TICKER ── */
+    #pnl-live-ticker {
+      position: fixed; bottom: 36px; left: 50%; transform: translateX(-50%);
+      background: rgba(10,12,15,0.92); border: 1px solid var(--border2);
+      border-radius: 20px; padding: 6px 18px;
+      font-family: var(--mono); font-size: 12px;
+      backdrop-filter: blur(8px); z-index: 800;
+      display: flex; align-items: center; gap: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      transition: opacity 0.3s; cursor: pointer;
+      white-space: nowrap;
+    }
+    #pnl-live-ticker:hover { opacity: 0.7; }
+    #pnl-live-ticker .ticker-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    #pnl-live-ticker .ticker-val   { font-size: 13px; font-weight: 500; }
+    #pnl-live-ticker .ticker-dot   { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s ease-in-out infinite; }
+    @media (max-width: 600px) { #pnl-live-ticker { bottom: 70px; font-size: 11px; padding: 5px 14px; } }
+
+    /* ── LANGUAGE TOGGLE ── */
+    .lang-btn {
+      font-size: 10px; color: var(--muted); letter-spacing: 0.06em;
+      background: none; border: 1px solid var(--border); border-radius: 6px;
+      padding: 5px 8px; cursor: pointer; transition: all 0.15s;
+      text-transform: uppercase; font-family: var(--font);
+    }
+    .lang-btn:hover { color: var(--accent); border-color: var(--accent); }
+    .lang-btn.active { color: var(--accent2); border-color: var(--accent); background: rgba(200,169,110,0.1); }
+
     /* TICKER */
     .ticker-move { display: flex; white-space: nowrap; animation: ticker-loop 60s linear infinite; }
     @keyframes ticker-loop { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
@@ -966,6 +1024,7 @@
 
   <!-- POSITIONS -->
   <div class="page" id="page-positions">
+    <div class="chip-bar" id="asset-chips"></div>
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
       <input id="pos-search" type="text" placeholder="Search ticker, class, side..."
         oninput="filterPositions()"
@@ -1328,6 +1387,15 @@
       Calendar
     </div>
   </div>
+  
+  <!-- LIVE P&L TICKER -->
+  <div id="pnl-live-ticker" onclick="this.style.display='none'" title="Click to hide">
+    <div class="ticker-dot"></div>
+    <div class="ticker-label" id="plt-label">Unrealised P&L</div>
+    <div class="ticker-val" id="plt-val">—</div>
+    <div id="plt-change" style="font-size:10px;color:var(--muted);"></div>
+  </div>
+
   <footer class="site-footer">
     <div class="footer-inner">
       <!-- LEFT: KFC affiliation -->
@@ -2020,15 +2088,37 @@ function renderOverview(d) {
 // ── RENDER POSITIONS ─────────────────────────────────────────────
 function renderPositions(positions) {
   const open=positions.filter(p=>p.status==='Open'), closed=positions.filter(p=>p.status==='Closed');
+  renderChips(positions);
   $('pos-badges').innerHTML=badge(open.length+' OPEN','blue')+' '+badge(closed.length+' CLOSED','gray')+`<span style="font-size:11px;color:var(--muted);margin-left:8px;">${positions.length} total trades</span>`;
   const th=`<tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Entry Date</th><th>Duration</th><th>Entry</th><th>Cur/Exit</th><th>Qty</th><th>Lev</th><th>Unrealised P&L</th><th>SL</th><th>TP</th><th>Status</th></tr>`;
   $('open-thead').innerHTML=th;
-  $('open-tbody').innerHTML=open.length?open.map(p=>`<tr><td>${p.id}</td><td class="label">${p.cls}</td><td class="label">${p.ticker}</td><td>${badge(p.side.toUpperCase(),p.side==='Long'?'green':'red')}</td><td style="color:var(--muted)">${p.date||'—'}</td><td id="dur-${p.id}" style="color:var(--muted);font-family:var(--mono)">${fmtDuration(null,p.date)}</td><td>${p.entry}</td><td>${p.exit||'—'}</td><td>${(p.qty/1e6).toFixed(2)}M</td><td>${p.lev}×</td><td id="pnl-${p.id}" style="color:${clr(p.pnl)}">${sgn(p.pnl)}$${fmtM(p.pnl)}</td><td style="color:var(--red)">${p.sl||'—'}</td><td style="color:var(--green)">${p.tp||'—'}</td><td>${badge('ACTIVE','blue')}</td></tr>`).join(''):'<tr><td colspan="14" style="color:var(--muted);text-align:center;padding:16px;">No open positions</td></tr>';
+  $('open-tbody').innerHTML=open.length?open.map(p=>`
+    <tr class="pos-row${p.pnl>0?' row-profit':p.pnl<0?' row-loss':''}" onclick="togglePosRow(${p.id})">
+      <td>${p.id}</td><td class="label">${p.cls}</td><td class="label">${p.ticker}</td>
+      <td>${badge(p.side.toUpperCase(),p.side==='Long'?'green':'red')}</td>
+      <td style="color:var(--muted)">${p.date||'—'}</td>
+      <td id="dur-${p.id}" style="color:var(--muted);font-family:var(--mono)">${fmtDuration(null,p.date)}</td>
+      <td>${p.entry}</td><td>${p.exit||'—'}</td>
+      <td>${(p.qty/1e6).toFixed(2)}M</td><td>${p.lev}×</td>
+      <td id="pnl-${p.id}" style="color:${clr(p.pnl)}">${sgn(p.pnl)}$${fmtM(p.pnl)}</td>
+      <td style="color:var(--red)">${p.sl||'—'}</td>
+      <td style="color:var(--green)">${p.tp||'—'}</td>
+      <td>${badge('ACTIVE','blue')}</td>
+    </tr>
+    ${buildExpandRow(p,14)}`).join(''):'<tr><td colspan="14" style="color:var(--muted);text-align:center;padding:16px;">No open positions</td></tr>';
   $('closed-thead').innerHTML=`<tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Entry Date</th><th>Exit Date</th><th>Entry</th><th>Exit</th><th>Hold</th><th>P&L</th><th>Result</th></tr>`;
   $('closed-tbody').innerHTML=closed.map(p=>{
     const rb=p.result==='TAKE PROFIT HIT'?'green':p.result==='STOP LOSS HIT'?'red':'blue';
     const rl=p.result==='TAKE PROFIT HIT'?'TP HIT':p.result==='STOP LOSS HIT'?'SL HIT':'CLOSED';
-    return`<tr><td>${p.id}</td><td class="label">${p.cls}</td><td class="label">${p.ticker}</td><td>${badge(p.side.toUpperCase(),p.side==='Long'?'green':'red')}</td><td style="color:var(--muted)">${p.date||'—'}</td><td style="color:var(--muted)">${p.exitDate||'—'}</td><td>${p.entry}</td><td>${p.exit}</td><td>${p.hold}d</td><td id="pnl-${p.id}" style="color:${clr(p.pnl)}">${sgn(p.pnl)}$${fmtM(p.pnl)}</td><td>${badge(rl,rb)}</td></tr>`;
+    return`<tr class="pos-row${p.pnl>0?' row-profit':p.pnl<0?' row-loss':''}" onclick="togglePosRow(${p.id})">
+      <td>${p.id}</td><td class="label">${p.cls}</td><td class="label">${p.ticker}</td>
+      <td>${badge(p.side.toUpperCase(),p.side==='Long'?'green':'red')}</td>
+      <td style="color:var(--muted)">${p.date||'—'}</td>
+      <td style="color:var(--muted)">${p.exitDate||'—'}</td>
+      <td>${p.entry}</td><td>${p.exit}</td><td>${p.hold}d</td>
+      <td id="pnl-${p.id}" style="color:${clr(p.pnl)}">${sgn(p.pnl)}$${fmtM(p.pnl)}</td>
+      <td>${badge(rl,rb)}</td>
+    </tr>${buildExpandRow(p,11)}`;
   }).join('');
 }
 
@@ -2899,6 +2989,7 @@ function filterPositions() {
   if (!d || !d.positions) return;
 
   const filtered = d.positions.filter(p => {
+    const matchChip   = activeChip === 'all' || (p.cls||'').toLowerCase() === activeChip;
     const matchQuery  = !query ||
       p.ticker.toLowerCase().includes(query) ||
       p.cls.toLowerCase().includes(query) ||
@@ -2906,7 +2997,7 @@ function filterPositions() {
       String(p.id).includes(query);
     const matchStatus = status === 'all' || p.status === status;
     const matchResult = result === 'all' || p.result === result || (result === 'Active' && p.status === 'Open');
-    return matchQuery && matchStatus && matchResult;
+    return matchChip && matchQuery && matchStatus && matchResult;
   });
 
   renderPositions(filtered);
@@ -3600,6 +3691,160 @@ function retryLoad() {
 }
 
 
+
+// ── LANGUAGE SUPPORT ─────────────────────────────────────────────
+let currentLang = 'en';
+const TRANSLATIONS = {
+  en: {
+    overview:'Overview', positions:'Positions', investors:'Investors',
+    analytics:'Analytics', calendar:'Calendar',
+    fundNav:'Fund NAV', totalPnl:'Total P&L', totalReturn:'Total Return',
+    winRate:'Win Rate', realisedPnl:'Realised P&L', unrealisedPnl:'Unrealised P&L',
+    marginDeployed:'Margin Deployed', notional:'Notional Exp.',
+    todayPnl:"Today's P&L", fundAge:'Fund Age',
+    netAssetValue:'Net asset value', realisedUnrealised:'Realised + Unrealised',
+    onCapital:'On capital deposited', openPositions:'Open positions',
+    activePositions:'Active positions', totalLeveraged:'Total leveraged',
+    closedTrades:'closed trades', lock:'Lock', live:'LIVE',
+    openPos:'Open Positions', closedPos:'Closed Positions',
+    unrealisedPnlCol:'Unrealised P&L', entryDate:'Entry Date', exitDate:'Exit Date',
+    duration:'Duration', entry:'Entry', exit:'Exit', hold:'Hold',
+    result:'Result', side:'Side', class:'Class', ticker:'Ticker',
+  },
+  fr: {
+    overview:'Aperçu', positions:'Positions', investors:'Investisseurs',
+    analytics:'Analytique', calendar:'Calendrier',
+    fundNav:'VNI du Fonds', totalPnl:'P&P Total', totalReturn:'Rendement Total',
+    winRate:'Taux de Réussite', realisedPnl:'P&P Réalisé', unrealisedPnl:'P&P Non Réalisé',
+    marginDeployed:'Marge Déployée', notional:'Exp. Notionnelle',
+    todayPnl:"P&P Aujourd'hui", fundAge:'Âge du Fonds',
+    netAssetValue:'Valeur nette des actifs', realisedUnrealised:'Réalisé + Non réalisé',
+    onCapital:'Sur capital déposé', openPositions:'Positions ouvertes',
+    activePositions:'Positions actives', totalLeveraged:'Total avec effet de levier',
+    closedTrades:'trades clôturés', lock:'Verrouiller', live:'EN DIRECT',
+    openPos:'Positions Ouvertes', closedPos:'Positions Clôturées',
+    unrealisedPnlCol:'P&P Non Réalisé', entryDate:"Date d'Entrée", exitDate:'Date de Sortie',
+    duration:'Durée', entry:'Entrée', exit:'Sortie', hold:'Durée',
+    result:'Résultat', side:'Sens', class:'Classe', ticker:'Ticker',
+  }
+};
+
+function t(key) { return TRANSLATIONS[currentLang][key] || TRANSLATIONS.en[key] || key; }
+
+function setLang(lang) {
+  currentLang = lang;
+  document.getElementById('lang-en').classList.toggle('active', lang==='en');
+  document.getElementById('lang-fr').classList.toggle('active', lang==='fr');
+  // Update nav tabs
+  document.querySelectorAll('.nav-tab').forEach(tab => {
+    const onclick = tab.getAttribute('onclick')||'';
+    const match = onclick.match(/'(\w+)'/);
+    if (match) {
+      const key = match[1];
+      if (TRANSLATIONS[lang][key]) tab.textContent = t(key);
+    }
+  });
+  // Update mobile nav items
+  document.querySelectorAll('.mobile-nav-item').forEach(item => {
+    const tabKey = item.getAttribute('data-tab');
+    if (tabKey) {
+      const svg = item.querySelector('svg');
+      item.textContent = t(tabKey);
+      if (svg) item.prepend(svg);
+    }
+  });
+  // Update header buttons
+  const lockBtn = document.querySelector('.logout-btn');
+  if (lockBtn) lockBtn.textContent = t('lock');
+  const liveBadge = document.querySelector('.live-badge');
+  if (liveBadge) {
+    const dot = liveBadge.querySelector('.live-dot');
+    liveBadge.textContent = t('live');
+    if (dot) liveBadge.prepend(dot);
+  }
+  // Re-render current page
+  if (window.lastData) renderAll(window.lastData);
+}
+
+// ── ASSET CLASS FILTER CHIPS ─────────────────────────────────────
+let activeChip = 'all';
+
+function renderChips(positions) {
+  const bar = document.getElementById('asset-chips');
+  if (!bar) return;
+  const classes = ['All', ...new Set((positions||[]).map(p=>p.cls).filter(Boolean).sort())];
+  bar.innerHTML = classes.map(cls => {
+    const key = cls.toLowerCase();
+    const count = cls==='All' ? positions.length : positions.filter(p=>p.cls===cls).length;
+    return `<div class="chip${activeChip===key?' active':''}" onclick="setChip('${key}')">${cls} <span style="opacity:0.6">${count}</span></div>`;
+  }).join('');
+}
+
+function setChip(cls) {
+  activeChip = cls;
+  renderChips(window.lastData?.positions||[]);
+  filterPositions();
+}
+
+// ── EXPANDABLE POSITION ROWS ─────────────────────────────────────
+function togglePosRow(id) {
+  const row = document.getElementById('expand-'+id);
+  if (!row) return;
+  const isOpen = row.classList.contains('open');
+  // Close all others first
+  document.querySelectorAll('.pos-expand.open').forEach(r => r.classList.remove('open'));
+  if (!isOpen) row.classList.add('open');
+}
+
+function buildExpandRow(p, colspan) {
+  const items = [
+    {label: t('entry'),   val: p.entry || '—'},
+    {label: t('exit'),    val: p.exit  || '—'},
+    {label: 'SL',         val: p.sl    || '—', style: 'color:var(--red)'},
+    {label: 'TP',         val: p.tp    || '—', style: 'color:var(--green)'},
+    {label: t('hold'),    val: (p.hold||0)+'d'},
+    {label: 'Qty',        val: fmtM(p.qty)},
+    {label: 'Leverage',   val: (p.lev||1)+'×'},
+    {label: 'P&L',        val: (p.pnl>=0?'+':'')+'$'+fmtM(p.pnl), style: 'color:'+(p.pnl>=0?'var(--green)':'var(--red)')},
+    {label: t('entryDate'), val: p.date||'—'},
+    {label: t('exitDate'),  val: p.exitDate||'—'},
+    {label: t('result'),    val: p.result||'—'},
+  ].filter(i => i.val !== '—' || ['SL','TP'].includes(i.label));
+
+  return `<tr id="expand-${p.id}" class="pos-expand">
+    <td colspan="${colspan}" style="padding:0;">
+      <div class="pos-expand-inner">
+        ${items.map(i=>`<div class="pos-detail-item">
+          <div class="pos-detail-label">${i.label}</div>
+          <div class="pos-detail-val" style="${i.style||''}">${i.val}</div>
+        </div>`).join('')}
+      </div>
+    </td>
+  </tr>`;
+}
+
+// ── LIVE P&L TICKER ──────────────────────────────────────────────
+let pltBase = null;
+
+function updateLiveTicker() {
+  const d = window.lastData;
+  if (!d) return;
+  const el  = document.getElementById('plt-val');
+  const chg = document.getElementById('plt-change');
+  if (!el) return;
+  const val = d.unrealisedPnl || 0;
+  if (pltBase === null) pltBase = val;
+  const diff = val - pltBase;
+  el.textContent = (val>=0?'+':'') + '$' + fmtM(val);
+  el.style.color = val >= 0 ? 'var(--green)' : 'var(--red)';
+  if (diff !== 0 && chg) {
+    chg.textContent = (diff>=0?'▲':'▼') + '$' + fmtM(Math.abs(diff));
+    chg.style.color = diff>=0?'var(--green)':'var(--red)';
+  }
+}
+setInterval(updateLiveTicker, 3000);
+
+
 // ── RENDER ALL ───────────────────────────────────────────────────
 function renderAll(d) {
   window.lastData = d;
@@ -3625,6 +3870,7 @@ function renderAll(d) {
   if (sw) sw.style.display = isMasterAccess ? 'block' : 'none';
   updateStmtReqButton();
   renderCalendar(d.positions||[]);
+  updateLiveTicker();
   renderRecentTrades(d.positions||[]);
 }
 
