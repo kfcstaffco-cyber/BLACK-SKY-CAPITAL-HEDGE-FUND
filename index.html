@@ -1995,8 +1995,8 @@ let prevMetrics = {};
 const FLUCT_CARDS = ['nav','totalPnl','unrealisedPnl','totalReturn'];
 const FLUCT_RANGES = {
   nav:          { scale:0.0003, fmt:v=>'$'+fmtM(v),                                        cls:'gold'  },
-  totalPnl:     { scale:0.0004, fmt:v=>(v>=0?'+ ':' '+'$'+fmtM(Math.abs(v))),             cls:'green' },
-  unrealisedPnl:{ scale:0.0006, fmt:v=>(v>=0?'+ ':'-')+'$'+fmtM(Math.abs(v)),             cls:'green' },
+  totalPnl:     { scale:0.0004, fmt:v=>(v>=0?'+':'-')+'$'+fmtM(Math.abs(v)),              cls:'green' },
+  unrealisedPnl:{ scale:0.0006, fmt:v=>(v>=0?'+':'-')+'$'+fmtM(Math.abs(v)),              cls:'green' },
   totalReturn:  { scale:0.0003, fmt:v=>sgn(v)+fmtPct(Math.abs(v)),                         cls:'green' },
 };
 let fluctBase = {};
@@ -2376,7 +2376,7 @@ function parseTransactionLog(rows) {
 // ── RENDER OVERVIEW ──────────────────────────────────────────────
 function renderOverview(d) {
   const metrics = [
-    {label:'Total P&L',      val:sgn(d.totalPnl)+'$'+fmtM(d.totalPnl),    cls:'green', sub:'All closed + open positions',         key:'totalPnl'},
+    {label:'Total P&L',      val:(d.totalPnl>=0?'+':'-')+'$'+fmtM(Math.abs(d.totalPnl)),    cls:'green', sub:'All closed + open positions',         key:'totalPnl'},
     {label:'Total Return',   val:sgn(d.totalReturn)+fmtPct(d.totalReturn), cls:'green', sub:'Since fund inception',          key:'totalReturn'},
     {label:'Win Rate',       val:(d.winRate*100).toFixed(2)+'%',           cls:'gold',  sub:d.winTrades+' wins / '+d.lossTrades+' losses', key:'winRate'},
     {label:'Realised P&L',   val:sgn(d.realisedPnl)+'$'+fmtM(d.realisedPnl), cls:'green', sub:d.totalTrades+' closed trades', key:'realisedPnl'},
