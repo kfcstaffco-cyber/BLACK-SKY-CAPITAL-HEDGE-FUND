@@ -2281,13 +2281,30 @@ function parseFundMeasures(rows) {
 function parsePositions(rows) {
   let hi=rows.findIndex(r=>r[0]==='#'); if(hi<0) return [];
   const clean=v=>{if(!v&&v!==0)return 0;const s=v.toString().trim();const neg=s.startsWith('(')&&s.endsWith(')');const n=parseFloat(s.replace(/[$()\s,]/g,''))||0;return neg?-n:n;};
-  return rows.slice(hi+1).filter(r=>r[0]&&!isNaN(parseInt(r[0]))&&r[1]&&(r[1]==='Open'||r[1]==='Closed')&&r[2]&&r[2].trim()!==''&&r[2].trim()!=='-').map(r=>({
-    id:parseInt(r[0]),status:r[1]||'',cls:r[2]||'',ticker:r[3]||'',side:r[4]||'',
+  return rows.slice(hi+1).filter(r=>{
+    if(!r[0]||isNaN(parseInt(r[0]))) return false;  // must have numeric ID
+    const status=(r[1]||'').trim();
+    if(!status) return false;                         // must have a status
+    const validStatus = status==='Open'||status==='Closed'||
+                        status.toLowerCase()==='open'||status.toLowerCase()==='closed';
+    if(!validStatus) return false;
+    // Asset class (r[2]) — allow empty/missing, don't filter on it
+    return true;
+  }).map(r=>({
+    id:parseInt(r[0]),
+    status:(r[1]||'').trim(),
+    cls:(r[2]||'').trim()||'Unknown',
+    ticker:(r[3]||'').trim(),
+    side:(r[4]||'').trim(),
     date:r[5]||'',
-    entry:clean(r[6]),qty:clean(r[7]),lev:clean(r[8]),exit:clean(r[14]),
+    entry:clean(r[6]),qty:clean(r[7]),lev:clean(r[8]),
+    exit:clean(r[14]),
     exitDate:r[19]||'',
     pnl:clean(r[16]),
-    hold:clean(r[20]),sl:r[21]?clean(r[21]):null,tp:r[22]?clean(r[22]):null,result:r[31]||'',date:r[5]||'',
+    hold:clean(r[20]),
+    sl:r[21]?clean(r[21]):null,
+    tp:r[22]?clean(r[22]):null,
+    result:(r[31]||'').trim(),
   }));
 }
 
