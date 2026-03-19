@@ -1894,6 +1894,7 @@ function logout() {
   document.getElementById('pw-error').textContent = '';
 }
 function showPostAuth() {
+  renderNotifications(); // restore persisted notifications immediately
   launchDashboard('1ELp_ABRtz_r2PSSQ5sS_AJPdVwFC8RBWY9RLOOR-WEo','AIzaSyCTd5pfr8gZLttk17YDlnWCHpem93IuzsY');
 }
 
@@ -2414,9 +2415,14 @@ function renderOverview(d) {
     {label:'Notional Exp.',  val:'$'+fmtM(d.notional),       cls:'blue',  sub:'Gross notional value',                           key:'notional'},
     {label:"Today's P&L", val:(()=>{
       const t=getTodayPnl(d.positions);
-      return (t>=0?'+':'')+'$'+fmtM(t);
+      return (t>=0?'+':(t<0?'-':''))+'$'+fmtM(Math.abs(t));
     })(), cls:(()=>{const t=getTodayPnl(d.positions);return t>0?'green':t<0?'red':'muted';})(),
-    sub:'Closed trades today', key:'todayPnl'},
+    sub:(()=>{
+      const t=getTodayPnl(d.positions);
+      const nav=Math.max(d.nav||d.totalDeposited||1,1);
+      const pct=(t/nav*100);
+      return t!==0?(pct>=0?'+':'')+pct.toFixed(2)+'% daily return':'No closed trades today';
+    })(), key:'todayPnl'},
     {label:'Fund Age',       val:(()=>{
       const txns=(d.transactions||[]).filter(t=>t.type==='Deposit');
       if(!txns.length) return '—';
@@ -2508,7 +2514,7 @@ function renderOverview(d) {
 
 // ── RENDER POSITIONS ─────────────────────────────────────────────
 function renderPositions(positions) {
-  const open=positions.filter(p=>p.status==='Open'), closed=positions.filter(p=>p.status==='Closed');
+  const open=positions.filter(p=>p.status==='Open'); let closed=positions.filter(p=>p.status==='Closed');
   $('pos-badges').innerHTML=badge(open.length+' OPEN','blue')+' '+badge(closed.length+' CLOSED','gray')+`<span style="font-size:11px;color:var(--muted);margin-left:8px;">${positions.length} total trades</span>`;
   const th=`<tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Entry Date</th><th>Duration</th><th>Entry</th><th>Cur/Exit</th><th>Qty</th><th>Lev</th><th>Unrealised P&L</th><th>SL</th><th>TP</th><th>Status</th></tr>`;
   $('open-thead').innerHTML=th;
@@ -3643,13 +3649,35 @@ function hideCalTip() {
 
 
 // ── NOTIFICATION CENTRE ──────────────────────────────────────────
-const notifications = [];
+// ── PERSISTENT NOTIFICATIONS (survive page reload, expire after 24h) ──
+const NOTIF_KEY = 'bsc_notifications';
+const NOTIF_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+function loadNotifications() {
+  try {
+    const raw = localStorage.getItem(NOTIF_KEY);
+    if (!raw) return [];
+    const all = JSON.parse(raw);
+    const now = Date.now();
+    // Filter out expired (> 24h old)
+    return all.filter(n => n.savedAt && (now - n.savedAt) < NOTIF_TTL);
+  } catch(e) { return []; }
+}
+
+function saveNotifications() {
+  try {
+    localStorage.setItem(NOTIF_KEY, JSON.stringify(notifications));
+  } catch(e) {}
+}
+
+const notifications = loadNotifications();
 let notifOpen = false;
 
 function addNotification(title, type, detail) {
   const ts = new Date().toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  notifications.unshift({title, type, detail, ts, id: Date.now()});
+  notifications.unshift({title, type, detail, ts, id: Date.now(), savedAt: Date.now()});
   if (notifications.length > 50) notifications.pop();
+  saveNotifications();
   renderNotifications();
   // Flash bell
   const bell = document.getElementById('notif-bell-btn');
@@ -3692,6 +3720,7 @@ function toggleNotifPanel() {
 
 function clearNotifications() {
   notifications.length = 0;
+  localStorage.removeItem(NOTIF_KEY);
   renderNotifications();
 }
 
