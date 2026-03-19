@@ -851,17 +851,16 @@
 
     /* ── INVESTOR MESSAGE BANNER ── */
     .investor-msg-banner {
-      display: none;
+      display: none !important;
       background: linear-gradient(135deg, rgba(200,169,110,0.12), rgba(200,169,110,0.06));
       border: 1px solid rgba(200,169,110,0.35);
       border-radius: 10px;
       padding: 14px 18px;
-      margin: 12px 28px 0;
+      margin: 8px 28px 0;
       position: relative;
-      animation: slideDown 0.3s ease;
     }
     @keyframes slideDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
-    .investor-msg-banner.visible { display: flex; align-items: flex-start; gap: 12px; }
+    .investor-msg-banner.visible { display: flex !important; align-items: flex-start; gap: 12px; animation: slideDown 0.3s ease; }
     .investor-msg-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
     .investor-msg-body { flex: 1; }
     .investor-msg-from { font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
@@ -890,6 +889,35 @@
 
     /* ── LIVE P&L CHART ── */
     .live-pnl-chart-wrap { position: relative; height: 160px; }
+
+
+    /* ── DISPATCHES ── */
+    .dispatch-card {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px 18px; margin-bottom: 10px;
+      transition: border-color 0.15s;
+    }
+    .dispatch-card:hover { border-color: var(--border2); }
+    .dispatch-card.pinned { border-color: rgba(200,169,110,0.4); background: rgba(200,169,110,0.04); }
+    .dispatch-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; }
+    .dispatch-tag { display:inline-flex; align-items:center; padding:2px 8px; border-radius:4px; font-size:9px; letter-spacing:0.05em; font-weight:500; margin-right:6px; }
+    .dispatch-tag.update   { background:rgba(74,158,255,0.15); color:#4a9eff; }
+    .dispatch-tag.alert    { background:rgba(232,83,74,0.15);  color:#e8534a; }
+    .dispatch-tag.general  { background:rgba(200,169,110,0.15);color:#c8a96e; }
+    .dispatch-tag.pinned-tag { background:rgba(200,169,110,0.2); color:var(--accent2); }
+    .dispatch-body { font-size:13px; color:var(--text); line-height:1.6; white-space:pre-wrap; }
+    .dispatch-meta { font-size:10px; color:var(--muted); margin-top:8px; display:flex; gap:12px; align-items:center; }
+    .dispatch-actions { display:flex; gap:6px; }
+    .dispatch-action-btn { background:none; border:1px solid var(--border); border-radius:5px; padding:3px 8px; font-size:10px; color:var(--muted); cursor:pointer; transition:all 0.15s; }
+    .dispatch-action-btn:hover { color:var(--text); border-color:var(--border2); }
+    .dispatch-action-btn.del:hover { color:var(--red); border-color:var(--red); }
+    .dispatch-compose { background:var(--bg3); border:1px solid var(--border2); border-radius:10px; padding:16px; margin-bottom:16px; }
+    .dispatch-compose textarea { width:100%; background:var(--bg); border:1px solid var(--border2); border-radius:8px; padding:10px 12px; font-size:13px; font-family:var(--font); color:var(--text); outline:none; resize:vertical; line-height:1.5; min-height:80px; }
+    .dispatch-compose textarea:focus { border-color:var(--accent); }
+    .dispatch-toolbar { display:flex; gap:8px; align-items:center; margin-top:10px; flex-wrap:wrap; }
+    .dispatch-tag-select { background:var(--bg); border:1px solid var(--border2); border-radius:6px; padding:5px 10px; font-size:11px; color:var(--text); outline:none; cursor:pointer; }
+    .dispatch-pin-toggle { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--muted); cursor:pointer; user-select:none; }
+    .dispatch-pin-toggle input { accent-color:var(--accent); }
 
     /* TICKER */
     .ticker-move { display: flex; white-space: nowrap; animation: ticker-loop 60s linear infinite; }
@@ -1341,6 +1369,7 @@
     <div class="nav-tab"        onclick="switchTab('analytics',this)">Analytics</div>
     <div class="nav-tab" onclick="switchTab('calendar',this)">Calendar</div>
     <div class="nav-tab" onclick="switchTab('activity',this)">Activity</div>
+    <div class="nav-tab" onclick="switchTab('dispatches',this)">Dispatches</div>
     <div class="nav-tab" onclick="exportPDF()" style="color:var(--accent);">&#8681; Export PDF</div>
   </div>
 
@@ -1782,6 +1811,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       Activity
     </div>
+    <div class="mobile-nav-item" onclick="switchTab('dispatches',null,this)" data-tab="dispatches">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Dispatch
+    </div>
   </div>
   
   <!-- LIVE P&L TICKER -->
@@ -1872,6 +1905,46 @@
     </div>
   </div>
 
+  
+  <!-- DISPATCHES -->
+  <div class="page" id="page-dispatches">
+    <!-- Compose area (master only) -->
+    <div id="dispatch-compose-wrap" style="display:none;">
+      <div class="dispatch-compose">
+        <div style="font-size:11px;font-weight:600;letter-spacing:0.05em;color:var(--accent);margin-bottom:10px;">📢 New Dispatch</div>
+        <textarea id="dispatch-textarea" placeholder="Write your dispatch message..."></textarea>
+        <div class="dispatch-toolbar">
+          <select id="dispatch-tag-sel" class="dispatch-tag-select">
+            <option value="general">General</option>
+            <option value="update">Update</option>
+            <option value="alert">Alert</option>
+          </select>
+          <label class="dispatch-pin-toggle">
+            <input type="checkbox" id="dispatch-pin-check"> Pin to top
+          </label>
+          <button class="modal-btn" style="margin:0;padding:7px 18px;font-size:11px;" onclick="postDispatch()">Post</button>
+          <span id="dispatch-edit-id" style="display:none;"></span>
+          <button id="dispatch-cancel-edit" onclick="cancelDispatchEdit()" style="display:none;padding:7px 14px;font-size:11px;background:none;border:1px solid var(--border2);border-radius:6px;color:var(--muted);cursor:pointer;">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <!-- Feed -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div>
+        <div style="font-size:14px;font-weight:600;">Dispatches</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;" id="dispatch-count">—</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <select id="dispatch-filter" onchange="renderDispatches()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:5px 10px;font-size:11px;color:var(--text);outline:none;cursor:pointer;">
+          <option value="all">All</option>
+          <option value="general">General</option>
+          <option value="update">Update</option>
+          <option value="alert">Alert</option>
+        </select>
+      </div>
+    </div>
+    <div id="dispatch-feed"></div>
+  </div>
   <footer class="site-footer">
     <div class="footer-inner">
       <!-- LEFT: KFC affiliation -->
@@ -4428,6 +4501,7 @@ function switchTab(name, el, mobileEl) {
   if (mobileLabel) mobileLabel.textContent = tabNames[name] || name;
   // Render calendar if switching to it
   if (name === 'calendar' && window.lastData) renderCalendar(window.lastData.positions||[]);
+  if (name === 'dispatches') renderDispatches();
 }
 
 // ── TODAY'S P&L ──────────────────────────────────────────────────
@@ -5300,6 +5374,153 @@ function updateLivePnlChart(unrealisedPnl) {
 }
 
 
+
+// ── DISPATCHES ────────────────────────────────────────────────────
+const DISPATCH_KEY = 'bsc_dispatches';
+
+function loadDispatches() {
+  try {
+    return JSON.parse(localStorage.getItem(DISPATCH_KEY) || '[]');
+  } catch(e) { return []; }
+}
+function saveDispatches(arr) {
+  try { localStorage.setItem(DISPATCH_KEY, JSON.stringify(arr)); } catch(e) {}
+}
+
+function postDispatch() {
+  const text    = (document.getElementById('dispatch-textarea')?.value || '').trim();
+  const tag     = document.getElementById('dispatch-tag-sel')?.value || 'general';
+  const pinned  = document.getElementById('dispatch-pin-check')?.checked || false;
+  const editId  = document.getElementById('dispatch-edit-id')?.textContent || '';
+  if (!text) return;
+
+  const dispatches = loadDispatches();
+  const now = Date.now();
+
+  if (editId) {
+    // Edit existing
+    const idx = dispatches.findIndex(d => d.id == editId);
+    if (idx > -1) {
+      dispatches[idx].text    = text;
+      dispatches[idx].tag     = tag;
+      dispatches[idx].pinned  = pinned;
+      dispatches[idx].edited  = now;
+    }
+    cancelDispatchEdit();
+  } else {
+    // New dispatch
+    dispatches.unshift({ id: now, text, tag, pinned, ts: now, edited: null });
+  }
+
+  saveDispatches(dispatches);
+  document.getElementById('dispatch-textarea').value = '';
+  document.getElementById('dispatch-pin-check').checked = false;
+  renderDispatches();
+}
+
+function deleteDispatch(id) {
+  if (!confirm('Delete this dispatch?')) return;
+  const dispatches = loadDispatches().filter(d => d.id != id);
+  saveDispatches(dispatches);
+  renderDispatches();
+}
+
+function editDispatch(id) {
+  const dispatch = loadDispatches().find(d => d.id == id);
+  if (!dispatch) return;
+  document.getElementById('dispatch-textarea').value     = dispatch.text;
+  document.getElementById('dispatch-tag-sel').value      = dispatch.tag;
+  document.getElementById('dispatch-pin-check').checked  = dispatch.pinned;
+  document.getElementById('dispatch-edit-id').textContent = id;
+  document.getElementById('dispatch-cancel-edit').style.display = 'inline-flex';
+  document.getElementById('dispatch-textarea').focus();
+  document.getElementById('dispatch-textarea').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function cancelDispatchEdit() {
+  document.getElementById('dispatch-textarea').value = '';
+  document.getElementById('dispatch-tag-sel').value  = 'general';
+  document.getElementById('dispatch-pin-check').checked = false;
+  document.getElementById('dispatch-edit-id').textContent = '';
+  document.getElementById('dispatch-cancel-edit').style.display = 'none';
+}
+
+function togglePin(id) {
+  const dispatches = loadDispatches();
+  const idx = dispatches.findIndex(d => d.id == id);
+  if (idx > -1) { dispatches[idx].pinned = !dispatches[idx].pinned; }
+  saveDispatches(dispatches);
+  renderDispatches();
+}
+
+function renderDispatches() {
+  const filter = document.getElementById('dispatch-filter')?.value || 'all';
+  let dispatches = loadDispatches();
+
+  // Show compose area for master
+  const compose = document.getElementById('dispatch-compose-wrap');
+  if (compose) compose.style.display = isMasterAccess ? 'block' : 'none';
+
+  // Filter
+  if (filter !== 'all') dispatches = dispatches.filter(d => d.tag === filter);
+
+  // Sort: pinned first, then by timestamp
+  dispatches.sort((a,b) => {
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    return b.ts - a.ts;
+  });
+
+  const countEl = document.getElementById('dispatch-count');
+  if (countEl) countEl.textContent = dispatches.length + (dispatches.length === 1 ? ' dispatch' : ' dispatches');
+
+  const feed = document.getElementById('dispatch-feed');
+  if (!feed) return;
+
+  if (dispatches.length === 0) {
+    feed.innerHTML = `<div style="color:var(--muted);font-size:13px;text-align:center;padding:40px 0;">
+      ${isMasterAccess ? 'No dispatches yet — write one above.' : 'No dispatches yet.'}
+    </div>`;
+    return;
+  }
+
+  const TAG_LABELS = { general: 'General', update: 'Update', alert: 'Alert' };
+
+  feed.innerHTML = dispatches.map(d => {
+    const ago = (() => {
+      const diff = Math.round((Date.now() - d.ts) / 60000);
+      if (diff < 1)  return 'Just now';
+      if (diff < 60) return diff + 'm ago';
+      if (diff < 1440) return Math.round(diff/60) + 'h ago';
+      return Math.round(diff/1440) + 'd ago';
+    })();
+
+    const masterActions = isMasterAccess ? `
+      <div class="dispatch-actions">
+        <button class="dispatch-action-btn" onclick="editDispatch(${d.id})">✎ Edit</button>
+        <button class="dispatch-action-btn" onclick="togglePin(${d.id})">${d.pinned ? '📌 Unpin' : '📌 Pin'}</button>
+        <button class="dispatch-action-btn del" onclick="deleteDispatch(${d.id})">✕ Delete</button>
+      </div>` : '';
+
+    return `
+      <div class="dispatch-card${d.pinned ? ' pinned' : ''}">
+        <div class="dispatch-header">
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;">
+            ${d.pinned ? '<span class="dispatch-tag pinned-tag">📌 Pinned</span>' : ''}
+            <span class="dispatch-tag ${d.tag}">${TAG_LABELS[d.tag]||d.tag}</span>
+          </div>
+          ${masterActions}
+        </div>
+        <div class="dispatch-body">${d.text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+        <div class="dispatch-meta">
+          <span>Black-Sky Capital · ${ago}</span>
+          ${d.edited ? '<span style="color:var(--muted);font-style:italic;">(edited)</span>' : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+
 // ── RENDER ALL ───────────────────────────────────────────────────
 function renderAll(d) {
   window.lastData = d;
@@ -5329,10 +5550,12 @@ function renderAll(d) {
   if (cw) cw.style.display = isMasterAccess ? 'block' : 'none';
   const bb = document.getElementById('broadcast-btn');
   if (bb) bb.style.display = isMasterAccess ? 'flex' : 'none';
+  renderDispatches();
   updateStmtReqButton();
   renderCalendar(d.positions||[]);
   updateLiveTicker();
   renderActivityLog();
+  renderDispatches();
   renderRollingWinRate(d.positions||[]);
   renderHeroSparkline(d.positions||[], d.totalDeposited||0);
   startPositionTimers();
