@@ -851,7 +851,7 @@
 
     /* ── INVESTOR MESSAGE BANNER ── */
     .investor-msg-banner {
-      display: none !important;
+      display: none;
       background: linear-gradient(135deg, rgba(200,169,110,0.12), rgba(200,169,110,0.06));
       border: 1px solid rgba(200,169,110,0.35);
       border-radius: 10px;
@@ -860,7 +860,7 @@
       position: relative;
     }
     @keyframes slideDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
-    .investor-msg-banner.visible { display: flex !important; align-items: flex-start; gap: 12px; animation: slideDown 0.3s ease; }
+    .investor-msg-banner.visible { display: flex; align-items: flex-start; gap: 12px; animation: slideDown 0.3s ease; }
     .investor-msg-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
     .investor-msg-body { flex: 1; }
     .investor-msg-from { font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
@@ -5219,18 +5219,24 @@ function showInvestorMessage() {
   const msg = getBroadcastMessage();
   const banner = document.getElementById('investor-msg-banner');
   if (!msg || !banner) return;
-  // Don't show if dismissed (standard users only)
+  // Don't show if already dismissed by this user
   if (!isMasterAccess && localStorage.getItem(MSG_DISMISSED_KEY)) return;
   document.getElementById('investor-msg-text').textContent = msg.text;
   const ago = Math.round((Date.now() - msg.ts) / 60000);
   const timeStr = ago < 1 ? 'Just now' : ago < 60 ? ago + 'm ago' : Math.round(ago/60) + 'h ago';
   document.getElementById('investor-msg-time').textContent = timeStr;
+  // Force display with inline style to override any CSS cascade issues
+  banner.style.display = 'flex';
+  banner.style.alignItems = 'flex-start';
+  banner.style.gap = '12px';
   banner.classList.add('visible');
 }
 
 function hideMsgBanner() {
   const banner = document.getElementById('investor-msg-banner');
-  if (banner) banner.classList.remove('visible');
+  if (!banner) return;
+  banner.classList.remove('visible');
+  banner.style.display = '';
 }
 
 function dismissInvestorMsg() {
