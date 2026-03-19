@@ -4706,7 +4706,9 @@ function renderCalSummary(positions, year, month) {
     return;
   }
   const totalPnl  = monthTrades.reduce((s,p)=>s+p.pnl,0);
-  const wins      = monthTrades.filter(p=>p.pnl>0).length;
+  const closedMonth = monthTrades.filter(p=>p.status==='Closed');
+  const wins      = closedMonth.filter(p=>p.pnl>0).length;
+  const winDenom  = closedMonth.length || 1;
   const best      = Math.max(...monthTrades.map(p=>p.pnl));
   const worst     = Math.min(...monthTrades.map(p=>p.pnl));
   el.innerHTML = `<div class="cal-summary-bar">
@@ -4721,8 +4723,8 @@ function renderCalSummary(positions, year, month) {
       <div class="cal-sum-val" style="color:var(--text)">${monthTrades.length}</div>
     </div>
     <div class="cal-sum-item">
-      <div class="cal-sum-label">Win Rate</div>
-      <div class="cal-sum-val" style="color:var(--accent2)">${((wins/monthTrades.length)*100).toFixed(0)}%</div>
+      <div class="cal-sum-label">Win Rate (closed)</div>
+      <div class="cal-sum-val" style="color:var(--accent2)">${closedMonth.length > 0 ? ((wins/winDenom)*100).toFixed(0)+'%' : '—'}</div>
     </div>
     <div class="cal-sum-item">
       <div class="cal-sum-label">Best Trade</div>
@@ -5150,9 +5152,11 @@ function calcHealthScore(d) {
   const pfScore = Math.min((pf / 10) * 25, 25);
 
   // 3. Drawdown (0-25): 0% drawdown = 25pts, 50%+ = 0pts
-  const nav = Math.max(d.nav || 1, 1);
-  const ddPct = Math.abs(d.drawdown || 0) / nav;
-  const ddScore = Math.max(25 - (ddPct * 100) * 0.5, 0);
+  // Calculate from peak vs current NAV for accuracy
+  const nav  = Math.max(d.nav || 1, 1);
+  const peak = Math.max(d.peakBalance || d.nav || 1, nav);
+  const ddPct = (peak - nav) / peak; // 0 = no drawdown, 1 = 100% loss
+  const ddScore = Math.max(25 - ddPct * 50, 0); // 50% drawdown = 0pts
 
   // 4. Sharpe (0-25): >3 = 25pts, 0 = 0pts
   const sharpe = Math.max(d.sharpe || 0, 0);
@@ -5198,7 +5202,7 @@ function renderHealthScore(d) {
   const components = [
     { label: 'Win Rate',      score: winScore,    max: 25, val: (d.winRate*100).toFixed(1)+'%',       color: '#3ecf8e' },
     { label: 'Profit Factor', score: pfScore,     max: 25, val: (d.profitFactor||0).toFixed(2)+'×',   color: '#c8a96e' },
-    { label: 'Drawdown',      score: ddScore,     max: 25, val: '$'+fmtM(Math.abs(d.drawdown||0)),    color: '#4a9eff' },
+    { label: 'Drawdown',      score: ddScore,     max: 25, val: (ddPct*100).toFixed(2)+'%',             color: '#4a9eff' },
     { label: 'Sharpe Ratio',  score: sharpeScore, max: 25, val: (d.sharpe||0).toFixed(2),             color: '#9b8dd4' },
   ];
 
@@ -5335,6 +5339,7 @@ async function launchDashboard(sheetId, apiKey) {
     initParticles();
     fetchBTCBenchmark();
     applyAccessLevel();
+    setTimeout(showInvestorMessage, 600);
     setInterval(async () => {
       try {
         const [mr,pr,ir,tr] = await Promise.all([
@@ -5358,6 +5363,7 @@ async function launchDashboard(sheetId, apiKey) {
     renderAll({...DEMO});
     initParticles();
     fetchBTCBenchmark();
+    setTimeout(showInvestorMessage, 600);
   }
   applyAccessLevel();
 }
