@@ -686,7 +686,7 @@
       letter-spacing: 0.06em; text-transform: uppercase;
     }
     
-    .mobile-nav-bar { display: none; }
+    .mobile-nav-bar { display: none; } /* shown in mobile media query */
 
     /* ── ERROR STATE ── */
     .error-state {
@@ -914,21 +914,22 @@
       .cal-pnl { display: none; }
       .cal-summary-bar { flex-wrap: wrap; gap: 10px; padding: 10px; }
 
-      /* ── FLOAT BUTTONS — above mobile nav ── */
+      /* ── FLOAT BUTTONS — stacked above mobile nav ── */
       .float-btn {
-        bottom: 80px !important; right: 16px !important;
-        width: 46px !important; height: 46px !important;
-      }
-      #stmt-req-float {
-        bottom: 136px !important; right: 16px !important;
-        width: 46px !important; height: 46px !important;
+        bottom: 76px !important; right: 16px !important;
+        width: 48px !important; height: 48px !important;
       }
       .dw-float-btn {
-        bottom: 80px !important; right: 16px !important;
-        width: 46px !important; height: 46px !important;
+        bottom: 134px !important; right: 16px !important;
+        width: 48px !important; height: 48px !important;
       }
-      /* Stack deposit/withdrawal above payout */
-      #dw-float { bottom: 136px !important; }
+      #stmt-req-float {
+        bottom: 192px !important; right: 16px !important;
+        width: 48px !important; height: 48px !important;
+      }
+      .float-tooltip { bottom: 80px !important; right: 72px !important; }
+      .dw-float-tooltip { bottom: 138px !important; right: 72px !important; }
+      #stmt-req-tip { bottom: 196px !important; right: 72px !important; }
 
       /* ── LIVE P&L TICKER ── */
       #pnl-live-ticker {
@@ -1087,21 +1088,22 @@
       .cal-pnl { display: none; }
       .cal-summary-bar { flex-wrap: wrap; gap: 10px; padding: 10px; }
 
-      /* ── FLOAT BUTTONS — above mobile nav ── */
+      /* ── FLOAT BUTTONS — stacked above mobile nav ── */
       .float-btn {
-        bottom: 80px !important; right: 16px !important;
-        width: 46px !important; height: 46px !important;
-      }
-      #stmt-req-float {
-        bottom: 136px !important; right: 16px !important;
-        width: 46px !important; height: 46px !important;
+        bottom: 76px !important; right: 16px !important;
+        width: 48px !important; height: 48px !important;
       }
       .dw-float-btn {
-        bottom: 80px !important; right: 16px !important;
-        width: 46px !important; height: 46px !important;
+        bottom: 134px !important; right: 16px !important;
+        width: 48px !important; height: 48px !important;
       }
-      /* Stack deposit/withdrawal above payout */
-      #dw-float { bottom: 136px !important; }
+      #stmt-req-float {
+        bottom: 192px !important; right: 16px !important;
+        width: 48px !important; height: 48px !important;
+      }
+      .float-tooltip { bottom: 80px !important; right: 72px !important; }
+      .dw-float-tooltip { bottom: 138px !important; right: 72px !important; }
+      #stmt-req-tip { bottom: 196px !important; right: 72px !important; }
 
       /* ── LIVE P&L TICKER ── */
       #pnl-live-ticker {
@@ -3863,21 +3865,22 @@ function generateStatement() {
       .cal-pnl { display: none; }
       .cal-summary-bar { flex-wrap: wrap; gap: 10px; padding: 10px; }
 
-      /* ── FLOAT BUTTONS — above mobile nav ── */
+      /* ── FLOAT BUTTONS — stacked above mobile nav ── */
       .float-btn {
-        bottom: 80px !important; right: 16px !important;
-        width: 46px !important; height: 46px !important;
-      }
-      #stmt-req-float {
-        bottom: 136px !important; right: 16px !important;
-        width: 46px !important; height: 46px !important;
+        bottom: 76px !important; right: 16px !important;
+        width: 48px !important; height: 48px !important;
       }
       .dw-float-btn {
-        bottom: 80px !important; right: 16px !important;
-        width: 46px !important; height: 46px !important;
+        bottom: 134px !important; right: 16px !important;
+        width: 48px !important; height: 48px !important;
       }
-      /* Stack deposit/withdrawal above payout */
-      #dw-float { bottom: 136px !important; }
+      #stmt-req-float {
+        bottom: 192px !important; right: 16px !important;
+        width: 48px !important; height: 48px !important;
+      }
+      .float-tooltip { bottom: 80px !important; right: 72px !important; }
+      .dw-float-tooltip { bottom: 138px !important; right: 72px !important; }
+      #stmt-req-tip { bottom: 196px !important; right: 72px !important; }
 
       /* ── LIVE P&L TICKER ── */
       #pnl-live-ticker {
@@ -5052,21 +5055,22 @@ function exportPDF() {
       .cal-pnl { display: none; }
       .cal-summary-bar { flex-wrap: wrap; gap: 10px; padding: 10px; }
 
-      /* ── FLOAT BUTTONS — above mobile nav ── */
+      /* ── FLOAT BUTTONS — stacked above mobile nav ── */
       .float-btn {
-        bottom: 80px !important; right: 16px !important;
-        width: 46px !important; height: 46px !important;
-      }
-      #stmt-req-float {
-        bottom: 136px !important; right: 16px !important;
-        width: 46px !important; height: 46px !important;
+        bottom: 76px !important; right: 16px !important;
+        width: 48px !important; height: 48px !important;
       }
       .dw-float-btn {
-        bottom: 80px !important; right: 16px !important;
-        width: 46px !important; height: 46px !important;
+        bottom: 134px !important; right: 16px !important;
+        width: 48px !important; height: 48px !important;
       }
-      /* Stack deposit/withdrawal above payout */
-      #dw-float { bottom: 136px !important; }
+      #stmt-req-float {
+        bottom: 192px !important; right: 16px !important;
+        width: 48px !important; height: 48px !important;
+      }
+      .float-tooltip { bottom: 80px !important; right: 72px !important; }
+      .dw-float-tooltip { bottom: 138px !important; right: 72px !important; }
+      #stmt-req-tip { bottom: 196px !important; right: 72px !important; }
 
       /* ── LIVE P&L TICKER ── */
       #pnl-live-ticker {
@@ -5224,21 +5228,22 @@ function exportPDF() {
       .cal-pnl { display: none; }
       .cal-summary-bar { flex-wrap: wrap; gap: 10px; padding: 10px; }
 
-      /* ── FLOAT BUTTONS — above mobile nav ── */
+      /* ── FLOAT BUTTONS — stacked above mobile nav ── */
       .float-btn {
-        bottom: 80px !important; right: 16px !important;
-        width: 46px !important; height: 46px !important;
-      }
-      #stmt-req-float {
-        bottom: 136px !important; right: 16px !important;
-        width: 46px !important; height: 46px !important;
+        bottom: 76px !important; right: 16px !important;
+        width: 48px !important; height: 48px !important;
       }
       .dw-float-btn {
-        bottom: 80px !important; right: 16px !important;
-        width: 46px !important; height: 46px !important;
+        bottom: 134px !important; right: 16px !important;
+        width: 48px !important; height: 48px !important;
       }
-      /* Stack deposit/withdrawal above payout */
-      #dw-float { bottom: 136px !important; }
+      #stmt-req-float {
+        bottom: 192px !important; right: 16px !important;
+        width: 48px !important; height: 48px !important;
+      }
+      .float-tooltip { bottom: 80px !important; right: 72px !important; }
+      .dw-float-tooltip { bottom: 138px !important; right: 72px !important; }
+      #stmt-req-tip { bottom: 196px !important; right: 72px !important; }
 
       /* ── LIVE P&L TICKER ── */
       #pnl-live-ticker {
