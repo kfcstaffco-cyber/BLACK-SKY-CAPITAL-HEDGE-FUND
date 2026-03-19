@@ -5220,12 +5220,14 @@ function showInvestorMessage() {
   const msg = getBroadcastMessage();
   const banner = document.getElementById('investor-msg-banner');
   if (!msg || !banner) return;
-  if (!isMasterAccess && localStorage.getItem(MSG_DISMISSED_KEY)) return;
+  // Check dismissal by message timestamp (not a global flag)
+  // so each new message shows fresh
+  const dismissedTs = localStorage.getItem(MSG_DISMISSED_KEY);
+  if (dismissedTs && dismissedTs === String(msg.ts)) return;
   document.getElementById('investor-msg-text').textContent = msg.text;
   const ago = Math.round((Date.now() - msg.ts) / 60000);
   const timeStr = ago < 1 ? 'Just now' : ago < 60 ? ago + 'm ago' : Math.round(ago/60) + 'h ago';
   document.getElementById('investor-msg-time').textContent = timeStr;
-  // Force display with inline style to override any CSS cascade issues
   banner.style.display = 'flex';
   banner.style.alignItems = 'flex-start';
   banner.style.gap = '12px';
@@ -5240,7 +5242,9 @@ function hideMsgBanner() {
 }
 
 function dismissInvestorMsg() {
-  localStorage.setItem(MSG_DISMISSED_KEY, '1');
+  const msg = getBroadcastMessage();
+  // Store the specific message timestamp so new messages still show
+  if (msg) localStorage.setItem(MSG_DISMISSED_KEY, String(msg.ts));
   hideMsgBanner();
 }
 
