@@ -578,10 +578,9 @@
 
     /* ── NAV TAB SLIDE INDICATOR ── */
     .nav-tab {
-      padding: 13px 18px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 13px 18px 14px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
       color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent;
       white-space: nowrap; transition: color 0.2s; user-select: none; position: relative;
-      overflow: hidden;
     }
     .nav-tab::after {
       content: ''; position: absolute; bottom: 0; left: 50%; right: 50%;
@@ -3751,7 +3750,7 @@ function setLang(lang) {
     const match = onclick.match(/'(\w+)'/);
     if (match) {
       const key = match[1];
-      if (TRANSLATIONS[lang][key]) tab.textContent = t(key);
+      if (TRANSLATIONS[lang][key]) { tab.textContent = t(key); tab.style.textTransform = lang==='fr' ? 'none' : ''; }
     }
   });
   // Update mobile nav items
@@ -3766,11 +3765,13 @@ function setLang(lang) {
   // Update header buttons
   const lockBtn = document.querySelector('.logout-btn');
   if (lockBtn) lockBtn.textContent = t('lock');
+  // Update live badge text without destroying the dot
   const liveBadge = document.querySelector('.live-badge');
   if (liveBadge) {
     const dot = liveBadge.querySelector('.live-dot');
-    liveBadge.textContent = t('live');
-    if (dot) liveBadge.prepend(dot);
+    liveBadge.innerHTML = '';
+    if (dot) liveBadge.appendChild(dot);
+    liveBadge.appendChild(document.createTextNode(t('live')));
   }
   // Re-render current page
   if (window.lastData) renderAll(window.lastData);
