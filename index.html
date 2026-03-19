@@ -4045,7 +4045,8 @@ function renderAll(d) {
   $('live-date').textContent = new Date().toLocaleString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}).replace(/\//g,'.');
   renderOverview(d);
   renderChips(d.positions||[]);
-  filterPositions();
+  const _sorted = applySortToPositions(d.positions||[]);
+  renderPositions(_sorted);
   checkForNewTP(d.positions||[]);
   setTimeout(colorPositionRows, 50);
   renderInvestors(d.investors||[], d.transactions||[]);
