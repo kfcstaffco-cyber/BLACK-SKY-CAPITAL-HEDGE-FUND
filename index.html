@@ -2464,7 +2464,7 @@ function renderOverview(d) {
 function renderPositions(positions) {
   const open=positions.filter(p=>p.status==='Open'), closed=positions.filter(p=>p.status==='Closed');
   $('pos-badges').innerHTML=badge(open.length+' OPEN','blue')+' '+badge(closed.length+' CLOSED','gray')+`<span style="font-size:11px;color:var(--muted);margin-left:8px;">${positions.length} total trades</span>`;
-  const th=`<tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Entry Date</th><th>Duration</th><th>Timer</th><th>Entry</th><th>Cur/Exit</th><th>Qty</th><th>Lev</th><th>Unrealised P&L</th><th>SL</th><th>TP</th><th>Status</th></tr>`;
+  const th=`<tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Entry Date</th><th>Duration</th><th>Entry</th><th>Cur/Exit</th><th>Qty</th><th>Lev</th><th>Unrealised P&L</th><th>SL</th><th>TP</th><th>Status</th></tr>`;
   $('open-thead').innerHTML=th;
   $('open-tbody').innerHTML=open.length?open.map(p=>`
     <tr class="pos-row" style="${getPnlRowStyle(p.pnl, window.lastData?.positions||[])}" onclick="togglePosRow(${p.id})">
@@ -2479,7 +2479,7 @@ function renderPositions(positions) {
       <td style="color:var(--green)">${p.tp||'—'}</td>
       <td>${badge('ACTIVE','blue')}</td>
     </tr>
-    ${buildExpandRow(p,14)}`).join(''):'<tr><td colspan="15" style="color:var(--muted);text-align:center;padding:16px;">No open positions</td></tr>';
+    ${buildExpandRow(p,14)}`).join(''):'<tr><td colspan="14" style="color:var(--muted);text-align:center;padding:16px;">No open positions</td></tr>';
   $('closed-thead').innerHTML=`<tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Entry Date</th><th>Exit Date</th><th>Entry</th><th>Exit</th><th>Hold</th><th>P&L</th><th>Result</th></tr>`;
   $('closed-tbody').innerHTML=closed.map(p=>{
     const rb=p.result==='TAKE PROFIT HIT'?'green':p.result==='STOP LOSS HIT'?'red':'blue';
