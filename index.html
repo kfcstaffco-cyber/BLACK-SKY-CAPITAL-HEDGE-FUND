@@ -2592,7 +2592,12 @@ function renderOverview(d) {
     ['Avg Hold Period',d.avgHold.toFixed(2)+' days',''],
     ['Max Potential Loss','$'+fmtM(d.maxLoss),'color:var(--red)'],
     ['Active Liquidations',d.activeLiquidations,d.activeLiquidations>0?'color:var(--red)':'color:var(--green)'],
-    ['Current Drawdown','$'+fmtM(d.drawdown),d.drawdown>0?'color:var(--red)':'color:var(--green)'],
+    ['Current Drawdown',(()=>{
+      const dd = Math.abs(d.drawdown||0);
+      const peak = Math.max(d.peakBalance||d.nav||1, 1);
+      const pct = (dd/peak*100).toFixed(2);
+      return dd>0 ? '-$'+fmtM(dd)+' ('+pct+'%)' : '$0.00 (0.00%)';
+    })(),d.drawdown>0?'color:var(--red)':'color:var(--green)'],
   ].map(([k,v,s])=>rowLabel(k,v,s)).join('');
 
   destroyChart('pnlChart'); destroyChart('assetChart');
