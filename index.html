@@ -4626,7 +4626,7 @@ function closeCalcModal(e, force) {
 }
 
 function updateCalc() {
-  const level    = parseInt(document.getElementById('calc-level').value) || 3;
+  const level    = parseInt(document.getElementById('calc-level').value) || 1;
   const balRaw   = (document.getElementById('calc-balance')?.value || '').replace(/[^0-9.]/g,'');
   const balance  = parseFloat(balRaw) || 0;
   const pnl      = window.lastData?.totalPnl || 0;
@@ -4636,39 +4636,69 @@ function updateCalc() {
 
   document.getElementById('calc-level-label').textContent = 'Level ' + level + ' — ' + sf.label;
 
-  const minDep = Math.max(sf.minDeposit, 200000);
+  // Min deposit is ALWAYS $200K (fund floor), regardless of level
+  const MIN_FUND = 200000;
 
-  // Suggested deposit: at least 10× min bet, scaled by % of investor balance
+  // The stake minimum is what they need to play at this level in the game
+  // Each level is 10× the previous in stake size
+  // e.g. Level 1 = $5 bet, Level 8 = $50M bet
+  const stakeMin = sf.minDeposit; // min bet amount for this level
+
+  // Recommended deposit logic:
+  // The deposit should cover at least 10 losing bets at the stake level
+  // (so they can sustain a losing streak without busting)
+  // But also capped as a % of their balance — lower % at higher levels (more skin in game)
+  // Cap %: Level 1-2: 20%, Level 3-4: 30%, Level 5-6: 40%, Level 7-8: 50%
+  const capPct = level <= 2 ? 0.20 : level <= 4 ? 0.30 : level <= 6 ? 0.40 : 0.50;
+
+  // Base = 10 bets worth of stake
+  const tenBets = stakeMin * 10;
+
   let suggested;
   if (balance > 0) {
-    const pctArr = [0.05, 0.10, 0.15, 0.20, 0.30, 0.40, 0.60, 0.80];
-    const balanceBased = balance * pctArr[level-1];
-    suggested = Math.max(minDep, balanceBased);
+    const balanceBased = balance * capPct;
+    // Take the higher of: 10 bets, or balance-based allocation
+    suggested = Math.max(tenBets, balanceBased);
+    // Never exceed their balance
     suggested = Math.min(suggested, balance);
-    suggested = Math.max(suggested, 200000);
   } else {
-    suggested = minDep;
+    // No balance entered — just show 10 bets worth
+    suggested = tenBets;
   }
+
+  // Always enforce $200K fund minimum
+  suggested = Math.max(suggested, MIN_FUND);
+
+  // If suggested > balance (and balance was entered), cap at balance
+  if (balance > 0) suggested = Math.min(suggested, balance);
 
   const fundTotal = Math.max(totalDep, 1);
   const ownerPct  = suggested / (fundTotal + suggested);
   const pnlShare  = pnl > 0 ? ownerPct * pnl : 0;
 
+  document.getElementById('calc-min').textContent      = '$' + fmtM(MIN_FUND);
   document.getElementById('calc-size').textContent     = '$' + fmtM(suggested);
   document.getElementById('calc-notional').textContent = pnlShare > 0 ? '+$' + fmtM(pnlShare) : '—';
   document.getElementById('calc-pct').textContent      = (ownerPct * 100).toFixed(4) + '%';
-  document.getElementById('calc-min').textContent      = '$' + fmtM(minDep);
 
+  // Scale reference table
   const tableEl = document.getElementById('calc-scale-table');
   if (tableEl) {
-    tableEl.innerHTML = '<div style="font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:8px;">Deposit Scale Reference</div>'
+    tableEl.innerHTML = '<div style="font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:8px;">Stake Level Reference — Min $200K fund deposit at all levels</div>'
       + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">'
       + STAKE_FACTORS.map((s,i) => {
-          const mb = Math.max(s.minDeposit, 200000);
-          return '<div style="background:' + (i===level-1?'rgba(200,169,110,0.12)':'var(--bg3)') + ';border:1px solid ' + (i===level-1?'var(--accent)':'var(--border)') + ';border-radius:8px;padding:8px;text-align:center;">'
-            + '<div style="font-size:9px;color:var(--muted);">Level ' + s.level + '</div>'
+          // Recommended for this level given their balance
+          const sCap = i+1 <= 2 ? 0.20 : i+1 <= 4 ? 0.30 : i+1 <= 6 ? 0.40 : 0.50;
+          const sRec = balance > 0
+            ? Math.max(Math.max(s.minDeposit*10, balance*sCap), MIN_FUND)
+            : Math.max(s.minDeposit*10, MIN_FUND);
+          const sRecCapped = balance > 0 ? Math.min(sRec, balance) : sRec;
+          const isActive = i === level-1;
+          return '<div style="background:' + (isActive?'rgba(200,169,110,0.12)':'var(--bg3)') + ';border:1px solid ' + (isActive?'var(--accent)':'var(--border)') + ';border-radius:8px;padding:8px;text-align:center;">'
+            + '<div style="font-size:9px;color:var(--muted);">Lv ' + s.level + '</div>'
             + '<div style="font-size:11px;font-weight:600;color:var(--accent2);margin:2px 0;">' + s.label + '</div>'
-            + '<div style="font-size:10px;font-family:var(--mono);color:var(--muted);">Min $' + fmtM(mb) + '</div>'
+            + '<div style="font-size:9px;color:var(--muted);margin-bottom:2px;">Stake: $' + fmtM(s.minDeposit) + '</div>'
+            + '<div style="font-size:10px;font-family:var(--mono);color:' + (isActive?'var(--accent2)':'var(--text)') + ';">Rec: $' + fmtM(sRecCapped) + '</div>'
             + '</div>';
         }).join('')
       + '</div>';
