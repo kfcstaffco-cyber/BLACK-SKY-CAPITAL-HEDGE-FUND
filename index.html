@@ -2168,7 +2168,16 @@ function renderPositions(positions) {
       <td>${badge('ACTIVE','blue')}</td>
     </tr>
     ${buildExpandRow(p,14)}`).join(''):'<tr><td colspan="14" style="color:var(--muted);text-align:center;padding:16px;">No open positions</td></tr>';
-  $('closed-thead').innerHTML=`<tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Entry Date</th><th>Exit Date</th><th>Entry</th><th>Exit</th><th>Hold</th><th>P&L</th><th>Result</th></tr>`;
+  $('closed-thead').innerHTML=`<tr>
+    <th>#</th><th>Class</th>
+    <th><span onclick="sortPositions('ticker')" class="sort-btn" id="sort-ticker-c">Ticker</span></th>
+    <th>Side</th>
+    <th><span onclick="sortPositions('date')" class="sort-btn" id="sort-date-c">Entry Date</span></th>
+    <th>Exit Date</th><th>Entry</th><th>Exit</th>
+    <th><span onclick="sortPositions('hold')" class="sort-btn" id="sort-hold-c">Hold</span></th>
+    <th><span onclick="sortPositions('pnl')" class="sort-btn" id="sort-pnl-c">P&L</span></th>
+    <th>Result</th>
+  </tr>`;
   $('closed-tbody').innerHTML=closed.map(p=>{
     const rb=p.result==='TAKE PROFIT HIT'?'green':p.result==='STOP LOSS HIT'?'red':'blue';
     const rl=p.result==='TAKE PROFIT HIT'?'TP HIT':p.result==='STOP LOSS HIT'?'SL HIT':'CLOSED';
@@ -2182,6 +2191,12 @@ function renderPositions(positions) {
       <td>${badge(rl,rb)}</td>
     </tr>${buildExpandRow(p,11)}`;
   }).join('');
+  // Summary rows + colour coding after DOM update
+  setTimeout(() => {
+    colorPositionRows();
+    renderSummaryRow(open, 'open-tbody', 14);
+    renderSummaryRow(closed, 'closed-tbody', 11);
+  }, 60);
 }
 
 // ── RENDER INVESTORS ─────────────────────────────────────────────
@@ -3951,6 +3966,7 @@ function applySortToPositions(positions) {
   return [...positions].sort((a, b) => {
     let av, bv;
     if (sortField === 'pnl')    { av = a.pnl||0;    bv = b.pnl||0; }
+    if (sortField === 'hold')   { av = a.hold||0;   bv = b.hold||0; }
     if (sortField === 'ticker') { av = a.ticker||''; bv = b.ticker||''; }
     if (sortField === 'date')   { 
       const pd = s => { if(!s||s==='—') return 0; const [d,m,y]=s.split('/'); return new Date(+y,+m-1,+d).getTime(); };
