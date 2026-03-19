@@ -1249,7 +1249,8 @@
       </div>
       <div class="hero-stats" id="hero-stats"></div>
     </div>
-    <div class="metric-grid" id="overview-metrics"></div>
+    <div style="margin-bottom:6px;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);">Performance</div>
+    <div class="metric-grid" id="overview-metrics" style="margin-bottom:6px;"></div>
     <div class="two-col">
       <div class="card">
         <div class="card-header"><span class="card-title">P&L Breakdown</span></div>
@@ -2294,12 +2295,14 @@ function renderOverview(d) {
   const isFirstRender = !grid.children.length || grid.querySelector('.skeleton') !== null;
   if (isFirstRender) {
     // Render cards with 0 first, then count up to real values
-    grid.innerHTML = metrics.map((c,i)=>`
-      <div class="metric-card" id="mc-${c.key}" data-raw="${d[c.key]||0}" style="opacity:0;transform:translateY(12px);transition:opacity 0.4s ease ${i*0.07}s, transform 0.4s ease ${i*0.07}s">
+    grid.innerHTML = metrics.map((c,i)=>{
+      const div = i===6 ? `</div><div style="margin:14px 0 6px;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);">Fund Info</div><div class="metric-grid" style="margin-bottom:0;">` : '';
+      return div + `<div class="metric-card" id="mc-${c.key}" data-raw="${d[c.key]||0}" style="opacity:0;transform:translateY(12px);transition:opacity 0.4s ease ${i*0.07}s, transform 0.4s ease ${i*0.07}s">
         <div class="metric-label">${c.label}</div>
         <div class="metric-value ${c.cls}">—</div>
         <div class="metric-sub">${c.sub}</div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
     // Stagger reveal then count up
     requestAnimationFrame(() => {
       metrics.forEach((c,i) => {
@@ -2364,7 +2367,7 @@ function renderPositions(positions) {
   const th=`<tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Entry Date</th><th>Duration</th><th>Entry</th><th>Cur/Exit</th><th>Qty</th><th>Lev</th><th>Unrealised P&L</th><th>SL</th><th>TP</th><th>Status</th></tr>`;
   $('open-thead').innerHTML=th;
   $('open-tbody').innerHTML=open.length?open.map(p=>`
-    <tr class="pos-row${p.pnl>0?' row-profit':p.pnl<0?' row-loss':''}" onclick="togglePosRow(${p.id})">
+    <tr class="pos-row" style="${getPnlRowStyle(p.pnl, window.lastData?.positions||[])}" onclick="togglePosRow(${p.id})">
       <td>${p.id}</td><td class="label">${p.cls}</td><td class="label">${p.ticker}</td>
       <td>${badge(p.side.toUpperCase(),p.side==='Long'?'green':'red')}</td>
       <td style="color:var(--muted)">${p.date||'—'}</td>
@@ -2381,7 +2384,7 @@ function renderPositions(positions) {
   $('closed-tbody').innerHTML=closed.map(p=>{
     const rb=p.result==='TAKE PROFIT HIT'?'green':p.result==='STOP LOSS HIT'?'red':'blue';
     const rl=p.result==='TAKE PROFIT HIT'?'TP HIT':p.result==='STOP LOSS HIT'?'SL HIT':'CLOSED';
-    return`<tr class="pos-row${p.pnl>0?' row-profit':p.pnl<0?' row-loss':''}" onclick="togglePosRow(${p.id})">
+    return`<tr class="pos-row" style="${getPnlRowStyle(p.pnl, window.lastData?.positions||[])}" onclick="togglePosRow(${p.id})">
       <td>${p.id}</td><td class="label">${p.cls}</td><td class="label">${p.ticker}</td>
       <td>${badge(p.side.toUpperCase(),p.side==='Long'?'green':'red')}</td>
       <td style="color:var(--muted)">${p.date||'—'}</td>
@@ -2498,6 +2501,14 @@ function renderInvestors(investors, transactions) {
             <div style="text-align:right">
               <div class="investor-total">$${fmtM(aggDeposited)}</div>
               <div style="font-size:10px;color:var(--muted);">Total deposited</div>
+            </div>
+            <div style="text-align:right;border-left:1px solid var(--border);padding-left:14px;">
+              <div style="font-size:15px;font-weight:600;font-family:var(--mono);color:var(--green);">${(inv.pnlShare>=0?'+':'')}$${fmtM(aggDeposited + inv.pnlShare)}</div>
+              <div style="font-size:10px;color:var(--muted);">Net payout</div>
+            </div>
+            <div style="text-align:right;border-left:1px solid var(--border);padding-left:14px;">
+              <div style="font-size:13px;font-weight:500;font-family:var(--mono);color:${inv.pnlShare>=0?'var(--green)':'var(--red)'};">${(inv.pnlShare>=0?'+':'')}$${fmtM(inv.pnlShare)}</div>
+              <div style="font-size:10px;color:var(--muted);">P&L share</div>
             </div>
             <div style="text-align:right">
               <div class="investor-pnl" style="color:var(--green)">${sgn(inv.pnlShare)}$${fmtM(inv.pnlShare)}</div>
@@ -4422,6 +4433,18 @@ function addChartDownloadButtons() {
   });
 }
 
+
+
+// ── P&L INTENSITY ROW COLOURING ─────────────────────────────────
+function getPnlRowStyle(pnl, positions) {
+  if (!pnl || pnl === 0) return '';
+  const allPnls = (positions||[]).map(p => Math.abs(p.pnl)).filter(v => v > 0);
+  const maxPnl  = allPnls.length ? Math.max(...allPnls) : 1;
+  const intensity = Math.min(Math.abs(pnl) / maxPnl, 1);
+  const alpha = 0.03 + intensity * 0.12; // range 0.03 to 0.15
+  if (pnl > 0) return `background:rgba(62,207,142,${alpha.toFixed(3)});`;
+  return `background:rgba(232,83,74,${alpha.toFixed(3)});`;
+}
 
 // ── RENDER ALL ───────────────────────────────────────────────────
 function renderAll(d) {
