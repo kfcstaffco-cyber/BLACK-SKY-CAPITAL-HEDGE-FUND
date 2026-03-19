@@ -5216,11 +5216,16 @@ function getBroadcastMessage() {
 }
 
 function showInvestorMessage() {
+  console.log('[BSC] showInvestorMessage called, isMasterAccess=', isMasterAccess);
   const msg = getBroadcastMessage();
+  console.log('[BSC] getBroadcastMessage result:', msg);
+  console.log('[BSC] MSG_KEY=', MSG_KEY, 'raw=', localStorage.getItem(MSG_KEY));
+  console.log('[BSC] dismissed=', localStorage.getItem(MSG_DISMISSED_KEY));
   const banner = document.getElementById('investor-msg-banner');
-  if (!msg || !banner) return;
+  console.log('[BSC] banner element:', banner);
+  if (!msg || !banner) { console.log('[BSC] early return: msg=', msg, 'banner=', banner); return; }
   // Don't show if already dismissed by this user
-  if (!isMasterAccess && localStorage.getItem(MSG_DISMISSED_KEY)) return;
+  if (!isMasterAccess && localStorage.getItem(MSG_DISMISSED_KEY)) { console.log('[BSC] dismissed, skipping'); return; }
   document.getElementById('investor-msg-text').textContent = msg.text;
   const ago = Math.round((Date.now() - msg.ts) / 60000);
   const timeStr = ago < 1 ? 'Just now' : ago < 60 ? ago + 'm ago' : Math.round(ago/60) + 'h ago';
