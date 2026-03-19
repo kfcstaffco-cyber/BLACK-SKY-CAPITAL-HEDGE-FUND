@@ -841,6 +841,45 @@
     .lang-btn:hover { color: var(--accent); border-color: var(--accent); }
     .lang-btn.active { color: var(--accent2); border-color: var(--accent); background: rgba(200,169,110,0.1); }
 
+
+    /* ── SORT CONTROLS ── */
+    .sort-btn {
+      background: none; border: none; cursor: pointer; color: var(--muted);
+      font-size: 9px; padding: 0 2px; transition: color 0.15s; vertical-align: middle;
+    }
+    .sort-btn:hover { color: var(--accent); }
+    .sort-btn.asc::after  { content: ' ▲'; }
+    .sort-btn.desc::after { content: ' ▼'; }
+    /* ── SUMMARY ROW ── */
+    .summary-row td {
+      border-top: 2px solid var(--border2) !important;
+      border-bottom: none !important;
+      font-size: 10px; color: var(--muted);
+      padding-top: 12px !important;
+    }
+    .summary-row td.sum-val {
+      font-family: var(--mono); font-size: 11px; font-weight: 500;
+    }
+    /* ── CALENDAR SUMMARY BAR ── */
+    .cal-summary-bar {
+      display: flex; gap: 20px; padding: 12px 16px; margin-bottom: 16px;
+      background: rgba(255,255,255,0.02); border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .cal-sum-item { display: flex; flex-direction: column; gap: 2px; }
+    .cal-sum-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
+    .cal-sum-val   { font-size: 15px; font-weight: 600; font-family: var(--mono); }
+    /* ── CHART DOWNLOAD ── */
+    .chart-dl-btn {
+      position: absolute; top: 8px; right: 8px;
+      background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: 6px; padding: 4px 8px; font-size: 9px;
+      color: var(--muted); cursor: pointer; transition: all 0.15s;
+      letter-spacing: 0.04em; z-index: 10;
+    }
+    .chart-dl-btn:hover { color: var(--accent); border-color: var(--accent); }
+    .chart-wrap { position: relative; }
+
     /* TICKER */
     .ticker-move { display: flex; white-space: nowrap; animation: ticker-loop 60s linear infinite; }
     @keyframes ticker-loop { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
@@ -1284,6 +1323,7 @@
         <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:rgba(200,169,110,0.5);display:inline-block;"></span>Open</span>
       </div>
     </div>
+    <div id="cal-summary"></div>
     <div class="card">
       <div id="cal-grid"></div>
     </div>
@@ -2003,13 +2043,13 @@ function parseTransactionLog(rows) {
 // ── RENDER OVERVIEW ──────────────────────────────────────────────
 function renderOverview(d) {
   const metrics = [
-    {label:'Total P&L',      val:sgn(d.totalPnl)+'$'+fmtM(d.totalPnl),    cls:'green', sub:'Realised + Unrealised',         key:'totalPnl'},
-    {label:'Total Return',   val:sgn(d.totalReturn)+fmtPct(d.totalReturn), cls:'green', sub:'On capital deposited',          key:'totalReturn'},
+    {label:'Total P&L',      val:sgn(d.totalPnl)+'$'+fmtM(d.totalPnl),    cls:'green', sub:'All closed + open positions',         key:'totalPnl'},
+    {label:'Total Return',   val:sgn(d.totalReturn)+fmtPct(d.totalReturn), cls:'green', sub:'Since fund inception',          key:'totalReturn'},
     {label:'Win Rate',       val:(d.winRate*100).toFixed(2)+'%',           cls:'gold',  sub:d.winTrades+' wins / '+d.lossTrades+' losses', key:'winRate'},
     {label:'Realised P&L',   val:sgn(d.realisedPnl)+'$'+fmtM(d.realisedPnl), cls:'green', sub:d.totalTrades+' closed trades', key:'realisedPnl'},
-    {label:'Unrealised P&L', val:sgn(d.unrealisedPnl)+'$'+fmtM(d.unrealisedPnl), cls:'green', sub:'Open positions',         key:'unrealisedPnl'},
-    {label:'Margin Deployed',val:'$'+fmtM(d.marginDeployed), cls:'blue',  sub:'Active positions',                          key:'marginDeployed'},
-    {label:'Notional Exp.',  val:'$'+fmtM(d.notional),       cls:'blue',  sub:'Total leveraged',                           key:'notional'},
+    {label:'Unrealised P&L', val:sgn(d.unrealisedPnl)+'$'+fmtM(d.unrealisedPnl), cls:'green', sub:'From open positions',         key:'unrealisedPnl'},
+    {label:'Margin Deployed',val:'$'+fmtM(d.marginDeployed), cls:'blue',  sub:'Currently deployed',                          key:'marginDeployed'},
+    {label:'Notional Exp.',  val:'$'+fmtM(d.notional),       cls:'blue',  sub:'Gross notional value',                           key:'notional'},
     {label:"Today's P&L", val:(()=>{
       const t=getTodayPnl(d.positions);
       return (t>=0?'+':'')+'$'+fmtM(t);
@@ -2102,7 +2142,17 @@ function renderOverview(d) {
 function renderPositions(positions) {
   const open=positions.filter(p=>p.status==='Open'), closed=positions.filter(p=>p.status==='Closed');
   $('pos-badges').innerHTML=badge(open.length+' OPEN','blue')+' '+badge(closed.length+' CLOSED','gray')+`<span style="font-size:11px;color:var(--muted);margin-left:8px;">${positions.length} total trades</span>`;
-  const th=`<tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Entry Date</th><th>Duration</th><th>Entry</th><th>Cur/Exit</th><th>Qty</th><th>Lev</th><th>Unrealised P&L</th><th>SL</th><th>TP</th><th>Status</th></tr>`;
+  const th=`<tr>
+      <th>#</th>
+      <th>Class</th>
+      <th><span onclick="sortPositions('ticker')" class="sort-btn" id="sort-ticker">Ticker</span></th>
+      <th>Side</th>
+      <th><span onclick="sortPositions('date')" class="sort-btn" id="sort-date">Entry Date</span></th>
+      <th>Duration</th>
+      <th>Entry</th><th>Cur/Exit</th><th>Qty</th><th>Lev</th>
+      <th><span onclick="sortPositions('pnl')" class="sort-btn" id="sort-pnl">Unrealised P&L</span></th>
+      <th>SL</th><th>TP</th><th>Status</th>
+    </tr>`;
   $('open-thead').innerHTML=th;
   $('open-tbody').innerHTML=open.length?open.map(p=>`
     <tr class="pos-row${p.pnl>0?' row-profit':p.pnl<0?' row-loss':''}" onclick="togglePosRow(${p.id})">
@@ -2546,6 +2596,7 @@ function renderAnalytics(d) {
 
   renderNewAnalytics(d.positions);
   renderStreaks(d.positions||[]);
+  setTimeout(addChartDownloadButtons, 200);
 }
 
 
@@ -3012,7 +3063,8 @@ function filterPositions() {
     return matchChip && matchQuery && matchStatus && matchResult;
   });
 
-  renderPositions(filtered);
+  const sorted = applySortToPositions(filtered);
+  renderPositions(sorted);
 }
 
 // ── TRADE CALENDAR ───────────────────────────────────────────────
@@ -3031,6 +3083,7 @@ function renderCalendar(positions) {
   const gridEl  = document.getElementById('cal-grid');
   const listEl  = document.getElementById('cal-trade-list');
   if (!titleEl || !gridEl) return;
+  renderCalSummary(positions, calYear, calMonth);
 
   const monthNames = ['January','February','March','April','May','June',
                       'July','August','September','October','November','December'];
@@ -3873,6 +3926,132 @@ function updateLiveTicker() {
 setInterval(updateLiveTicker, 3000);
 
 
+
+// ── POSITION SORT ────────────────────────────────────────────────
+let sortField = null;
+let sortDir   = 'desc';
+
+function sortPositions(field) {
+  if (sortField === field) {
+    sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+  } else {
+    sortField = field;
+    sortDir   = 'desc';
+  }
+  // Update sort button indicators
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('asc','desc'));
+  const btn = document.getElementById('sort-' + field);
+  if (btn) btn.classList.add(sortDir);
+  // Re-render
+  filterPositions();
+}
+
+function applySortToPositions(positions) {
+  if (!sortField) return positions;
+  return [...positions].sort((a, b) => {
+    let av, bv;
+    if (sortField === 'pnl')    { av = a.pnl||0;    bv = b.pnl||0; }
+    if (sortField === 'ticker') { av = a.ticker||''; bv = b.ticker||''; }
+    if (sortField === 'date')   { 
+      const pd = s => { if(!s||s==='—') return 0; const [d,m,y]=s.split('/'); return new Date(+y,+m-1,+d).getTime(); };
+      av = pd(a.date); bv = pd(b.date);
+    }
+    if (typeof av === 'string') return sortDir==='asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+    return sortDir === 'asc' ? av - bv : bv - av;
+  });
+}
+
+// ── POSITIONS SUMMARY ROW ────────────────────────────────────────
+function renderSummaryRow(positions, tbodyId, colspan) {
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody || !positions.length) return;
+  const totalPnl  = positions.reduce((s,p) => s+p.pnl, 0);
+  const avgHold   = positions.reduce((s,p) => s+(p.hold||0), 0) / positions.length;
+  const wins      = positions.filter(p => p.pnl > 0).length;
+  const winRate   = ((wins/positions.length)*100).toFixed(0);
+  const row = document.createElement('tr');
+  row.className = 'summary-row';
+  row.innerHTML = `
+    <td colspan="4" style="color:var(--muted);font-size:10px;">
+      ${positions.length} trades · ${winRate}% win rate
+    </td>
+    <td colspan="${Math.max(colspan-8,1)}"></td>
+    <td colspan="2" class="sum-val" style="color:var(--muted);">Avg hold: ${avgHold.toFixed(1)}d</td>
+    <td colspan="2" class="sum-val" style="color:${totalPnl>=0?'var(--green)':'var(--red)'};">
+      ${totalPnl>=0?'+':''}$${fmtM(totalPnl)}
+    </td>
+    <td colspan="${Math.max(colspan-8,1)}"></td>`;
+  tbody.appendChild(row);
+}
+
+// ── CALENDAR MONTHLY SUMMARY ─────────────────────────────────────
+function renderCalSummary(positions, year, month) {
+  const el = document.getElementById('cal-summary');
+  if (!el) return;
+  const monthTrades = (positions||[]).filter(p => {
+    const d = p.status==='Open' ? p.date : (p.exitDate||p.date);
+    if (!d||d==='—') return false;
+    const parts = d.split('/');
+    return +parts[2]===year && +parts[1]-1===month;
+  });
+  if (!monthTrades.length) {
+    el.innerHTML = '<div class="cal-summary-bar" style="color:var(--muted);font-size:12px;">No trades this month</div>';
+    return;
+  }
+  const totalPnl  = monthTrades.reduce((s,p)=>s+p.pnl,0);
+  const wins      = monthTrades.filter(p=>p.pnl>0).length;
+  const best      = Math.max(...monthTrades.map(p=>p.pnl));
+  const worst     = Math.min(...monthTrades.map(p=>p.pnl));
+  el.innerHTML = `<div class="cal-summary-bar">
+    <div class="cal-sum-item">
+      <div class="cal-sum-label">Monthly P&L</div>
+      <div class="cal-sum-val" style="color:${totalPnl>=0?'var(--green)':'var(--red)'}">
+        ${totalPnl>=0?'+':''}$${fmtM(totalPnl)}
+      </div>
+    </div>
+    <div class="cal-sum-item">
+      <div class="cal-sum-label">Trades</div>
+      <div class="cal-sum-val" style="color:var(--text)">${monthTrades.length}</div>
+    </div>
+    <div class="cal-sum-item">
+      <div class="cal-sum-label">Win Rate</div>
+      <div class="cal-sum-val" style="color:var(--accent2)">${((wins/monthTrades.length)*100).toFixed(0)}%</div>
+    </div>
+    <div class="cal-sum-item">
+      <div class="cal-sum-label">Best Trade</div>
+      <div class="cal-sum-val" style="color:var(--green)">+$${fmtM(best)}</div>
+    </div>
+    <div class="cal-sum-item">
+      <div class="cal-sum-label">Worst Trade</div>
+      <div class="cal-sum-val" style="color:var(--red)">${worst>=0?'+':''}$${fmtM(worst)}</div>
+    </div>
+  </div>`;
+}
+
+// ── CHART DOWNLOAD BUTTONS ───────────────────────────────────────
+function addChartDownloadButtons() {
+  const chartIds = ['plBarChart','assetPnlChart','cumulativePnlChart',
+                    'drawdownChart','navChart','investorCapitalChart',
+                    'winRateChart','momentumChart'];
+  chartIds.forEach(id => {
+    const canvas = document.getElementById(id);
+    if (!canvas) return;
+    const wrap = canvas.closest('.chart-wrap');
+    if (!wrap || wrap.querySelector('.chart-dl-btn')) return;
+    const btn = document.createElement('button');
+    btn.className = 'chart-dl-btn';
+    btn.textContent = '↓ PNG';
+    btn.onclick = () => {
+      const link = document.createElement('a');
+      link.download = id + '.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    };
+    wrap.appendChild(btn);
+  });
+}
+
+
 // ── RENDER ALL ───────────────────────────────────────────────────
 function renderAll(d) {
   window.lastData = d;
@@ -3894,6 +4073,7 @@ function renderAll(d) {
   renderInceptionStats(d);
   renderNAVWithBenchmark(d);
   setTimeout(colorPositionRows, 100);
+  setTimeout(addChartDownloadButtons, 300);
   // Show statement button for master
   const sw = document.getElementById('statement-btn-wrap');
   if (sw) sw.style.display = isMasterAccess ? 'block' : 'none';
