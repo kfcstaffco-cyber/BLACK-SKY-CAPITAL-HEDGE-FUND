@@ -2513,10 +2513,6 @@ function renderInvestors(investors, transactions) {
               <div style="font-size:16px;font-weight:500;font-family:var(--mono);color:${inv.pnlShare>=0?'var(--green)':'var(--red)'};">${(inv.pnlShare>=0?'+':'')}$${fmtM(inv.pnlShare)}</div>
               <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">P&L share</div>
             </div>
-            <div style="text-align:right">
-              <div class="investor-pnl" style="color:var(--green)">${sgn(inv.pnlShare)}$${fmtM(inv.pnlShare)}</div>
-              <div style="font-size:10px;color:var(--muted);">P&L share</div>
-            </div>
             <button class="chevron" id="chev-${idx}">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
