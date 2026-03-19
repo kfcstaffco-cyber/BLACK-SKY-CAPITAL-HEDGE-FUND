@@ -501,7 +501,8 @@
       transition: opacity 1s ease;
     }
     #particle-canvas.visible { opacity: 1; }
-    #page-overview { position: relative; z-index: 1; }
+    /* Ensure all content sits above canvas */
+    .header, .nav-tabs, .page, .ticker-wrap, .mobile-nav-bar { position: relative; z-index: 1; }
 
 
 
@@ -2179,7 +2180,7 @@ function switchTab(name, el) {
       current.style.animation = '';
       next.classList.add('active');
       next.style.animation = 'pageIn 0.22s ease forwards';
-      showParticles(name === 'overview');
+      showParticles(true);
       setTimeout(() => { next.style.animation = ''; }, 250);
     }, 160);
   } else {
