@@ -118,7 +118,6 @@
       transition: color 0.15s; user-select: none;
     }
     .nav-tab:hover { color: var(--text); }
-    .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 
     /* PAGES */
     .page { display: none; padding: 26px 28px 60px; max-width: 1400px; margin: 0 auto; }
@@ -3001,7 +3000,7 @@ function filterPositions() {
   if (!d || !d.positions) return;
 
   const filtered = d.positions.filter(p => {
-    const matchChip   = activeChip === 'all' || (p.cls||'').toLowerCase() === activeChip;
+    const matchChip   = activeChips.has('all') || activeChips.has((p.cls||'').toLowerCase());
     const matchQuery  = !query ||
       p.ticker.toLowerCase().includes(query) ||
       p.cls.toLowerCase().includes(query) ||
@@ -3779,7 +3778,7 @@ function setLang(lang) {
 }
 
 // ── ASSET CLASS FILTER CHIPS ─────────────────────────────────────
-let activeChip = 'all';
+let activeChips = new Set(['all']);
 
 function renderChips(positions) {
   const bar = document.getElementById('asset-chips');
@@ -3787,13 +3786,27 @@ function renderChips(positions) {
   const classes = ['All', ...new Set((positions||[]).map(p=>p.cls).filter(Boolean).sort())];
   bar.innerHTML = classes.map(cls => {
     const key = cls.toLowerCase();
+    const isActive = key === 'all' ? activeChips.has('all') : activeChips.has(key);
     const count = cls==='All' ? positions.length : positions.filter(p=>p.cls===cls).length;
-    return `<div class="chip${activeChip===key?' active':''}" onclick="setChip('${key}')">${cls} <span style="opacity:0.6">${count}</span></div>`;
+    return `<div class="chip${isActive?' active':''}" onclick="setChip('${key}')">${cls} <span style="opacity:0.6">${count}</span></div>`;
   }).join('');
 }
 
 function setChip(cls) {
-  activeChip = cls;
+  if (cls === 'all') {
+    // All resets everything
+    activeChips = new Set(['all']);
+  } else {
+    // Remove 'all' when selecting specific class
+    activeChips.delete('all');
+    if (activeChips.has(cls)) {
+      activeChips.delete(cls);
+      // If nothing left, revert to all
+      if (activeChips.size === 0) activeChips = new Set(['all']);
+    } else {
+      activeChips.add(cls);
+    }
+  }
   renderChips(window.lastData?.positions||[]);
   filterPositions();
 }
