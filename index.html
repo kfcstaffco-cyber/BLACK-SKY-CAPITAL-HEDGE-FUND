@@ -1994,10 +1994,10 @@ let prevMetrics = {};
 // ── MICRO-FLUCTUATION ────────────────────────────────────────────
 const FLUCT_CARDS = ['nav','totalPnl','unrealisedPnl','totalReturn'];
 const FLUCT_RANGES = {
-  nav:          { scale:0.0003, fmt:v=>'$'+fmtM(v),                          cls:'gold'  },
-  totalPnl:     { scale:0.0004, fmt:v=>(v>=0?'+':'')+' $'+fmtM(Math.abs(v)), cls:'green' },
-  unrealisedPnl:{ scale:0.0006, fmt:v=>(v>=0?'+':'')+' $'+fmtM(Math.abs(v)), cls:'green' },
-  totalReturn:  { scale:0.0003, fmt:v=>sgn(v)+fmtPct(Math.abs(v)),           cls:'green' },
+  nav:          { scale:0.0003, fmt:v=>'$'+fmtM(v),                                        cls:'gold'  },
+  totalPnl:     { scale:0.0004, fmt:v=>(v>=0?'+ ':' '+'$'+fmtM(Math.abs(v))),             cls:'green' },
+  unrealisedPnl:{ scale:0.0006, fmt:v=>(v>=0?'+ ':'-')+'$'+fmtM(Math.abs(v)),             cls:'green' },
+  totalReturn:  { scale:0.0003, fmt:v=>sgn(v)+fmtPct(Math.abs(v)),                         cls:'green' },
 };
 let fluctBase = {};
 let fluctTimer = null;
@@ -2079,7 +2079,9 @@ function startMicroFluctuations() {
         if (!card) return;
         const cfg = FLUCT_RANGES[key], base = fluctBase[key];
         if (!cfg || base == null) return;
-        const newVal = base + (Math.abs(base) * cfg.scale * direction * (0.5 + Math.random() * 0.5));
+        const nudge = Math.abs(base) * cfg.scale * direction * (0.5 + Math.random() * 0.5);
+        // Clamp so we never cross zero — a negative value stays negative
+        const newVal = base >= 0 ? Math.max(0, base + nudge) : Math.min(0, base + nudge);
         const valEl = card.querySelector('.metric-value');
         if (!valEl) return;
         valEl.classList.remove('tick-up','tick-down');
@@ -2156,7 +2158,10 @@ function startMicroFluctuations() {
   fluctTimer = setTimeout(tick, 2500 + Math.random()*1000);
 }
 
-function seedFluctuations(d) { FLUCT_CARDS.forEach(k=>{if(d[k]!=null) fluctBase[k]=d[k];}); }
+function seedFluctuations(d) { 
+  // Always reseed from real data so fluctuations stay anchored to actual values
+  FLUCT_CARDS.forEach(k => { if (d[k] != null) fluctBase[k] = d[k]; }); 
+}
 function destroyChart(id) { if(charts[id]){charts[id].destroy();delete charts[id];} }
 
 Chart.defaults.color = '#6b7380';
