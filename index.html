@@ -2052,6 +2052,24 @@ const DEMO = {
 // ── HELPERS ─────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 const fmtM = n => { const a=Math.abs(n); if(a>=1e12) return (n/1e12).toFixed(2)+'T'; if(a>=1e9) return (n/1e9).toFixed(2)+'B'; if(a>=1e6) return (n/1e6).toFixed(1)+'M'; if(a>=1e3) return (n/1e3).toFixed(0)+'K'; return n.toFixed(2); };
+// Format prices with apostrophe thousands separator: 75000 → 75'000, 1234.56 → 1'234.56
+const fmtPrice = n => {
+  if (!n && n !== 0) return '—';
+  const num = parseFloat(n);
+  if (isNaN(num)) return String(n);
+  // Split integer and decimal parts
+  const [intPart, decPart] = num.toFixed(num % 1 === 0 ? 0 : 2).split('.');
+  const intFormatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+  return decPart ? intFormatted + '.' + decPart : intFormatted;
+};
+// Format quantity: show B if >= 1B, M if >= 1M, K if >= 1K
+const fmtQty = n => {
+  const a = Math.abs(n);
+  if (a >= 1e9) return (n/1e9).toFixed(2)+'B';
+  if (a >= 1e6) return (n/1e6).toFixed(2)+'M';
+  if (a >= 1e3) return (n/1e3).toFixed(1)+'K';
+  return String(n);
+};
 const fmtPct = n => (n*100).toFixed(2)+'%';
 const sgn = n => n>=0?'+':'';
 const clr = n => n>=0?'var(--green)':'var(--red)';
@@ -2619,11 +2637,11 @@ function renderPositions(positions) {
       <td>${badge(p.side.toUpperCase(),p.side==='Long'?'green':'red')}</td>
       <td style="color:var(--muted)">${p.date||'—'}</td>
       <td id="dur-${p.id}" style="color:var(--muted);font-family:var(--mono)">${fmtDuration(null,p.date)}</td>
-      <td>${p.entry}</td><td>${p.exit||'—'}</td>
-      <td>${(p.qty/1e6).toFixed(2)}M</td><td>${p.lev}×</td>
+      <td>${fmtPrice(p.entry)}</td><td>${fmtPrice(p.exit)||'—'}</td>
+      <td>${fmtQty(p.qty)}</td><td>${p.lev}×</td>
       <td id="pnl-${p.id}" style="color:${clr(p.pnl)}">${sgn(p.pnl)}$${fmtM(p.pnl)}</td>
-      <td style="color:var(--red)">${p.sl||'—'}</td>
-      <td style="color:var(--green)">${p.tp||'—'}</td>
+      <td style="color:var(--red)">${p.sl?fmtPrice(p.sl):'—'}</td>
+      <td style="color:var(--green)">${p.tp?fmtPrice(p.tp):'—'}</td>
       <td>${badge('ACTIVE','blue')}</td>
     </tr>
     ${buildExpandRow(p,14)}`).join(''):'<tr><td colspan="14" style="color:var(--muted);text-align:center;padding:16px;">No open positions</td></tr>';
@@ -2664,7 +2682,7 @@ function renderPositions(positions) {
       <td>${badge(p.side.toUpperCase(),p.side==='Long'?'green':'red')}</td>
       <td style="color:var(--muted)">${p.date||'—'}</td>
       <td style="color:var(--muted)">${p.exitDate||'—'}</td>
-      <td>${p.entry}</td><td>${p.exit}</td><td>${p.hold}d</td>
+      <td>${fmtPrice(p.entry)}</td><td>${fmtPrice(p.exit)}</td><td>${p.hold}d</td>
       <td id="pnl-${p.id}" style="color:${clr(p.pnl)}">${sgn(p.pnl)}$${fmtM(p.pnl)}</td>
       <td>${badge(rl,rb)}</td>
     </tr>${buildExpandRow(p,11)}`;
@@ -4567,10 +4585,10 @@ function togglePosRow(id) {
 
 function buildExpandRow(p, colspan) {
   const items = [
-    {label: t('entry'),   val: p.entry || '—'},
-    {label: t('exit'),    val: p.exit  || '—'},
-    {label: 'SL',         val: p.sl    || '—', style: 'color:var(--red)'},
-    {label: 'TP',         val: p.tp    || '—', style: 'color:var(--green)'},
+    {label: t('entry'),   val: p.entry ? fmtPrice(p.entry) : '—'},
+    {label: t('exit'),    val: p.exit  ? fmtPrice(p.exit)  : '—'},
+    {label: 'SL',         val: p.sl    ? fmtPrice(p.sl)    : '—', style: 'color:var(--red)'},
+    {label: 'TP',         val: p.tp    ? fmtPrice(p.tp)    : '—', style: 'color:var(--green)'},
     {label: t('hold'),    val: (p.hold||0)+'d'},
     {label: 'Qty',        val: fmtM(p.qty)},
     {label: 'Leverage',   val: (p.lev||1)+'×'},
