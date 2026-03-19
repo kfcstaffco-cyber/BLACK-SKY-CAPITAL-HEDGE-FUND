@@ -2218,7 +2218,7 @@ function parseInvestors(rows) {
       byName[n].deposited   += r.deposited;
       byName[n].withdrawn   += r.withdrawn;
       byName[n].pct         += r.pct;
-      byName[n].pnlShare    += r.pnlShare;
+      // pnlShare is the same total on every row — don't accumulate, keep first value
       byName[n].balance     += r.balance;
       // Keep the most recent deposit date
       byName[n].depositDate  = r.depositDate || byName[n].depositDate;
