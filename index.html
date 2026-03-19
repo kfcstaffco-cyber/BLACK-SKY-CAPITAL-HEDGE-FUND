@@ -1249,8 +1249,7 @@
       </div>
       <div class="hero-stats" id="hero-stats"></div>
     </div>
-    <div style="margin-bottom:6px;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);">Performance</div>
-    <div class="metric-grid" id="overview-metrics" style="margin-bottom:6px;"></div>
+    <div class="metric-grid" id="overview-metrics"></div>
     <div class="two-col">
       <div class="card">
         <div class="card-header"><span class="card-title">P&L Breakdown</span></div>
@@ -2295,14 +2294,12 @@ function renderOverview(d) {
   const isFirstRender = !grid.children.length || grid.querySelector('.skeleton') !== null;
   if (isFirstRender) {
     // Render cards with 0 first, then count up to real values
-    grid.innerHTML = metrics.map((c,i)=>{
-      const div = i===6 ? `</div><div style="margin:14px 0 6px;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);">Fund Info</div><div class="metric-grid" style="margin-bottom:0;">` : '';
-      return div + `<div class="metric-card" id="mc-${c.key}" data-raw="${d[c.key]||0}" style="opacity:0;transform:translateY(12px);transition:opacity 0.4s ease ${i*0.07}s, transform 0.4s ease ${i*0.07}s">
+    grid.innerHTML = metrics.map((c,i)=>`
+      <div class="metric-card" id="mc-${c.key}" data-raw="${d[c.key]||0}" style="opacity:0;transform:translateY(12px);transition:opacity 0.4s ease ${i*0.07}s, transform 0.4s ease ${i*0.07}s">
         <div class="metric-label">${c.label}</div>
         <div class="metric-value ${c.cls}">—</div>
         <div class="metric-sub">${c.sub}</div>
-      </div>`;
-    }).join('');
+      </div>`).join('');
     // Stagger reveal then count up
     requestAnimationFrame(() => {
       metrics.forEach((c,i) => {
@@ -2502,16 +2499,12 @@ function renderInvestors(investors, transactions) {
               <div class="investor-total">$${fmtM(aggDeposited)}</div>
               <div style="font-size:10px;color:var(--muted);">Total deposited</div>
             </div>
-            <div style="text-align:right;border-left:1px solid var(--border);padding-left:14px;">
-              <div style="font-size:15px;font-weight:600;font-family:var(--mono);color:var(--green);">${(inv.pnlShare>=0?'+':'')}$${fmtM(aggDeposited + inv.pnlShare)}</div>
-              <div style="font-size:10px;color:var(--muted);">Net payout</div>
-            </div>
-            <div style="text-align:right;border-left:1px solid var(--border);padding-left:14px;">
-              <div style="font-size:13px;font-weight:500;font-family:var(--mono);color:${inv.pnlShare>=0?'var(--green)':'var(--red)'};">${(inv.pnlShare>=0?'+':'')}$${fmtM(inv.pnlShare)}</div>
+            <div style="text-align:right">
+              <div class="investo            <div style="text-align:right">
+              <div class="investor-pnl" style="color:var(--green)">${sgn(inv.pnlShare)}$${fmtM(inv.pnlShare)}</div>
               <div style="font-size:10px;color:var(--muted);">P&L share</div>
             </div>
-            <div style="text-align:right">
-              <div class="investo            <button class="chevron" id="chev-${idx}">
+            <button class="chevron" id="chev-${idx}">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
           </div>
