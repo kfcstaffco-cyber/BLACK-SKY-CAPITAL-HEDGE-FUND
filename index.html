@@ -4605,14 +4605,14 @@ document.addEventListener('keydown', e => {
 
 // ── POSITION SIZING CALCULATOR ───────────────────────────────────
 const STAKE_FACTORS = [
-  {level:1, label:'Low',        mult:1,        minDeposit:200000},
-  {level:2, label:'Mid',        mult:10,       minDeposit:500000},
-  {level:3, label:'High',       mult:100,      minDeposit:2000000},
-  {level:4, label:'Royale',     mult:1000,     minDeposit:10000000},
-  {level:5, label:'Legendary',  mult:10000,    minDeposit:50000000},
-  {level:6, label:'Mythic',     mult:100000,   minDeposit:500000000},
-  {level:7, label:'High-Roller',mult:1000000,  minDeposit:5000000000},
-  {level:8, label:'Champion',   mult:10000000, minDeposit:50000000000},
+  {level:1, label:'Low',        mult:1,        minBet:5,          minDeposit:200000},
+  {level:2, label:'Mid',        mult:10,       minBet:50,         minDeposit:500000},
+  {level:3, label:'High',       mult:100,      minBet:500,        minDeposit:2000000},
+  {level:4, label:'Royale',     mult:1000,     minBet:5000,       minDeposit:10000000},
+  {level:5, label:'Legendary',  mult:10000,    minBet:50000,      minDeposit:50000000},
+  {level:6, label:'Mythic',     mult:100000,   minBet:500000,     minDeposit:500000000},
+  {level:7, label:'High-Roller',mult:1000000,  minBet:5000000,    minDeposit:5000000000},
+  {level:8, label:'Champion',   mult:10000000, minBet:50000000,   minDeposit:50000000000},
 ];
 const MULT_LABELS = ['Low','Mid','High','Royale','Legendary','Mythic','High-Roller','Champion'];
 
@@ -4639,10 +4639,8 @@ function updateCalc() {
   // Min deposit is ALWAYS $200K (fund floor), regardless of level
   const MIN_FUND = 200000;
 
-  // The stake minimum is what they need to play at this level in the game
-  // Each level is 10× the previous in stake size
-  // e.g. Level 1 = $5 bet, Level 8 = $50M bet
-  const stakeMin = sf.minDeposit; // min bet amount for this level
+  // The stake minimum is the actual min bet at this level in the game
+  const stakeMin = sf.minBet;
 
   // Recommended deposit logic:
   // The deposit should cover at least 10 losing bets at the stake level
@@ -4651,8 +4649,8 @@ function updateCalc() {
   // Cap %: Level 1-2: 20%, Level 3-4: 30%, Level 5-6: 40%, Level 7-8: 50%
   const capPct = level <= 2 ? 0.20 : level <= 4 ? 0.30 : level <= 6 ? 0.40 : 0.50;
 
-  // Base = 10 bets worth of stake
-  const tenBets = stakeMin * 10;
+  // Base = 10 bets worth of stake — uses actual min bet per level
+  const tenBets = sf.minBet * 10;
 
   let suggested;
   if (balance > 0) {
@@ -4690,14 +4688,15 @@ function updateCalc() {
           // Recommended for this level given their balance
           const sCap = i+1 <= 2 ? 0.20 : i+1 <= 4 ? 0.30 : i+1 <= 6 ? 0.40 : 0.50;
           const sRec = balance > 0
-            ? Math.max(Math.max(s.minDeposit*10, balance*sCap), MIN_FUND)
-            : Math.max(s.minDeposit*10, MIN_FUND);
+            ? Math.max(Math.max(s.minBet*10, balance*sCap), MIN_FUND)
+            : Math.max(s.minBet*10, MIN_FUND);
           const sRecCapped = balance > 0 ? Math.min(sRec, balance) : sRec;
           const isActive = i === level-1;
           return '<div style="background:' + (isActive?'rgba(200,169,110,0.12)':'var(--bg3)') + ';border:1px solid ' + (isActive?'var(--accent)':'var(--border)') + ';border-radius:8px;padding:8px;text-align:center;">'
             + '<div style="font-size:9px;color:var(--muted);">Lv ' + s.level + '</div>'
             + '<div style="font-size:11px;font-weight:600;color:var(--accent2);margin:2px 0;">' + s.label + '</div>'
-            + '<div style="font-size:9px;color:var(--muted);margin-bottom:2px;">Stake: $' + fmtM(s.minDeposit) + '</div>'
+            + '<div style="font-size:9px;color:var(--muted);margin-bottom:2px;">Min bet: $' + fmtM(s.minBet) + '</div>'
+            + '<div style="font-size:9px;color:var(--muted);margin-bottom:3px;">Fund min: $' + fmtM(s.minDeposit) + '</div>'
             + '<div style="font-size:10px;font-family:var(--mono);color:' + (isActive?'var(--accent2)':'var(--text)') + ';">Rec: $' + fmtM(sRecCapped) + '</div>'
             + '</div>';
         }).join('')
