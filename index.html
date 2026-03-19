@@ -1739,10 +1739,10 @@
       <div class="modal-title">&#9881; Position Sizing Guide</div>
       <div class="modal-sub" style="margin-bottom:16px;">Recommended investor deposit by stake level</div>
       <label style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Investor Available Balance</label>
-      <div style="position:relative;margin-bottom:16px;">
-        <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-family:var(--mono);">$</span>
+      <div style="display:flex;align-items:center;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;margin-bottom:16px;overflow:hidden;">
+        <span style="padding:0 10px 0 16px;color:var(--muted);font-family:var(--mono);font-size:15px;line-height:1;">$</span>
         <input type="text" id="calc-balance" placeholder="e.g. 5,000,000" oninput="updateCalc()"
-          class="modal-input" style="padding-left:28px;">
+          style="flex:1;background:transparent;border:none;outline:none;padding:14px 14px 14px 0;font-size:15px;font-family:var(--mono);color:var(--text);letter-spacing:0.05em;">
       </div>
       <label style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Stake Level</label>
       <input type="range" id="calc-level" min="1" max="8" value="3" oninput="updateCalc()" style="width:100%;accent-color:var(--accent);margin-bottom:8px;">
@@ -4609,18 +4609,18 @@ function updateCalc() {
 
   document.getElementById('calc-level-label').textContent = 'Level ' + level + ' — ' + sf.label;
 
-  const minBet = Math.max(sf.minBet, 200000);
+  const minDep = Math.max(sf.minDeposit, 200000);
 
   // Suggested deposit: at least 10× min bet, scaled by % of investor balance
   let suggested;
   if (balance > 0) {
     const pctArr = [0.05, 0.10, 0.15, 0.20, 0.30, 0.40, 0.60, 0.80];
     const balanceBased = balance * pctArr[level-1];
-    suggested = Math.max(minBet * 10, balanceBased);
+    suggested = Math.max(minDep, balanceBased);
     suggested = Math.min(suggested, balance);
     suggested = Math.max(suggested, 200000);
   } else {
-    suggested = minBet * 10;
+    suggested = minDep;
   }
 
   const fundTotal = Math.max(totalDep, 1);
@@ -4630,14 +4630,14 @@ function updateCalc() {
   document.getElementById('calc-size').textContent     = '$' + fmtM(suggested);
   document.getElementById('calc-notional').textContent = pnlShare > 0 ? '+$' + fmtM(pnlShare) : '—';
   document.getElementById('calc-pct').textContent      = (ownerPct * 100).toFixed(4) + '%';
-  document.getElementById('calc-min').textContent      = '$' + fmtM(minBet);
+  document.getElementById('calc-min').textContent      = '$' + fmtM(minDep);
 
   const tableEl = document.getElementById('calc-scale-table');
   if (tableEl) {
     tableEl.innerHTML = '<div style="font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:8px;">Deposit Scale Reference</div>'
       + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">'
       + STAKE_FACTORS.map((s,i) => {
-          const mb = Math.max(s.minBet, 200000);
+          const mb = Math.max(s.minDeposit, 200000);
           return '<div style="background:' + (i===level-1?'rgba(200,169,110,0.12)':'var(--bg3)') + ';border:1px solid ' + (i===level-1?'var(--accent)':'var(--border)') + ';border-radius:8px;padding:8px;text-align:center;">'
             + '<div style="font-size:9px;color:var(--muted);">Level ' + s.level + '</div>'
             + '<div style="font-size:11px;font-weight:600;color:var(--accent2);margin:2px 0;">' + s.label + '</div>'
