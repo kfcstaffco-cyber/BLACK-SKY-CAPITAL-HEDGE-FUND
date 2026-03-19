@@ -388,37 +388,7 @@
     .ht-trade-row { font-size: 10px; color: var(--muted); padding: 2px 0; display: flex; justify-content: space-between; gap: 12px; }
 
     /* ── MOBILE ── */
-    @media (max-width: 600px) {
-      .header { padding: 8px 12px; }
-      .logo-text { font-size: 13px; }
-      .logo-sub  { display: none; }
-      .nav-tabs  { padding: 0 8px; }
-      .nav-tab   { padding: 10px 10px; font-size: 10px; }
-      .page      { padding: 12px 12px 80px; }
-      .metric-grid { grid-template-columns: repeat(2,1fr); gap: 8px; }
-      .metric-value { font-size: 15px; }
-      .metric-card  { padding: 10px 12px; }
-      .two-col, .three-col { grid-template-columns: 1fr; }
-      .card { padding: 14px 14px; }
-      .investor-card-header { flex-wrap: wrap; gap: 8px; }
-      .investor-right { gap: 10px; flex-wrap: wrap; }
-      .investor-total { font-size: 14px; }
-      .deposit-row { grid-template-columns: 1fr 1fr; gap: 6px; }
-      .investor-summary-row { grid-template-columns: 1fr 1fr; }
-      .float-btn { bottom: 16px; right: 16px; width: 46px; height: 46px; }
-      .ticker-item { padding: 0 20px; font-size: 10px; }
-      table { font-size: 10px; }
-      tbody td { padding: 7px 8px 7px 0; }
-      .pw-box { padding: 28px 20px; }
-      .chart-wrap { height: 180px; }
-      .chart-wrap.tall { height: 220px; }
-      /* Mobile footer — compact single column */
-      .site-footer { padding: 16px 16px; }
-      .footer-inner { grid-template-columns: 1fr; gap: 14px; }
-      .footer-center { display: none; }
-      .footer-contact { align-items: flex-start; }
-      .footer-bottom { flex-direction: column; gap: 4px; font-size: 9px; }
-    }
+    
 
 
     /* STREAK */
@@ -715,60 +685,7 @@
       display: none; font-size: 11px; color: var(--muted);
       letter-spacing: 0.06em; text-transform: uppercase;
     }
-    @media (max-width: 600px) {
-      #mobile-tab-name { display: block; }
-      .nav-tabs { display: none; }
-      /* Mobile hero nav */
-      .hero-nav { flex-direction: column; gap: 16px; padding: 18px 16px; }
-      .hero-nav-val { font-size: 32px; }
-      .hero-stats { gap: 16px; justify-content: flex-start; }
-      .hero-stat-item { text-align: left; }
-      /* Mobile investor cards */
-      .investor-card-header { flex-wrap: wrap; gap: 8px; }
-      .investor-right { flex-wrap: wrap; gap: 8px; }
-      /* Mobile calendar */
-      .cal-day { min-height: 44px; padding: 4px; font-size: 10px; }
-      .cal-day-header { font-size: 8px; padding: 4px 0; }
-      .cal-trade-dot { width: 6px; height: 6px; }
-      .cal-pnl { display: none; }
-      /* Mobile positions - hide less important columns */
-      #open-thead th:nth-child(8),
-      #open-tbody td:nth-child(8),
-      #open-thead th:nth-child(9),
-      #open-tbody td:nth-child(9),
-      #open-thead th:nth-child(10),
-      #open-tbody td:nth-child(10),
-      #closed-thead th:nth-child(5),
-      #closed-tbody td:nth-child(5),
-      #closed-thead th:nth-child(6),
-      #closed-tbody td:nth-child(6) { display: none; }
-      /* Mobile metric grid - 2 cols */
-      .metric-grid { grid-template-columns: repeat(2,1fr); }
-      /* Mobile two-col */
-      .two-col { grid-template-columns: 1fr; }
-      /* Hide particle canvas on mobile */
-      #particle-canvas { display: none; }
-      /* Mobile float buttons */
-      .float-btn, #stmt-req-float { width: 46px; height: 46px; }
-      /* Better touch targets for nav */
-      .mobile-nav-bar {
-        display: flex !important;
-        position: fixed; bottom: 0; left: 0; right: 0;
-        background: var(--bg2); border-top: 1px solid var(--border);
-        z-index: 500; padding: 4px 0 env(safe-area-inset-bottom, 4px);
-        justify-content: space-around;
-      }
-      .mobile-nav-item {
-        display: flex; flex-direction: column; align-items: center;
-        padding: 6px 10px; font-size: 9px; letter-spacing: 0.05em;
-        text-transform: uppercase; color: var(--muted); cursor: pointer;
-        gap: 3px; min-width: 48px; transition: color 0.15s;
-      }
-      .mobile-nav-item.active { color: var(--accent); }
-      .mobile-nav-item svg { width: 18px; height: 18px; }
-      .page { padding-bottom: 80px !important; }
-      .site-footer { display: none; }
-    }
+    
     .mobile-nav-bar { display: none; }
 
     /* ── ERROR STATE ── */
@@ -829,7 +746,7 @@
     #pnl-live-ticker .ticker-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
     #pnl-live-ticker .ticker-val   { font-size: 13px; font-weight: 500; }
     #pnl-live-ticker .ticker-dot   { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s ease-in-out infinite; }
-    @media (max-width: 600px) { #pnl-live-ticker { bottom: 70px; font-size: 11px; padding: 5px 14px; } }
+    
 
     /* ── LANGUAGE TOGGLE ── */
     .lang-btn {
@@ -911,6 +828,148 @@
       .metric-value { font-size: 17px; }
       .pw-box { padding: 32px 24px; }
     }
+  
+    /* ══ MOBILE LAYOUT — COMPREHENSIVE FIX ══ */
+    @media (max-width: 700px) {
+
+      /* ── HEADER ── */
+      .header {
+        padding: 8px 12px;
+        flex-wrap: nowrap;
+        gap: 6px;
+      }
+      .header-logo-img { width: 36px; height: 36px; }
+      .logo-text { font-size: 12px; }
+      .logo-sub  { display: none; }
+      /* Hide EN/FR, date, access badge on mobile — too cramped */
+      .lang-btn, #lang-en, #lang-fr { display: none !important; }
+      #live-date { display: none; }
+      #access-badge { display: none !important; }
+      /* Shrink header-right items */
+      .header-right { gap: 8px; }
+      .logout-btn { padding: 4px 8px; font-size: 9px; }
+      .notif-bell { font-size: 14px; }
+      /* Mobile tab name under LIVE badge */
+      #mobile-tab-name { display: block; font-size: 9px; }
+      /* Live badge smaller */
+      .live-badge { font-size: 9px; gap: 4px; }
+      .live-dot { width: 5px; height: 5px; }
+
+      /* ── HIDE DESKTOP NAV, SHOW MOBILE NAV ── */
+      .nav-tabs { display: none !important; }
+      .mobile-nav-bar { display: flex !important; }
+
+      /* ── PAGES ── */
+      .page { padding: 12px 12px 90px !important; }
+
+      /* ── HERO NAV ── */
+      .hero-nav {
+        flex-direction: column; gap: 12px;
+        padding: 16px; margin-bottom: 14px;
+      }
+      .hero-nav-val { font-size: 28px; }
+      .hero-nav-sub { font-size: 11px; }
+      .hero-stats { gap: 16px; justify-content: flex-start; flex-wrap: wrap; }
+      .hero-stat-val { font-size: 16px; }
+      .hero-stat-item { text-align: left; }
+
+      /* ── METRIC GRID ── */
+      .metric-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .metric-value { font-size: 16px; }
+      .metric-card { padding: 10px 12px; }
+
+      /* ── CARDS ── */
+      .card { padding: 14px; }
+      .card-header { margin-bottom: 12px; }
+      .two-col, .three-col { grid-template-columns: 1fr !important; }
+
+      /* ── TABLES — horizontal scroll ── */
+      .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      table { font-size: 10px; min-width: 500px; }
+      tbody td { padding: 8px 8px 8px 0; }
+      thead th { padding: 0 8px 8px 0; font-size: 8px; }
+
+      /* ── POSITIONS FILTER BAR ── */
+      #asset-chips { gap: 4px; }
+      .chip { padding: 3px 8px; font-size: 9px; }
+      .pos-filter-bar { flex-wrap: wrap; gap: 6px; }
+      #pos-search { width: 100% !important; }
+
+      /* ── INVESTOR CARDS ── */
+      .investor-card-header { flex-wrap: wrap; gap: 8px; }
+      .investor-right { flex-wrap: wrap; gap: 8px; }
+      .investor-total { font-size: 13px; }
+      .avatar-lg { width: 36px !important; height: 36px !important; font-size: 13px !important; }
+      .investor-summary-row { grid-template-columns: 1fr 1fr !important; gap: 8px; }
+      .inv-stat-box { padding: 8px !important; }
+
+      /* ── CHARTS ── */
+      .chart-wrap { height: 180px !important; }
+      .chart-wrap.tall { height: 220px !important; }
+
+      /* ── CALENDAR ── */
+      .cal-day { min-height: 42px; padding: 3px; }
+      .cal-day-header { font-size: 8px; padding: 4px 0; }
+      .cal-trade-dot { width: 6px; height: 6px; }
+      .cal-pnl { display: none; }
+      .cal-summary-bar { flex-wrap: wrap; gap: 10px; padding: 10px; }
+
+      /* ── FLOAT BUTTONS — above mobile nav ── */
+      .float-btn {
+        bottom: 80px !important; right: 16px !important;
+        width: 46px !important; height: 46px !important;
+      }
+      #stmt-req-float {
+        bottom: 136px !important; right: 16px !important;
+        width: 46px !important; height: 46px !important;
+      }
+      .dw-float-btn {
+        bottom: 80px !important; right: 16px !important;
+        width: 46px !important; height: 46px !important;
+      }
+      /* Stack deposit/withdrawal above payout */
+      #dw-float { bottom: 136px !important; }
+
+      /* ── LIVE P&L TICKER ── */
+      #pnl-live-ticker {
+        bottom: 68px; font-size: 10px;
+        padding: 4px 12px; gap: 6px;
+        max-width: calc(100vw - 120px);
+      }
+
+      /* ── MOBILE NAV BAR ── */
+      .mobile-nav-bar {
+        height: 60px;
+        padding: 4px 0 env(safe-area-inset-bottom, 6px);
+      }
+      .mobile-nav-item {
+        font-size: 8px; padding: 4px 6px; gap: 2px; min-width: 40px;
+      }
+      .mobile-nav-item svg { width: 20px; height: 20px; }
+
+      /* ── NOTIFICATION PANEL ── */
+      .notif-panel { width: calc(100vw - 24px); right: 12px; top: 54px; }
+
+      /* ── MODALS ── */
+      .modal-box { padding: 24px 18px !important; margin: 12px; }
+      .modal-title { font-size: 15px; }
+
+      /* ── TICKER BAR ── */
+      .ticker-item { padding: 0 16px; font-size: 10px; }
+
+      /* ── FOOTER ── */
+      .site-footer { display: none; }
+
+      /* ── MISC ── */
+      #particle-canvas { display: none; }
+      .section-title { font-size: 9px; }
+      .badge { font-size: 8px; padding: 2px 6px; }
+
+      /* ── PW SCREEN ── */
+      .pw-box { padding: 28px 20px; margin: 16px; }
+      .pw-title { font-size: 16px; }
+    }
+
   </style>
 
   <style media="print">
@@ -942,6 +1001,148 @@
     .card-title  { color: #111 !important; }
     .stat-key, .metric-label, .metric-sub { color: #6b7280 !important; }
     @page { margin: 20mm; size: A4; }
+  
+    /* ══ MOBILE LAYOUT — COMPREHENSIVE FIX ══ */
+    @media (max-width: 700px) {
+
+      /* ── HEADER ── */
+      .header {
+        padding: 8px 12px;
+        flex-wrap: nowrap;
+        gap: 6px;
+      }
+      .header-logo-img { width: 36px; height: 36px; }
+      .logo-text { font-size: 12px; }
+      .logo-sub  { display: none; }
+      /* Hide EN/FR, date, access badge on mobile — too cramped */
+      .lang-btn, #lang-en, #lang-fr { display: none !important; }
+      #live-date { display: none; }
+      #access-badge { display: none !important; }
+      /* Shrink header-right items */
+      .header-right { gap: 8px; }
+      .logout-btn { padding: 4px 8px; font-size: 9px; }
+      .notif-bell { font-size: 14px; }
+      /* Mobile tab name under LIVE badge */
+      #mobile-tab-name { display: block; font-size: 9px; }
+      /* Live badge smaller */
+      .live-badge { font-size: 9px; gap: 4px; }
+      .live-dot { width: 5px; height: 5px; }
+
+      /* ── HIDE DESKTOP NAV, SHOW MOBILE NAV ── */
+      .nav-tabs { display: none !important; }
+      .mobile-nav-bar { display: flex !important; }
+
+      /* ── PAGES ── */
+      .page { padding: 12px 12px 90px !important; }
+
+      /* ── HERO NAV ── */
+      .hero-nav {
+        flex-direction: column; gap: 12px;
+        padding: 16px; margin-bottom: 14px;
+      }
+      .hero-nav-val { font-size: 28px; }
+      .hero-nav-sub { font-size: 11px; }
+      .hero-stats { gap: 16px; justify-content: flex-start; flex-wrap: wrap; }
+      .hero-stat-val { font-size: 16px; }
+      .hero-stat-item { text-align: left; }
+
+      /* ── METRIC GRID ── */
+      .metric-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .metric-value { font-size: 16px; }
+      .metric-card { padding: 10px 12px; }
+
+      /* ── CARDS ── */
+      .card { padding: 14px; }
+      .card-header { margin-bottom: 12px; }
+      .two-col, .three-col { grid-template-columns: 1fr !important; }
+
+      /* ── TABLES — horizontal scroll ── */
+      .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      table { font-size: 10px; min-width: 500px; }
+      tbody td { padding: 8px 8px 8px 0; }
+      thead th { padding: 0 8px 8px 0; font-size: 8px; }
+
+      /* ── POSITIONS FILTER BAR ── */
+      #asset-chips { gap: 4px; }
+      .chip { padding: 3px 8px; font-size: 9px; }
+      .pos-filter-bar { flex-wrap: wrap; gap: 6px; }
+      #pos-search { width: 100% !important; }
+
+      /* ── INVESTOR CARDS ── */
+      .investor-card-header { flex-wrap: wrap; gap: 8px; }
+      .investor-right { flex-wrap: wrap; gap: 8px; }
+      .investor-total { font-size: 13px; }
+      .avatar-lg { width: 36px !important; height: 36px !important; font-size: 13px !important; }
+      .investor-summary-row { grid-template-columns: 1fr 1fr !important; gap: 8px; }
+      .inv-stat-box { padding: 8px !important; }
+
+      /* ── CHARTS ── */
+      .chart-wrap { height: 180px !important; }
+      .chart-wrap.tall { height: 220px !important; }
+
+      /* ── CALENDAR ── */
+      .cal-day { min-height: 42px; padding: 3px; }
+      .cal-day-header { font-size: 8px; padding: 4px 0; }
+      .cal-trade-dot { width: 6px; height: 6px; }
+      .cal-pnl { display: none; }
+      .cal-summary-bar { flex-wrap: wrap; gap: 10px; padding: 10px; }
+
+      /* ── FLOAT BUTTONS — above mobile nav ── */
+      .float-btn {
+        bottom: 80px !important; right: 16px !important;
+        width: 46px !important; height: 46px !important;
+      }
+      #stmt-req-float {
+        bottom: 136px !important; right: 16px !important;
+        width: 46px !important; height: 46px !important;
+      }
+      .dw-float-btn {
+        bottom: 80px !important; right: 16px !important;
+        width: 46px !important; height: 46px !important;
+      }
+      /* Stack deposit/withdrawal above payout */
+      #dw-float { bottom: 136px !important; }
+
+      /* ── LIVE P&L TICKER ── */
+      #pnl-live-ticker {
+        bottom: 68px; font-size: 10px;
+        padding: 4px 12px; gap: 6px;
+        max-width: calc(100vw - 120px);
+      }
+
+      /* ── MOBILE NAV BAR ── */
+      .mobile-nav-bar {
+        height: 60px;
+        padding: 4px 0 env(safe-area-inset-bottom, 6px);
+      }
+      .mobile-nav-item {
+        font-size: 8px; padding: 4px 6px; gap: 2px; min-width: 40px;
+      }
+      .mobile-nav-item svg { width: 20px; height: 20px; }
+
+      /* ── NOTIFICATION PANEL ── */
+      .notif-panel { width: calc(100vw - 24px); right: 12px; top: 54px; }
+
+      /* ── MODALS ── */
+      .modal-box { padding: 24px 18px !important; margin: 12px; }
+      .modal-title { font-size: 15px; }
+
+      /* ── TICKER BAR ── */
+      .ticker-item { padding: 0 16px; font-size: 10px; }
+
+      /* ── FOOTER ── */
+      .site-footer { display: none; }
+
+      /* ── MISC ── */
+      #particle-canvas { display: none; }
+      .section-title { font-size: 9px; }
+      .badge { font-size: 8px; padding: 2px 6px; }
+
+      /* ── PW SCREEN ── */
+      .pw-box { padding: 28px 20px; margin: 16px; }
+      .pw-title { font-size: 16px; }
+    }
+
   </style>
 
 </head>
@@ -3301,25 +3502,40 @@ document.addEventListener('click', e => {
 });
 
 // Override checkForNewTP to also log notifications
+let _notifInitialised = false;
 function checkForNewTP(positions) {
   const closed = positions.filter(p => p.status === 'Closed');
   const tpCount = closed.filter(p => p.result === 'TAKE PROFIT HIT').length;
   const slCount = closed.filter(p => p.result === 'STOP LOSS HIT').length;
-  if (prevTpCount > 0 && tpCount > prevTpCount) {
-    // Find which new trade hit TP
+
+  // On first call, just store baseline counts — don't fire any notifications
+  if (!_notifInitialised) {
+    prevTpCount        = tpCount;
+    window._prevSlCount = slCount;
+    _notifInitialised  = true;
+    return;
+  }
+
+  // TP hits
+  if (tpCount > prevTpCount) {
+    // Use trade IDs to find genuinely new ones, not just count diff
     const newTPs = closed.filter(p => p.result === 'TAKE PROFIT HIT').slice(-(tpCount - prevTpCount));
     newTPs.forEach(p => {
       addNotification('Take Profit Hit — ' + p.ticker, 'tp', (p.pnl>=0?'+':'') + '$' + fmtM(p.pnl));
     });
     playChime();
   }
-  if (prevTpCount > 0 && slCount > (window._prevSlCount||0)) {
-    const newSLs = closed.filter(p => p.result === 'STOP LOSS HIT').slice(-(slCount - (window._prevSlCount||0)));
+
+  // SL hits — use own prev counter, not prevTpCount guard
+  const prevSl = window._prevSlCount || 0;
+  if (slCount > prevSl) {
+    const newSLs = closed.filter(p => p.result === 'STOP LOSS HIT').slice(-(slCount - prevSl));
     newSLs.forEach(p => {
       addNotification('Stop Loss Hit — ' + p.ticker, 'sl', (p.pnl>=0?'+':'') + '$' + fmtM(p.pnl));
     });
   }
-  prevTpCount = tpCount;
+
+  prevTpCount         = tpCount;
   window._prevSlCount = slCount;
 }
 
@@ -3561,6 +3777,148 @@ function generateStatement() {
     .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; font-size: 10px; color: #aaa; }
     .disclaimer { margin-top: 16px; font-size: 9px; color: #aaa; line-height: 1.5; }
     @media print { body{padding:20px;} .no-print{display:none;} }
+  
+    /* ══ MOBILE LAYOUT — COMPREHENSIVE FIX ══ */
+    @media (max-width: 700px) {
+
+      /* ── HEADER ── */
+      .header {
+        padding: 8px 12px;
+        flex-wrap: nowrap;
+        gap: 6px;
+      }
+      .header-logo-img { width: 36px; height: 36px; }
+      .logo-text { font-size: 12px; }
+      .logo-sub  { display: none; }
+      /* Hide EN/FR, date, access badge on mobile — too cramped */
+      .lang-btn, #lang-en, #lang-fr { display: none !important; }
+      #live-date { display: none; }
+      #access-badge { display: none !important; }
+      /* Shrink header-right items */
+      .header-right { gap: 8px; }
+      .logout-btn { padding: 4px 8px; font-size: 9px; }
+      .notif-bell { font-size: 14px; }
+      /* Mobile tab name under LIVE badge */
+      #mobile-tab-name { display: block; font-size: 9px; }
+      /* Live badge smaller */
+      .live-badge { font-size: 9px; gap: 4px; }
+      .live-dot { width: 5px; height: 5px; }
+
+      /* ── HIDE DESKTOP NAV, SHOW MOBILE NAV ── */
+      .nav-tabs { display: none !important; }
+      .mobile-nav-bar { display: flex !important; }
+
+      /* ── PAGES ── */
+      .page { padding: 12px 12px 90px !important; }
+
+      /* ── HERO NAV ── */
+      .hero-nav {
+        flex-direction: column; gap: 12px;
+        padding: 16px; margin-bottom: 14px;
+      }
+      .hero-nav-val { font-size: 28px; }
+      .hero-nav-sub { font-size: 11px; }
+      .hero-stats { gap: 16px; justify-content: flex-start; flex-wrap: wrap; }
+      .hero-stat-val { font-size: 16px; }
+      .hero-stat-item { text-align: left; }
+
+      /* ── METRIC GRID ── */
+      .metric-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .metric-value { font-size: 16px; }
+      .metric-card { padding: 10px 12px; }
+
+      /* ── CARDS ── */
+      .card { padding: 14px; }
+      .card-header { margin-bottom: 12px; }
+      .two-col, .three-col { grid-template-columns: 1fr !important; }
+
+      /* ── TABLES — horizontal scroll ── */
+      .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      table { font-size: 10px; min-width: 500px; }
+      tbody td { padding: 8px 8px 8px 0; }
+      thead th { padding: 0 8px 8px 0; font-size: 8px; }
+
+      /* ── POSITIONS FILTER BAR ── */
+      #asset-chips { gap: 4px; }
+      .chip { padding: 3px 8px; font-size: 9px; }
+      .pos-filter-bar { flex-wrap: wrap; gap: 6px; }
+      #pos-search { width: 100% !important; }
+
+      /* ── INVESTOR CARDS ── */
+      .investor-card-header { flex-wrap: wrap; gap: 8px; }
+      .investor-right { flex-wrap: wrap; gap: 8px; }
+      .investor-total { font-size: 13px; }
+      .avatar-lg { width: 36px !important; height: 36px !important; font-size: 13px !important; }
+      .investor-summary-row { grid-template-columns: 1fr 1fr !important; gap: 8px; }
+      .inv-stat-box { padding: 8px !important; }
+
+      /* ── CHARTS ── */
+      .chart-wrap { height: 180px !important; }
+      .chart-wrap.tall { height: 220px !important; }
+
+      /* ── CALENDAR ── */
+      .cal-day { min-height: 42px; padding: 3px; }
+      .cal-day-header { font-size: 8px; padding: 4px 0; }
+      .cal-trade-dot { width: 6px; height: 6px; }
+      .cal-pnl { display: none; }
+      .cal-summary-bar { flex-wrap: wrap; gap: 10px; padding: 10px; }
+
+      /* ── FLOAT BUTTONS — above mobile nav ── */
+      .float-btn {
+        bottom: 80px !important; right: 16px !important;
+        width: 46px !important; height: 46px !important;
+      }
+      #stmt-req-float {
+        bottom: 136px !important; right: 16px !important;
+        width: 46px !important; height: 46px !important;
+      }
+      .dw-float-btn {
+        bottom: 80px !important; right: 16px !important;
+        width: 46px !important; height: 46px !important;
+      }
+      /* Stack deposit/withdrawal above payout */
+      #dw-float { bottom: 136px !important; }
+
+      /* ── LIVE P&L TICKER ── */
+      #pnl-live-ticker {
+        bottom: 68px; font-size: 10px;
+        padding: 4px 12px; gap: 6px;
+        max-width: calc(100vw - 120px);
+      }
+
+      /* ── MOBILE NAV BAR ── */
+      .mobile-nav-bar {
+        height: 60px;
+        padding: 4px 0 env(safe-area-inset-bottom, 6px);
+      }
+      .mobile-nav-item {
+        font-size: 8px; padding: 4px 6px; gap: 2px; min-width: 40px;
+      }
+      .mobile-nav-item svg { width: 20px; height: 20px; }
+
+      /* ── NOTIFICATION PANEL ── */
+      .notif-panel { width: calc(100vw - 24px); right: 12px; top: 54px; }
+
+      /* ── MODALS ── */
+      .modal-box { padding: 24px 18px !important; margin: 12px; }
+      .modal-title { font-size: 15px; }
+
+      /* ── TICKER BAR ── */
+      .ticker-item { padding: 0 16px; font-size: 10px; }
+
+      /* ── FOOTER ── */
+      .site-footer { display: none; }
+
+      /* ── MISC ── */
+      #particle-canvas { display: none; }
+      .section-title { font-size: 9px; }
+      .badge { font-size: 8px; padding: 2px 6px; }
+
+      /* ── PW SCREEN ── */
+      .pw-box { padding: 28px 20px; margin: 16px; }
+      .pw-title { font-size: 16px; }
+    }
+
   </style></head><body>
   <div class="watermark"><img src="${logoSrc}"></div>
   <div class="content">
@@ -4608,6 +4966,148 @@ function exportPDF() {
     h2{font-size:13px;font-weight:600;margin:20px 0 10px;text-transform:uppercase;letter-spacing:0.06em;color:#444;}
     .footer{margin-top:32px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:10px;color:#aaa;display:flex;justify-content:space-between;}
     @media print{body{padding:16px;}.no-print{display:none;}}
+  
+    /* ══ MOBILE LAYOUT — COMPREHENSIVE FIX ══ */
+    @media (max-width: 700px) {
+
+      /* ── HEADER ── */
+      .header {
+        padding: 8px 12px;
+        flex-wrap: nowrap;
+        gap: 6px;
+      }
+      .header-logo-img { width: 36px; height: 36px; }
+      .logo-text { font-size: 12px; }
+      .logo-sub  { display: none; }
+      /* Hide EN/FR, date, access badge on mobile — too cramped */
+      .lang-btn, #lang-en, #lang-fr { display: none !important; }
+      #live-date { display: none; }
+      #access-badge { display: none !important; }
+      /* Shrink header-right items */
+      .header-right { gap: 8px; }
+      .logout-btn { padding: 4px 8px; font-size: 9px; }
+      .notif-bell { font-size: 14px; }
+      /* Mobile tab name under LIVE badge */
+      #mobile-tab-name { display: block; font-size: 9px; }
+      /* Live badge smaller */
+      .live-badge { font-size: 9px; gap: 4px; }
+      .live-dot { width: 5px; height: 5px; }
+
+      /* ── HIDE DESKTOP NAV, SHOW MOBILE NAV ── */
+      .nav-tabs { display: none !important; }
+      .mobile-nav-bar { display: flex !important; }
+
+      /* ── PAGES ── */
+      .page { padding: 12px 12px 90px !important; }
+
+      /* ── HERO NAV ── */
+      .hero-nav {
+        flex-direction: column; gap: 12px;
+        padding: 16px; margin-bottom: 14px;
+      }
+      .hero-nav-val { font-size: 28px; }
+      .hero-nav-sub { font-size: 11px; }
+      .hero-stats { gap: 16px; justify-content: flex-start; flex-wrap: wrap; }
+      .hero-stat-val { font-size: 16px; }
+      .hero-stat-item { text-align: left; }
+
+      /* ── METRIC GRID ── */
+      .metric-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .metric-value { font-size: 16px; }
+      .metric-card { padding: 10px 12px; }
+
+      /* ── CARDS ── */
+      .card { padding: 14px; }
+      .card-header { margin-bottom: 12px; }
+      .two-col, .three-col { grid-template-columns: 1fr !important; }
+
+      /* ── TABLES — horizontal scroll ── */
+      .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      table { font-size: 10px; min-width: 500px; }
+      tbody td { padding: 8px 8px 8px 0; }
+      thead th { padding: 0 8px 8px 0; font-size: 8px; }
+
+      /* ── POSITIONS FILTER BAR ── */
+      #asset-chips { gap: 4px; }
+      .chip { padding: 3px 8px; font-size: 9px; }
+      .pos-filter-bar { flex-wrap: wrap; gap: 6px; }
+      #pos-search { width: 100% !important; }
+
+      /* ── INVESTOR CARDS ── */
+      .investor-card-header { flex-wrap: wrap; gap: 8px; }
+      .investor-right { flex-wrap: wrap; gap: 8px; }
+      .investor-total { font-size: 13px; }
+      .avatar-lg { width: 36px !important; height: 36px !important; font-size: 13px !important; }
+      .investor-summary-row { grid-template-columns: 1fr 1fr !important; gap: 8px; }
+      .inv-stat-box { padding: 8px !important; }
+
+      /* ── CHARTS ── */
+      .chart-wrap { height: 180px !important; }
+      .chart-wrap.tall { height: 220px !important; }
+
+      /* ── CALENDAR ── */
+      .cal-day { min-height: 42px; padding: 3px; }
+      .cal-day-header { font-size: 8px; padding: 4px 0; }
+      .cal-trade-dot { width: 6px; height: 6px; }
+      .cal-pnl { display: none; }
+      .cal-summary-bar { flex-wrap: wrap; gap: 10px; padding: 10px; }
+
+      /* ── FLOAT BUTTONS — above mobile nav ── */
+      .float-btn {
+        bottom: 80px !important; right: 16px !important;
+        width: 46px !important; height: 46px !important;
+      }
+      #stmt-req-float {
+        bottom: 136px !important; right: 16px !important;
+        width: 46px !important; height: 46px !important;
+      }
+      .dw-float-btn {
+        bottom: 80px !important; right: 16px !important;
+        width: 46px !important; height: 46px !important;
+      }
+      /* Stack deposit/withdrawal above payout */
+      #dw-float { bottom: 136px !important; }
+
+      /* ── LIVE P&L TICKER ── */
+      #pnl-live-ticker {
+        bottom: 68px; font-size: 10px;
+        padding: 4px 12px; gap: 6px;
+        max-width: calc(100vw - 120px);
+      }
+
+      /* ── MOBILE NAV BAR ── */
+      .mobile-nav-bar {
+        height: 60px;
+        padding: 4px 0 env(safe-area-inset-bottom, 6px);
+      }
+      .mobile-nav-item {
+        font-size: 8px; padding: 4px 6px; gap: 2px; min-width: 40px;
+      }
+      .mobile-nav-item svg { width: 20px; height: 20px; }
+
+      /* ── NOTIFICATION PANEL ── */
+      .notif-panel { width: calc(100vw - 24px); right: 12px; top: 54px; }
+
+      /* ── MODALS ── */
+      .modal-box { padding: 24px 18px !important; margin: 12px; }
+      .modal-title { font-size: 15px; }
+
+      /* ── TICKER BAR ── */
+      .ticker-item { padding: 0 16px; font-size: 10px; }
+
+      /* ── FOOTER ── */
+      .site-footer { display: none; }
+
+      /* ── MISC ── */
+      #particle-canvas { display: none; }
+      .section-title { font-size: 9px; }
+      .badge { font-size: 8px; padding: 2px 6px; }
+
+      /* ── PW SCREEN ── */
+      .pw-box { padding: 28px 20px; margin: 16px; }
+      .pw-title { font-size: 16px; }
+    }
+
   </style>
   <style media="print">
     * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -4638,6 +5138,148 @@ function exportPDF() {
     .card-title  { color: #111 !important; }
     .stat-key, .metric-label, .metric-sub { color: #6b7280 !important; }
     @page { margin: 20mm; size: A4; }
+  
+    /* ══ MOBILE LAYOUT — COMPREHENSIVE FIX ══ */
+    @media (max-width: 700px) {
+
+      /* ── HEADER ── */
+      .header {
+        padding: 8px 12px;
+        flex-wrap: nowrap;
+        gap: 6px;
+      }
+      .header-logo-img { width: 36px; height: 36px; }
+      .logo-text { font-size: 12px; }
+      .logo-sub  { display: none; }
+      /* Hide EN/FR, date, access badge on mobile — too cramped */
+      .lang-btn, #lang-en, #lang-fr { display: none !important; }
+      #live-date { display: none; }
+      #access-badge { display: none !important; }
+      /* Shrink header-right items */
+      .header-right { gap: 8px; }
+      .logout-btn { padding: 4px 8px; font-size: 9px; }
+      .notif-bell { font-size: 14px; }
+      /* Mobile tab name under LIVE badge */
+      #mobile-tab-name { display: block; font-size: 9px; }
+      /* Live badge smaller */
+      .live-badge { font-size: 9px; gap: 4px; }
+      .live-dot { width: 5px; height: 5px; }
+
+      /* ── HIDE DESKTOP NAV, SHOW MOBILE NAV ── */
+      .nav-tabs { display: none !important; }
+      .mobile-nav-bar { display: flex !important; }
+
+      /* ── PAGES ── */
+      .page { padding: 12px 12px 90px !important; }
+
+      /* ── HERO NAV ── */
+      .hero-nav {
+        flex-direction: column; gap: 12px;
+        padding: 16px; margin-bottom: 14px;
+      }
+      .hero-nav-val { font-size: 28px; }
+      .hero-nav-sub { font-size: 11px; }
+      .hero-stats { gap: 16px; justify-content: flex-start; flex-wrap: wrap; }
+      .hero-stat-val { font-size: 16px; }
+      .hero-stat-item { text-align: left; }
+
+      /* ── METRIC GRID ── */
+      .metric-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .metric-value { font-size: 16px; }
+      .metric-card { padding: 10px 12px; }
+
+      /* ── CARDS ── */
+      .card { padding: 14px; }
+      .card-header { margin-bottom: 12px; }
+      .two-col, .three-col { grid-template-columns: 1fr !important; }
+
+      /* ── TABLES — horizontal scroll ── */
+      .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      table { font-size: 10px; min-width: 500px; }
+      tbody td { padding: 8px 8px 8px 0; }
+      thead th { padding: 0 8px 8px 0; font-size: 8px; }
+
+      /* ── POSITIONS FILTER BAR ── */
+      #asset-chips { gap: 4px; }
+      .chip { padding: 3px 8px; font-size: 9px; }
+      .pos-filter-bar { flex-wrap: wrap; gap: 6px; }
+      #pos-search { width: 100% !important; }
+
+      /* ── INVESTOR CARDS ── */
+      .investor-card-header { flex-wrap: wrap; gap: 8px; }
+      .investor-right { flex-wrap: wrap; gap: 8px; }
+      .investor-total { font-size: 13px; }
+      .avatar-lg { width: 36px !important; height: 36px !important; font-size: 13px !important; }
+      .investor-summary-row { grid-template-columns: 1fr 1fr !important; gap: 8px; }
+      .inv-stat-box { padding: 8px !important; }
+
+      /* ── CHARTS ── */
+      .chart-wrap { height: 180px !important; }
+      .chart-wrap.tall { height: 220px !important; }
+
+      /* ── CALENDAR ── */
+      .cal-day { min-height: 42px; padding: 3px; }
+      .cal-day-header { font-size: 8px; padding: 4px 0; }
+      .cal-trade-dot { width: 6px; height: 6px; }
+      .cal-pnl { display: none; }
+      .cal-summary-bar { flex-wrap: wrap; gap: 10px; padding: 10px; }
+
+      /* ── FLOAT BUTTONS — above mobile nav ── */
+      .float-btn {
+        bottom: 80px !important; right: 16px !important;
+        width: 46px !important; height: 46px !important;
+      }
+      #stmt-req-float {
+        bottom: 136px !important; right: 16px !important;
+        width: 46px !important; height: 46px !important;
+      }
+      .dw-float-btn {
+        bottom: 80px !important; right: 16px !important;
+        width: 46px !important; height: 46px !important;
+      }
+      /* Stack deposit/withdrawal above payout */
+      #dw-float { bottom: 136px !important; }
+
+      /* ── LIVE P&L TICKER ── */
+      #pnl-live-ticker {
+        bottom: 68px; font-size: 10px;
+        padding: 4px 12px; gap: 6px;
+        max-width: calc(100vw - 120px);
+      }
+
+      /* ── MOBILE NAV BAR ── */
+      .mobile-nav-bar {
+        height: 60px;
+        padding: 4px 0 env(safe-area-inset-bottom, 6px);
+      }
+      .mobile-nav-item {
+        font-size: 8px; padding: 4px 6px; gap: 2px; min-width: 40px;
+      }
+      .mobile-nav-item svg { width: 20px; height: 20px; }
+
+      /* ── NOTIFICATION PANEL ── */
+      .notif-panel { width: calc(100vw - 24px); right: 12px; top: 54px; }
+
+      /* ── MODALS ── */
+      .modal-box { padding: 24px 18px !important; margin: 12px; }
+      .modal-title { font-size: 15px; }
+
+      /* ── TICKER BAR ── */
+      .ticker-item { padding: 0 16px; font-size: 10px; }
+
+      /* ── FOOTER ── */
+      .site-footer { display: none; }
+
+      /* ── MISC ── */
+      #particle-canvas { display: none; }
+      .section-title { font-size: 9px; }
+      .badge { font-size: 8px; padding: 2px 6px; }
+
+      /* ── PW SCREEN ── */
+      .pw-box { padding: 28px 20px; margin: 16px; }
+      .pw-title { font-size: 16px; }
+    }
+
   </style>
 
 </head><body>
