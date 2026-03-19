@@ -5168,7 +5168,7 @@ function calcHealthScore(d) {
   const sharpeScore = Math.min((sharpe / 3) * 25, 25);
 
   const total = Math.round(winScore + pfScore + ddScore + sharpeScore);
-  return { total, winScore, pfScore, ddScore, sharpeScore };
+  return { total, winScore, pfScore, ddScore, sharpeScore, ddPct };
 }
 
 function getHealthGrade(score) {
@@ -5180,7 +5180,7 @@ function getHealthGrade(score) {
 }
 
 function renderHealthScore(d) {
-  const { total, winScore, pfScore, ddScore, sharpeScore } = calcHealthScore(d);
+  const { total, winScore, pfScore, ddScore, sharpeScore, ddPct } = calcHealthScore(d);
   const { grade, color } = getHealthGrade(total);
   const CIRCUMFERENCE = 2 * Math.PI * 46; // r=46
 
