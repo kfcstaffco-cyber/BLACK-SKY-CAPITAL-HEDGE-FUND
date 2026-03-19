@@ -842,6 +842,12 @@
       display: inline-block;
     }
 
+
+    /* ── SORTABLE COLUMN HEADERS ── */
+    .sort-th { transition: color 0.15s; }
+    .sort-th:hover { color: var(--accent2) !important; }
+    th.sort-th { color: var(--muted); }
+
     /* TICKER */
     .ticker-move { display: flex; white-space: nowrap; animation: ticker-loop 60s linear infinite; }
     @keyframes ticker-loop { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
@@ -1357,7 +1363,13 @@
       <div class="table-scroll"><table><thead id="open-thead"></thead><tbody id="open-tbody"></tbody></table></div>
     </div>
     <div class="card">
-      <div class="card-header"><span class="card-title">Closed Positions</span></div>
+      <div class="card-header">
+        <span class="card-title">Closed Positions</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span id="closed-sort-label" style="font-size:10px;color:var(--muted);display:none;"></span>
+          <button id="closed-sort-clear" onclick="clearClosedSort()" style="display:none;font-size:9px;padding:3px 10px;background:rgba(255,255,255,0.06);border:1px solid var(--border2);border-radius:6px;color:var(--muted);cursor:pointer;letter-spacing:0.05em;transition:all 0.15s;" onmouseover="this.style.color='var(--red)';this.style.borderColor='var(--red)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border2)'">✕ CLEAR SORT</button>
+        </div>
+      </div>
       <div class="table-scroll"><table><thead id="closed-thead"></thead><tbody id="closed-tbody"></tbody></table></div>
     </div>
   </div>
@@ -2393,11 +2405,11 @@ function parseTransactionLog(rows) {
 // ── RENDER OVERVIEW ──────────────────────────────────────────────
 function renderOverview(d) {
   const metrics = [
-    {label:'Total P&L',      val:(d.totalPnl>=0?'+':'-')+'$'+fmtM(Math.abs(d.totalPnl)),    cls:'green', sub:'All closed + open positions',         key:'totalPnl'},
-    {label:'Total Return',   val:sgn(d.totalReturn)+fmtPct(d.totalReturn), cls:'green', sub:'Since fund inception',          key:'totalReturn'},
+    {label:'Total P&L',      val:(d.totalPnl>=0?'+':'-')+'$'+fmtM(Math.abs(d.totalPnl)),    cls:d.totalPnl>=0?'green':'red', sub:'All closed + open positions',         key:'totalPnl'},
+    {label:'Total Return',   val:sgn(d.totalReturn)+fmtPct(d.totalReturn), cls:d.totalReturn>=0?'green':'red', sub:'Since fund inception',          key:'totalReturn'},
     {label:'Win Rate',       val:(d.winRate*100).toFixed(2)+'%',           cls:'gold',  sub:d.winTrades+' wins / '+d.lossTrades+' losses', key:'winRate'},
-    {label:'Realised P&L',   val:sgn(d.realisedPnl)+'$'+fmtM(d.realisedPnl), cls:'green', sub:d.totalTrades+' closed trades', key:'realisedPnl'},
-    {label:'Unrealised P&L', val:sgn(d.unrealisedPnl)+'$'+fmtM(d.unrealisedPnl), cls:'green', sub:'From open positions',         key:'unrealisedPnl'},
+    {label:'Realised P&L',   val:sgn(d.realisedPnl)+'$'+fmtM(d.realisedPnl), cls:d.realisedPnl>=0?'green':'red', sub:d.totalTrades+' closed trades', key:'realisedPnl'},
+    {label:'Unrealised P&L', val:(d.unrealisedPnl>=0?'+':'-')+'$'+fmtM(Math.abs(d.unrealisedPnl)), cls:d.unrealisedPnl>=0?'green':'red', sub:'From open positions',         key:'unrealisedPnl'},
     {label:'Margin Deployed',val:'$'+fmtM(d.marginDeployed), cls:'blue',  sub:'Currently deployed',                          key:'marginDeployed'},
     {label:'Notional Exp.',  val:'$'+fmtM(d.notional),       cls:'blue',  sub:'Gross notional value',                           key:'notional'},
     {label:"Today's P&L", val:(()=>{
@@ -2449,8 +2461,14 @@ function renderOverview(d) {
       const card=$('mc-'+c.key); if(!card) return;
       const old=prevMetrics[c.key];
       const valStr = String(c.val);
+      // Update colour class dynamically on every render
+      const valEl = card.querySelector('.metric-value');
+      if (valEl) {
+        valEl.classList.remove('green','red','gold','blue','muted');
+        valEl.classList.add(c.cls);
+      }
       if(old!==undefined&&old!==d[c.key]){ animateMetricRefresh(c.key, d[c.key], ()=>valStr); }
-      else { card.querySelector('.metric-value').textContent=c.val; }
+      else { if(valEl) valEl.textContent=c.val; }
       card.querySelector('.metric-sub').textContent=c.sub;
     });
   }
@@ -2508,7 +2526,35 @@ function renderPositions(positions) {
       <td>${badge('ACTIVE','blue')}</td>
     </tr>
     ${buildExpandRow(p,14)}`).join(''):'<tr><td colspan="14" style="color:var(--muted);text-align:center;padding:16px;">No open positions</td></tr>';
-  $('closed-thead').innerHTML=`<tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Entry Date</th><th>Exit Date</th><th>Entry</th><th>Exit</th><th>Hold</th><th>P&L</th><th>Result</th></tr>`;
+  $('closed-thead').innerHTML=`<tr>
+    <th>#</th>
+    <th class="sort-th" onclick="sortClosed('cls')" style="cursor:pointer;user-select:none;white-space:nowrap;">Class ${closedSortField==='cls'?(closedSortDir==='asc'?'↑':'↓'):'⇅'}</th>
+    <th class="sort-th" onclick="sortClosed('ticker')" style="cursor:pointer;user-select:none;white-space:nowrap;">Ticker ${closedSortField==='ticker'?(closedSortDir==='asc'?'↑':'↓'):'⇅'}</th>
+    <th>Side</th>
+    <th class="sort-th" onclick="sortClosed('date')" style="cursor:pointer;user-select:none;white-space:nowrap;">Entry ${closedSortField==='date'?(closedSortDir==='asc'?'↑':'↓'):'⇅'}</th>
+    <th class="sort-th" onclick="sortClosed('exitDate')" style="cursor:pointer;user-select:none;white-space:nowrap;">Exit ${closedSortField==='exitDate'?(closedSortDir==='asc'?'↑':'↓'):'⇅'}</th>
+    <th>Entry</th>
+    <th>Exit</th>
+    <th class="sort-th" onclick="sortClosed('hold')" style="cursor:pointer;user-select:none;white-space:nowrap;">Hold ${closedSortField==='hold'?(closedSortDir==='asc'?'↑':'↓'):'⇅'}</th>
+    <th class="sort-th" onclick="sortClosed('pnl')" style="cursor:pointer;user-select:none;white-space:nowrap;">P&amp;L ${closedSortField==='pnl'?(closedSortDir==='asc'?'↑':'↓'):'⇅'}</th>
+    <th class="sort-th" onclick="sortClosed('result')" style="cursor:pointer;user-select:none;white-space:nowrap;">Result ${closedSortField==='result'?(closedSortDir==='asc'?'↑':'↓'):'⇅'}</th>
+  </tr>`;
+  // Apply closed sort
+  if (closedSortField) {
+    const parseD = s => { if(!s||s==='—') return 0; const [dd,mm,yy]=(s||'').split('/'); return new Date(+yy,+mm-1,+dd).getTime(); };
+    closed = [...closed].sort((a,b) => {
+      let av, bv;
+      if (closedSortField==='pnl')      { av=a.pnl||0;    bv=b.pnl||0; }
+      if (closedSortField==='hold')     { av=a.hold||0;   bv=b.hold||0; }
+      if (closedSortField==='ticker')   { av=a.ticker||''; bv=b.ticker||''; }
+      if (closedSortField==='cls')      { av=a.cls||'';    bv=b.cls||''; }
+      if (closedSortField==='result')   { av=a.result||''; bv=b.result||''; }
+      if (closedSortField==='date')     { av=parseD(a.date);  bv=parseD(b.date); }
+      if (closedSortField==='exitDate') { av=parseD(a.exitDate); bv=parseD(b.exitDate); }
+      if (typeof av==='string') return closedSortDir==='asc'?av.localeCompare(bv):bv.localeCompare(av);
+      return closedSortDir==='asc'?av-bv:bv-av;
+    });
+  }
   $('closed-tbody').innerHTML=closed.map(p=>{
     const rb=p.result==='TAKE PROFIT HIT'?'green':p.result==='STOP LOSS HIT'?'red':'blue';
     const rl=p.result==='TAKE PROFIT HIT'?'TP HIT':p.result==='STOP LOSS HIT'?'SL HIT':'CLOSED';
@@ -4448,6 +4494,8 @@ setInterval(updateLiveTicker, 3000);
 // ── POSITION SORT ────────────────────────────────────────────────
 let sortField = null;
 let sortDir   = 'desc';
+let closedSortField = null;
+let closedSortDir   = 'desc';
 
 function sortPositions(field) {
   if (sortField === field) {
@@ -4457,6 +4505,32 @@ function sortPositions(field) {
     sortDir   = 'desc';
   }
   filterPositions();
+}
+
+function sortClosed(field) {
+  if (closedSortField === field) {
+    closedSortDir = closedSortDir === 'desc' ? 'asc' : 'desc';
+  } else {
+    closedSortField = field;
+    closedSortDir   = 'desc';
+  }
+  // Update label & show clear button
+  const labels = {cls:'Class',ticker:'Ticker',date:'Entry Date',exitDate:'Exit Date',hold:'Hold',pnl:'P&L',result:'Result'};
+  const lbl = document.getElementById('closed-sort-label');
+  const btn = document.getElementById('closed-sort-clear');
+  if (lbl) { lbl.textContent = 'Sorted by ' + labels[field] + ' ' + (closedSortDir==='asc'?'↑':'↓'); lbl.style.display='inline'; }
+  if (btn) btn.style.display = 'inline-flex';
+  if (window.lastData) renderPositions(window.lastData.positions||[]);
+}
+
+function clearClosedSort() {
+  closedSortField = null;
+  closedSortDir   = 'desc';
+  const lbl = document.getElementById('closed-sort-label');
+  const btn = document.getElementById('closed-sort-clear');
+  if (lbl) { lbl.textContent=''; lbl.style.display='none'; }
+  if (btn) btn.style.display = 'none';
+  if (window.lastData) renderPositions(window.lastData.positions||[]);
 }
 
 function applySortToPositions(positions) {
