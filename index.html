@@ -1393,11 +1393,14 @@
   </div>
   
   <!-- LIVE P&L TICKER -->
-  <div id="pnl-live-ticker" onclick="this.style.display='none'" title="Click to hide">
+  <div id="pnl-live-ticker">
     <div class="ticker-dot"></div>
     <div class="ticker-label" id="plt-label">Unrealised P&L</div>
     <div class="ticker-val" id="plt-val">—</div>
     <div id="plt-change" style="font-size:10px;color:var(--muted);"></div>
+    <button onclick="document.getElementById('pnl-live-ticker').style.display='none'"
+      style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 0 0 6px;line-height:1;"
+      title="Dismiss">&#x2715;</button>
   </div>
 
   <footer class="site-footer">
