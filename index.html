@@ -1736,33 +1736,32 @@
   <div class="modal-overlay" id="calc-modal" onclick="closeCalcModal(event)">
     <div class="modal-box calc-modal" style="position:relative;">
       <button class="modal-close" onclick="closeCalcModal(null,true)">&#x2715;</button>
-      <div class="modal-title">&#9881; Position Sizing Calculator</div>
-      <div class="modal-sub" style="margin-bottom:16px;">Based on current NAV and stake factor scale</div>
+      <div class="modal-title">&#9881; Position Sizing Guide</div>
+      <div class="modal-sub" style="margin-bottom:16px;">Recommended investor deposit by stake level</div>
       <label style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Stake Level (1–8)</label>
       <input type="range" id="calc-level" min="1" max="8" value="3" oninput="updateCalc()" style="width:100%;accent-color:var(--accent);margin-bottom:8px;">
-      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:16px;">
-        <span>Level 1 — 1×</span><span id="calc-level-label" style="color:var(--accent2);font-weight:600;">Level 3 — 100×</span><span>Level 8 — 10M×</span>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:20px;">
+        <span>Level 1</span><span id="calc-level-label" style="color:var(--accent2);font-weight:600;">Level 3 — 100×</span><span>Level 8</span>
       </div>
-      <label style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Leverage</label>
-      <input type="number" id="calc-lev" value="20" min="1" max="100" oninput="updateCalc()" class="modal-input" style="margin-bottom:4px;">
       <div class="calc-grid">
         <div class="calc-result-box">
-          <div class="calc-result-label">Recommended Size</div>
-          <div class="calc-result-val" id="calc-size">—</div>
-        </div>
-        <div class="calc-result-box">
-          <div class="calc-result-label">Notional Exposure</div>
-          <div class="calc-result-val" id="calc-notional" style="color:var(--blue);">—</div>
-        </div>
-        <div class="calc-result-box">
-          <div class="calc-result-label">% of Fund NAV</div>
-          <div class="calc-result-val" id="calc-pct" style="color:var(--muted);">—</div>
-        </div>
-        <div class="calc-result-box">
-          <div class="calc-result-label">Min Deposit Required</div>
+          <div class="calc-result-label">Minimum Deposit</div>
           <div class="calc-result-val" id="calc-min" style="color:var(--accent);">—</div>
         </div>
+        <div class="calc-result-box">
+          <div class="calc-result-label">Recommended Deposit</div>
+          <div class="calc-result-val" id="calc-size" style="color:var(--accent2);">—</div>
+        </div>
+        <div class="calc-result-box">
+          <div class="calc-result-label">Expected P&L Share</div>
+          <div class="calc-result-val" id="calc-pnl" style="color:var(--green);">—</div>
+        </div>
+        <div class="calc-result-box">
+          <div class="calc-result-label">Fund Ownership</div>
+          <div class="calc-result-val" id="calc-pct" style="color:var(--blue);">—</div>
+        </div>
       </div>
+      <div id="calc-scale-table" style="margin-top:16px;"></div>
     </div>
   </div>
 
@@ -3173,10 +3172,10 @@ function initParticles() {
     dots.forEach(d => {
       d.x = d.ox + Math.sin(t + d.phase) * 3;
       d.y = d.oy + Math.cos(t + d.phase * 0.7) * 2;
-      const alpha = 0.2 + Math.sin(t + d.phase) * 0.08;
+      const alpha = 0.12 + Math.sin(t + d.phase) * 0.05;
       ctx.beginPath();
       ctx.arc(d.x, d.y, 1.5, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(200,169,110,${alpha})`;
+      ctx.fillStyle = `rgba(180,185,195,${alpha})`;
       ctx.fill();
     });
     // Draw connections between nearby dots
@@ -3189,7 +3188,7 @@ function initParticles() {
           ctx.beginPath();
           ctx.moveTo(dots[i].x, dots[i].y);
           ctx.lineTo(dots[j].x, dots[j].y);
-          ctx.strokeStyle = `rgba(200,169,110,${0.12 * (1 - dist/45)})`;
+          ctx.strokeStyle = `rgba(180,185,195,${0.07 * (1 - dist/45)})`;
           ctx.lineWidth = 0.5;
           ctx.stroke();
         }
@@ -4594,22 +4593,44 @@ function closeCalcModal(e, force) {
 }
 function updateCalc() {
   const level = parseInt(document.getElementById('calc-level').value) || 3;
-  const lev   = parseFloat(document.getElementById('calc-lev').value) || 20;
   const nav   = window.lastData?.nav || 0;
+  const pnl   = window.lastData?.totalPnl || 0;
+  const totalDep = window.lastData?.totalDeposited || 0;
   const sf    = STAKE_FACTORS[level-1];
 
   document.getElementById('calc-level-label').textContent = `Level ${level} — ${MULT_LABELS[level-1]}`;
 
-  if (!nav || !sf) return;
-  const baseUnit  = nav * 0.00001; // 0.001% of NAV as base unit
-  const size      = baseUnit * sf.mult;
-  const notional  = size * lev;
-  const pct       = (size / nav * 100).toFixed(4);
+  if (!sf) return;
 
-  document.getElementById('calc-size').textContent    = '$' + fmtM(size);
-  document.getElementById('calc-notional').textContent = '$' + fmtM(notional);
-  document.getElementById('calc-pct').textContent     = pct + '%';
-  document.getElementById('calc-min').textContent     = '$' + fmtM(sf.minDeposit);
+  // Min deposit from stake factor table (capped at $100B)
+  const minDep = Math.min(sf.minDeposit, 100e9);
+  // Recommended = 3× the minimum, also capped at $100B
+  const recDep = Math.min(minDep * 3, 100e9);
+
+  // Expected P&L share based on recommended deposit vs current fund
+  const fundTotal = Math.max(totalDep, 1);
+  const ownerPct  = recDep / (fundTotal + recDep);
+  const pnlShare  = pnl > 0 ? ownerPct * pnl : 0;
+
+  document.getElementById('calc-min').textContent  = '$' + fmtM(minDep);
+  document.getElementById('calc-size').textContent = '$' + fmtM(recDep);
+  document.getElementById('calc-pnl').textContent  = pnlShare > 0 ? '+$' + fmtM(pnlShare) : '—';
+  document.getElementById('calc-pct').textContent  = (ownerPct * 100).toFixed(4) + '%';
+
+  // Render full scale reference table
+  const tableEl = document.getElementById('calc-scale-table');
+  if (tableEl) {
+    tableEl.innerHTML = `
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:8px;">Full Stake Scale Reference</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
+        ${STAKE_FACTORS.map((s,i) => `
+          <div style="background:${i===level-1?'rgba(200,169,110,0.12)':'var(--bg3)'};border:1px solid ${i===level-1?'var(--accent)':'var(--border)'};border-radius:8px;padding:8px;text-align:center;">
+            <div style="font-size:9px;color:var(--muted);">Level ${s.level}</div>
+            <div style="font-size:10px;font-family:var(--mono);color:var(--accent2);margin:2px 0;">${MULT_LABELS[i]}</div>
+            <div style="font-size:11px;font-family:var(--mono);color:var(--text);">$${fmtM(Math.min(s.minDeposit,100e9))}</div>
+          </div>`).join('')}
+      </div>`;
+  }
 }
 
 // ── ROLLING WIN RATE CHART ────────────────────────────────────────
