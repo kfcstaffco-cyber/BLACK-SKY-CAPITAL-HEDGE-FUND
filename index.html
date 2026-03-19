@@ -2079,7 +2079,7 @@ function startMicroFluctuations() {
         if (!card) return;
         const cfg = FLUCT_RANGES[key], base = fluctBase[key];
         if (!cfg || base == null) return;
-        const newVal = base + (base * cfg.scale * direction * (0.5 + Math.random() * 0.5));
+        const newVal = base + (Math.abs(base) * cfg.scale * direction * (0.5 + Math.random() * 0.5));
         const valEl = card.querySelector('.metric-value');
         if (!valEl) return;
         valEl.classList.remove('tick-up','tick-down');
@@ -2099,7 +2099,7 @@ function startMicroFluctuations() {
       const navBase = fluctBase['nav'];
       if (heroEl && navBase != null) {
         const navCfg = FLUCT_RANGES['nav'];
-        const heroVal = navBase + (navBase * navCfg.scale * direction * (0.5 + Math.random() * 0.5));
+        const heroVal = navBase + (Math.abs(navBase) * navCfg.scale * direction * (0.5 + Math.random() * 0.5));
         heroEl.classList.remove('tick-up','tick-down');
         void heroEl.offsetWidth;
         heroEl.classList.add(direction > 0 ? 'tick-up' : 'tick-down');
@@ -3644,28 +3644,33 @@ function checkForNewTP(positions) {
 
   // On first call, just store baseline counts — don't fire any notifications
   if (!_notifInitialised) {
-    prevTpCount        = tpCount;
+    prevTpCount         = tpCount;
     window._prevSlCount = slCount;
-    _notifInitialised  = true;
+    // Seed all existing closed trade IDs so they never trigger notifications
+    window._notifiedIds = new Set(closed.map(p => p.id));
+    _notifInitialised   = true;
     return;
   }
 
   // TP hits
   if (tpCount > prevTpCount) {
-    // Use trade IDs to find genuinely new ones, not just count diff
-    const newTPs = closed.filter(p => p.result === 'TAKE PROFIT HIT').slice(-(tpCount - prevTpCount));
+    const newTPs = closed.filter(p => p.result === 'TAKE PROFIT HIT' && !window._notifiedIds?.has(p.id));
     newTPs.forEach(p => {
       addNotification('Take Profit Hit — ' + p.ticker, 'tp', (p.pnl>=0?'+':'') + '$' + fmtM(p.pnl));
+      window._notifiedIds = window._notifiedIds || new Set();
+      window._notifiedIds.add(p.id);
     });
-    playChime();
+    if (newTPs.length > 0) playChime();
   }
 
-  // SL hits — use own prev counter, not prevTpCount guard
+  // SL hits
   const prevSl = window._prevSlCount || 0;
   if (slCount > prevSl) {
-    const newSLs = closed.filter(p => p.result === 'STOP LOSS HIT').slice(-(slCount - prevSl));
+    const newSLs = closed.filter(p => p.result === 'STOP LOSS HIT' && !window._notifiedIds?.has(p.id));
     newSLs.forEach(p => {
       addNotification('Stop Loss Hit — ' + p.ticker, 'sl', (p.pnl>=0?'+':'') + '$' + fmtM(p.pnl));
+      window._notifiedIds = window._notifiedIds || new Set();
+      window._notifiedIds.add(p.id);
     });
   }
 
