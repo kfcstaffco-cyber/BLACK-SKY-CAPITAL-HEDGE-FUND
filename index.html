@@ -4758,11 +4758,12 @@ function buildActivityLog(d) {
     const isSL = p.result === 'STOP LOSS HIT';
     events.push({
       date, type: 'trade',
+      sortKey: p.id || 0,   // higher trade ID = more recent
       icon: isTP ? '✓' : isSL ? '✗' : '●',
       iconBg: isTP ? 'rgba(62,207,142,0.15)' : isSL ? 'rgba(232,83,74,0.15)' : 'rgba(74,158,255,0.15)',
       iconColor: isTP ? 'var(--green)' : isSL ? 'var(--red)' : 'var(--blue)',
       title: (isTP ? 'TP Hit' : isSL ? 'SL Hit' : 'Closed') + ' — ' + p.ticker,
-      meta: p.cls + ' · ' + p.side + ' · Hold: ' + (p.hold||0) + 'd',
+      meta: p.cls + ' · ' + p.side + ' · Hold: ' + (p.hold||0) + 'd · Exit: ' + (p.exitDate||p.date||'—'),
       amount: (p.pnl>=0?'+':'') + '$' + fmtM(p.pnl),
       amountColor: p.pnl >= 0 ? 'var(--green)' : 'var(--red)',
     });
@@ -4771,9 +4772,10 @@ function buildActivityLog(d) {
   (d.positions||[]).filter(p => p.status==='Open').forEach(p => {
     events.push({
       date: p.date||'', type: 'trade',
+      sortKey: p.id || 0,
       icon: '▶', iconBg: 'rgba(200,169,110,0.15)', iconColor: 'var(--accent)',
       title: 'Position Opened — ' + p.ticker,
-      meta: p.cls + ' · ' + p.side + ' · Entry: ' + p.entry,
+      meta: p.cls + ' · ' + p.side + ' · Entry: ' + p.entry + ' · Since: ' + (p.date||'—'),
       amount: 'ACTIVE', amountColor: 'var(--blue)',
     });
   });
@@ -4782,6 +4784,7 @@ function buildActivityLog(d) {
     const isDep = t.type === 'Deposit';
     events.push({
       date: t.date||'', type: 'deposit',
+      sortKey: t.id || 0,   // transaction ID as tiebreaker
       icon: isDep ? '↓' : '↑',
       iconBg: isDep ? 'rgba(62,207,142,0.15)' : 'rgba(232,83,74,0.15)',
       iconColor: isDep ? 'var(--green)' : 'var(--red)',
@@ -4791,9 +4794,13 @@ function buildActivityLog(d) {
       amountColor: isDep ? 'var(--green)' : 'var(--red)',
     });
   });
-  // Sort newest first
+  // Sort: newest date first, then highest sortKey (trade/txn ID) as tiebreaker
   const parseD = s => { if(!s||s==='—') return 0; const [dd,mm,yy]=s.split('/'); return new Date(+yy,+mm-1,+dd).getTime(); };
-  return events.sort((a,b) => parseD(b.date) - parseD(a.date));
+  return events.sort((a,b) => {
+    const dateDiff = parseD(b.date) - parseD(a.date);
+    if (dateDiff !== 0) return dateDiff;
+    return (b.sortKey||0) - (a.sortKey||0); // same date → higher ID first
+  });
 }
 
 function renderActivityLog() {
