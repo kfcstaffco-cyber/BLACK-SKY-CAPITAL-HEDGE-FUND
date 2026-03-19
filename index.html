@@ -962,6 +962,12 @@
         <div id="mobile-tab-name">Overview</div>
       </div>
       <div class="date-label" id="live-date">—</div>
+      <button class="lang-btn active" id="lang-en" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" id="lang-fr" onclick="setLang('fr')">FR</button>
+      <button class="notif-bell" onclick="toggleNotifPanel()" id="notif-bell-btn">
+        &#128276;
+        <div class="notif-badge" id="notif-badge">0</div>
+      </button>
       <button class="logout-btn" onclick="logout()">Lock</button>
     </div>
   </div>
@@ -1447,21 +1453,27 @@ async function _digest(str) {
 // ── REMEMBER ME ──────────────────────────────────────────────────
 const REMEMBER_KEY = 'bsc_remembered_until';
 
+// checkRemembered defined above
+
+// Remember me helper — called from original checkPassword on success
+function applyRememberMe() {
+  const remember = document.getElementById('pw-remember')?.checked;
+  if (remember) {
+    localStorage.setItem(REMEMBER_KEY, Date.now() + 24*60*60*1000);
+    localStorage.setItem('bsc_access_level', isMasterAccess ? 'master' : 'standard');
+  }
+}
+
 function checkRemembered() {
   const until = localStorage.getItem(REMEMBER_KEY);
   if (until && Date.now() < parseInt(until)) {
-    // Auto-login
+    const level = localStorage.getItem('bsc_access_level');
+    if (level === 'master') isMasterAccess = true;
     document.getElementById('pw-screen').style.display = 'none';
     showPostAuth();
     return true;
   }
   return false;
-}
-
-// Remember me helper — called from original checkPassword on success
-function applyRememberMe() {
-  const remember = document.getElementById('pw-remember')?.checked;
-  if (remember) localStorage.setItem(REMEMBER_KEY, Date.now() + 24*60*60*1000);
 }
 
 // Clear remember me on logout (patch into existing logout)
@@ -4177,6 +4189,7 @@ function togglePrivacy() {
 // Apply on load
 document.addEventListener('DOMContentLoaded', () => {
   document.body.classList.add('privacy-on');
+  checkRemembered();
 });
 
 // ── HEATMAP TOOLTIP ──────────────────────────────────────────────
