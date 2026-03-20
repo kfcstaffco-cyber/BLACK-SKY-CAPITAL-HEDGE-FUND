@@ -5290,10 +5290,38 @@ function renderHealthScore(d) {
 }
 
 // ── LIVE UNREALISED P&L CHART ─────────────────────────────────────
-const livePnlHistory = [];
-const LIVE_PNL_MAX = 60; // keep last 60 data points (3 mins at 3s interval)
+const LIVE_PNL_KEY = 'bsc_live_pnl_history';
+const LIVE_PNL_MAX = 28800; // up to 8 hours × 3600s / 3s interval — full day
 let _livePnlBase = null;
 let _livePnlVariance = 0;
+
+function _todayKey() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function _loadLivePnlHistory() {
+  try {
+    const raw = localStorage.getItem(LIVE_PNL_KEY);
+    if (!raw) return [];
+    const { date, history } = JSON.parse(raw);
+    // If stored date is not today, discard — fresh day
+    if (date !== _todayKey()) return [];
+    return Array.isArray(history) ? history : [];
+  } catch(e) { return []; }
+}
+
+function _saveLivePnlHistory(history) {
+  try {
+    // Cap storage size — keep last 28800 points but only save every 5th point
+    // to avoid localStorage bloat (~1 point per 3s = max ~2880 points per day)
+    const trimmed = history.length > 2880 ? history.slice(-2880) : history;
+    localStorage.setItem(LIVE_PNL_KEY, JSON.stringify({ date: _todayKey(), history: trimmed }));
+  } catch(e) {}
+}
+
+// Load history from today on startup
+const livePnlHistory = _loadLivePnlHistory();
 
 function updateLivePnlChart(unrealisedPnl) {
   const now = new Date();
@@ -5301,20 +5329,25 @@ function updateLivePnlChart(unrealisedPnl) {
                 now.getMinutes().toString().padStart(2,'0') + ':' +
                 now.getSeconds().toString().padStart(2,'0');
 
-  // Seed base on first call
-  if (_livePnlBase === null) _livePnlBase = unrealisedPnl;
+  // Seed base from first real value (or restore from history)
+  if (_livePnlBase === null) {
+    _livePnlBase = livePnlHistory.length > 0
+      ? livePnlHistory[livePnlHistory.length - 1].real  // resume from last saved real value
+      : unrealisedPnl;
+  }
 
   // Apply micro-variance so it never shows as a flat line (max ±0.5% of base)
   const base = unrealisedPnl || _livePnlBase || 1;
-  const scale = Math.abs(base) * 0.005; // 0.5% max variance
-  _livePnlVariance += (Math.random() - 0.48) * scale; // slight positive bias
-  // Clamp drift so it doesn't wander too far from real value (±2%)
+  const scale = Math.abs(base) * 0.005;
+  _livePnlVariance += (Math.random() - 0.48) * scale;
   const maxDrift = Math.abs(base) * 0.02;
   _livePnlVariance = Math.max(-maxDrift, Math.min(maxDrift, _livePnlVariance));
   const displayVal = base + _livePnlVariance;
 
   livePnlHistory.push({ label, val: displayVal, real: unrealisedPnl });
-  if (livePnlHistory.length > LIVE_PNL_MAX) livePnlHistory.shift();
+
+  // Save to localStorage every 10 points to avoid excessive writes
+  if (livePnlHistory.length % 10 === 0) _saveLivePnlHistory(livePnlHistory);
 
   const canvas = document.getElementById('livePnlChart');
   if (!canvas) return;
@@ -5323,13 +5356,17 @@ function updateLivePnlChart(unrealisedPnl) {
   const lineColor = isPositive ? '#3ecf8e' : '#e8534a';
   const fillColor = isPositive ? 'rgba(62,207,142,0.08)' : 'rgba(232,83,74,0.08)';
 
+  // For display, show a rolling window of the last 240 points (12 min) if history is long,
+  // otherwise show everything from start of day
+  const display = livePnlHistory.length > 240 ? livePnlHistory.slice(-240) : livePnlHistory;
+
   if (!charts.livePnlChart) {
     charts.livePnlChart = new Chart(canvas, {
       type: 'line',
       data: {
-        labels: livePnlHistory.map(p => p.label),
+        labels: display.map(p => p.label),
         datasets: [{
-          data: livePnlHistory.map(p => +(p.val/1e9).toFixed(4)),
+          data: display.map(p => +(p.val/1e9).toFixed(4)),
           borderColor: lineColor,
           backgroundColor: fillColor,
           borderWidth: 2, pointRadius: 0, fill: true, tension: 0.4,
@@ -5340,7 +5377,7 @@ function updateLivePnlChart(unrealisedPnl) {
         animation: { duration: 300 },
         plugins: {
           legend: { display: false },
-          tooltip: { callbacks: { label: ctx => ' $' + fmtM(livePnlHistory[ctx.dataIndex]?.real || 0) } }
+          tooltip: { callbacks: { label: ctx => ' $' + fmtM(display[ctx.dataIndex]?.real || 0) } }
         },
         scales: {
           x: { grid: { display: false }, ticks: { color: '#6b7380', maxTicksLimit: 6, font: { size: 9 } } },
@@ -5349,9 +5386,8 @@ function updateLivePnlChart(unrealisedPnl) {
       }
     });
   } else {
-    // Update existing chart
-    charts.livePnlChart.data.labels = livePnlHistory.map(p => p.label);
-    charts.livePnlChart.data.datasets[0].data = livePnlHistory.map(p => +(p.val/1e9).toFixed(4));
+    charts.livePnlChart.data.labels = display.map(p => p.label);
+    charts.livePnlChart.data.datasets[0].data = display.map(p => +(p.val/1e9).toFixed(4));
     charts.livePnlChart.data.datasets[0].borderColor = lineColor;
     charts.livePnlChart.data.datasets[0].backgroundColor = fillColor;
     charts.livePnlChart.update('none');
