@@ -1881,16 +1881,19 @@
   <div class="modal-overlay" id="msg-modal" onclick="closeMsgModal(event)">
     <div class="modal-box" style="position:relative;max-width:480px;">
       <button class="modal-close" onclick="closeMsgModal(null,true)">&#x2715;</button>
-      <div class="modal-title">📢 Broadcast Message</div>
-      <div class="modal-sub" style="margin-bottom:16px;">Shown to all investors on next login. Persists for 24 hours.</div>
-      <label style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Message</label>
-      <textarea id="msg-input" rows="4" placeholder="e.g. New position opened on Oil Futures. Fund is performing well — stay tuned for updates." style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;font-size:13px;font-family:var(--font);color:var(--text);outline:none;resize:vertical;line-height:1.5;"></textarea>
-      <div style="display:flex;gap:8px;margin-top:12px;">
-        <button class="modal-btn" style="margin:0;flex:1;" onclick="broadcastMessage()">Send to All Investors</button>
-        <button onclick="clearBroadcastMessage();closeMsgModal(null,true)" style="padding:10px 16px;background:rgba(232,83,74,0.1);border:1px solid rgba(232,83,74,0.3);border-radius:8px;color:var(--red);font-size:12px;cursor:pointer;">Clear</button>
+      <div class="modal-title">📢 Broadcast Announcement</div>
+      <div class="modal-sub" style="margin-bottom:16px;">To broadcast a message to all investors, add a row to the <b>Dispatches</b> sheet with tag <b>announcement</b>. It will appear as the banner for all users on next load.</div>
+      <div style="background:rgba(200,169,110,0.07);border:1px solid rgba(200,169,110,0.2);border-radius:10px;padding:14px 16px;font-size:12px;color:var(--muted);line-height:1.8;">
+        <b style="color:var(--text);">Sheet columns:</b><br>
+        ID &nbsp;|&nbsp; Text &nbsp;|&nbsp; <span style="color:var(--accent2);">announcement</span> &nbsp;|&nbsp; false &nbsp;|&nbsp; <i>timestamp</i><br><br>
+        <b style="color:var(--text);">To remove:</b> delete the row or change the tag away from <span style="font-family:var(--mono);color:var(--accent2);">announcement</span>.
       </div>
-      <div id="msg-preview" style="display:none;margin-top:14px;padding:10px 14px;background:rgba(200,169,110,0.08);border:1px solid rgba(200,169,110,0.2);border-radius:8px;font-size:12px;color:var(--muted);">
-        Current message: <span id="msg-preview-text" style="color:var(--text);"></span>
+      <div id="msg-preview" style="display:none;margin-top:14px;padding:10px 14px;background:rgba(62,207,142,0.06);border:1px solid rgba(62,207,142,0.2);border-radius:8px;font-size:12px;">
+        <span style="color:var(--green);font-size:10px;text-transform:uppercase;letter-spacing:0.06em;">Active announcement</span><br>
+        <span id="msg-preview-text" style="color:var(--text);"></span>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button class="modal-btn" style="margin:0;flex:1;" onclick="closeMsgModal(null,true)">Close</button>
       </div>
     </div>
   </div>
@@ -5129,12 +5132,14 @@ function renderActivityLog() {
 
 
 // ── INVESTOR BROADCAST MESSAGE ────────────────────────────────────
-const MSG_KEY = 'bsc_broadcast_msg';
-const MSG_TTL = 24 * 60 * 60 * 1000;
+// The banner reads the most recent 'announcement' tag row from the
+// Dispatches sheet — same source used for the dispatches feed.
+// Dismissal is stored locally per-device (that's fine — it's just UX).
 const MSG_DISMISSED_KEY = 'bsc_msg_dismissed';
 
 function openMsgModal() {
-  const existing = getBroadcastMessage();
+  // Show current active announcement if any
+  const existing = getAnnouncementFromSheet();
   const preview = document.getElementById('msg-preview');
   const previewText = document.getElementById('msg-preview-text');
   if (existing && preview && previewText) {
@@ -5144,7 +5149,6 @@ function openMsgModal() {
     preview.style.display = 'none';
   }
   document.getElementById('msg-modal').classList.add('open');
-  setTimeout(() => document.getElementById('msg-input')?.focus(), 200);
 }
 
 function closeMsgModal(e, force) {
@@ -5152,40 +5156,29 @@ function closeMsgModal(e, force) {
     document.getElementById('msg-modal').classList.remove('open');
 }
 
-function broadcastMessage() {
-  const text = (document.getElementById('msg-input')?.value || '').trim();
-  if (!text) return;
-  const msg = { text, ts: Date.now(), from: 'Black-Sky Capital' };
-  localStorage.setItem(MSG_KEY, JSON.stringify(msg));
-  localStorage.removeItem(MSG_DISMISSED_KEY); // reset dismissal so investors see it
-  closeMsgModal(null, true);
-  showInvestorMessage(); // preview for master too
-}
-
-function clearBroadcastMessage() {
-  localStorage.removeItem(MSG_KEY);
-  localStorage.removeItem(MSG_DISMISSED_KEY);
-  hideMsgBanner();
+function getAnnouncementFromSheet() {
+  // Find the most recent dispatch tagged 'announcement'
+  const dispatches = window._sheetDispatches || [];
+  const announcements = dispatches
+    .filter(d => d.tag === 'announcement')
+    .sort((a, b) => b.ts - a.ts);
+  return announcements[0] || null;
 }
 
 function getBroadcastMessage() {
-  try {
-    const raw = localStorage.getItem(MSG_KEY);
-    if (!raw) return null;
-    const msg = JSON.parse(raw);
-    if (Date.now() - msg.ts > MSG_TTL) { localStorage.removeItem(MSG_KEY); return null; }
-    return msg;
-  } catch(e) { return null; }
+  return getAnnouncementFromSheet();
 }
 
 function showInvestorMessage() {
-  const msg = getBroadcastMessage();
+  const msg = getAnnouncementFromSheet();
   const banner = document.getElementById('investor-msg-banner');
-  if (!msg || !banner) return;
-  // Check dismissal by message timestamp (not a global flag)
-  // so each new message shows fresh
+  if (!banner) return;
+  if (!msg) { hideMsgBanner(); return; }
+
+  // Check if user already dismissed this specific message
   const dismissedTs = localStorage.getItem(MSG_DISMISSED_KEY);
   if (dismissedTs && dismissedTs === String(msg.ts)) return;
+
   document.getElementById('investor-msg-text').textContent = msg.text;
   const ago = Math.round((Date.now() - msg.ts) / 60000);
   const timeStr = ago < 1 ? 'Just now' : ago < 60 ? ago + 'm ago' : Math.round(ago/60) + 'h ago';
@@ -5204,11 +5197,14 @@ function hideMsgBanner() {
 }
 
 function dismissInvestorMsg() {
-  const msg = getBroadcastMessage();
-  // Store the specific message timestamp so new messages still show
+  const msg = getAnnouncementFromSheet();
   if (msg) localStorage.setItem(MSG_DISMISSED_KEY, String(msg.ts));
   hideMsgBanner();
 }
+
+// Keep these as stubs so the modal clear button doesn't break
+function broadcastMessage() { closeMsgModal(null, true); }
+function clearBroadcastMessage() { hideMsgBanner(); closeMsgModal(null, true); }
 
 // ── FUND HEALTH SCORE ─────────────────────────────────────────────
 function calcHealthScore(d) {
@@ -5436,9 +5432,11 @@ function renderDispatches() {
     return;
   }
 
-  const TAG_LABELS = { general: 'General', update: 'Update', alert: 'Alert' };
+  const TAG_LABELS = { general: 'General', update: 'Update', alert: 'Alert', announcement: 'Announcement' };
 
-  feed.innerHTML = dispatches.map(d => {
+  feed.innerHTML = dispatches
+    .filter(d => d.tag !== 'announcement') // announcements show as banner only, not in feed
+    .map(d => {
     const ago = (() => {
       const diff = Math.round((Date.now() - d.ts) / 60000);
       if (diff < 1)    return 'Just now';
@@ -5546,7 +5544,8 @@ async function launchDashboard(sheetId, apiKey) {
         m.transactions=parseTransactionLog(tr);
         storeSheetDispatches(dr);
         renderAll(m);
-        renderDispatches(); // re-render after fresh sheet data
+        renderDispatches();
+        showInvestorMessage(); // re-check banner on every refresh
       } catch(e) { console.warn('Refresh failed:',e); }
     }, REFRESH_INTERVAL);
   } catch(err) {
