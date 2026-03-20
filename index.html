@@ -1898,23 +1898,19 @@
   
   <!-- DISPATCHES -->
   <div class="page" id="page-dispatches">
-    <!-- Compose area (master only) -->
+    <!-- Master-only instructions panel -->
     <div id="dispatch-compose-wrap" style="display:none;">
-      <div class="dispatch-compose">
-        <div style="font-size:11px;font-weight:600;letter-spacing:0.05em;color:var(--accent);margin-bottom:10px;">📢 New Dispatch</div>
-        <textarea id="dispatch-textarea" placeholder="Write your dispatch message..."></textarea>
-        <div class="dispatch-toolbar">
-          <select id="dispatch-tag-sel" class="dispatch-tag-select">
-            <option value="general">General</option>
-            <option value="update">Update</option>
-            <option value="alert">Alert</option>
-          </select>
-          <label class="dispatch-pin-toggle">
-            <input type="checkbox" id="dispatch-pin-check"> Pin to top
-          </label>
-          <button class="modal-btn" style="margin:0;padding:7px 18px;font-size:11px;" onclick="postDispatch()">Post</button>
-          <span id="dispatch-edit-id" style="display:none;"></span>
-          <button id="dispatch-cancel-edit" onclick="cancelDispatchEdit()" style="display:none;padding:7px 14px;font-size:11px;background:none;border:1px solid var(--border2);border-radius:6px;color:var(--muted);cursor:pointer;">Cancel</button>
+      <div class="dispatch-compose" style="background:rgba(200,169,110,0.06);border-color:rgba(200,169,110,0.25);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <span style="font-size:16px;">📋</span>
+          <span style="font-size:12px;font-weight:600;color:var(--accent);">How to post a dispatch</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.7;">
+          Add a row to the <b style="color:var(--text);">Dispatches</b> tab in your Google Sheet.<br>
+          Columns: <span style="font-family:var(--mono);font-size:11px;color:var(--accent2);">ID &nbsp;|&nbsp; Text &nbsp;|&nbsp; Tag &nbsp;|&nbsp; Pinned &nbsp;|&nbsp; Timestamp &nbsp;|&nbsp; Edited</span><br>
+          Tag values: <span style="font-family:var(--mono);font-size:11px;">general</span>, <span style="font-family:var(--mono);font-size:11px;">update</span>, <span style="font-family:var(--mono);font-size:11px;">alert</span> &nbsp;·&nbsp; Pinned: <span style="font-family:var(--mono);font-size:11px;">true</span> or <span style="font-family:var(--mono);font-size:11px;">false</span><br>
+          Timestamp: Unix ms (e.g. paste <span style="font-family:var(--mono);font-size:11px;">=INT((NOW()-DATE(1970,1,1))*86400000)</span>)<br>
+          Dashboard refreshes every 60s — or reload the page to see new posts immediately.
         </div>
       </div>
     </div>
@@ -2057,6 +2053,7 @@ const SHEET_TABS = {
   positions:    'Positions',
   investors:    'Investor Withdrawals',
   transactions: 'Transaction Log',
+  dispatches:   'Dispatches',
 };
 const REFRESH_INTERVAL = 60000; // 60s — reduces API calls by half
 
@@ -5368,116 +5365,47 @@ function updateLivePnlChart(unrealisedPnl) {
 
 
 // ── DISPATCHES ────────────────────────────────────────────────────
-// Dispatches live in localStorage — master posts, all users on the same
-// browser/device see them. On first load we wipe any legacy stuck entries
-// that pre-date the current schema (they have no 'schema' marker).
-const DISPATCH_KEY    = 'bsc_dispatches';
-const DISPATCH_SCHEMA = 2; // bump this to nuke old entries on next load
-
-(function migrateDispatches() {
-  try {
-    const raw = localStorage.getItem(DISPATCH_KEY);
-    if (!raw) return;
-    const arr = JSON.parse(raw);
-    // If any entry lacks a schema marker it's from the old version — wipe them
-    if (!Array.isArray(arr) || arr.some(d => !d._v)) {
-      localStorage.removeItem(DISPATCH_KEY);
-    }
-  } catch(e) { localStorage.removeItem(DISPATCH_KEY); }
+// All dispatches are read from the 'Dispatches' Google Sheet tab.
+// This ensures both master and standard users see the same posts
+// regardless of device/browser — localStorage is not used for content.
+// Master adds rows directly to the Dispatches sheet; dashboard
+// fetches and displays them for everyone on load + every refresh.
+// Schema: Row 1 = header. Data rows: ID | Text | Tag | Pinned | Timestamp | Edited
+// Wipe any old localStorage dispatches on load to prevent ghost entries.
+(function clearLegacyDispatches() {
+  try { localStorage.removeItem('bsc_dispatches'); } catch(e) {}
 })();
 
-function loadDispatches() {
-  try { return JSON.parse(localStorage.getItem(DISPATCH_KEY) || '[]'); }
-  catch(e) { return []; }
+// Called by launchDashboard after fetching — stores rows globally
+function storeSheetDispatches(rows) {
+  window._sheetDispatches = parseSheetDispatches(rows);
 }
 
-function saveDispatches(arr) {
-  // Stamp schema version on every entry before saving
-  const stamped = arr.map(d => ({ ...d, _v: DISPATCH_SCHEMA }));
-  try { localStorage.setItem(DISPATCH_KEY, JSON.stringify(stamped)); } catch(e) {}
-}
-
-function clearAllDispatches() {
-  if (!confirm('Clear ALL dispatches? This cannot be undone.')) return;
-  localStorage.removeItem(DISPATCH_KEY);
-  renderDispatches();
-}
-
-function postDispatch() {
-  const text   = (document.getElementById('dispatch-textarea')?.value || '').trim();
-  const tag    = document.getElementById('dispatch-tag-sel')?.value || 'general';
-  const pinned = document.getElementById('dispatch-pin-check')?.checked || false;
-  const editId = document.getElementById('dispatch-edit-id')?.textContent || '';
-  if (!text) return;
-
-  const dispatches = loadDispatches();
-  const now = Date.now();
-
-  if (editId) {
-    const idx = dispatches.findIndex(d => d.id == editId);
-    if (idx > -1) {
-      dispatches[idx].text   = text;
-      dispatches[idx].tag    = tag;
-      dispatches[idx].pinned = pinned;
-      dispatches[idx].edited = now;
-    }
-    cancelDispatchEdit();
-  } else {
-    dispatches.unshift({ id: now, text, tag, pinned, ts: now, edited: null, _v: DISPATCH_SCHEMA });
-  }
-
-  saveDispatches(dispatches);
-  document.getElementById('dispatch-textarea').value = '';
-  document.getElementById('dispatch-pin-check').checked = false;
-  renderDispatches();
-}
-
-function deleteDispatch(id) {
-  if (!confirm('Delete this dispatch?')) return;
-  const filtered = loadDispatches().filter(d => d.id != id);
-  saveDispatches(filtered);
-  renderDispatches();
-}
-
-function editDispatch(id) {
-  const dispatch = loadDispatches().find(d => d.id == id);
-  if (!dispatch) return;
-  document.getElementById('dispatch-textarea').value      = dispatch.text;
-  document.getElementById('dispatch-tag-sel').value       = dispatch.tag;
-  document.getElementById('dispatch-pin-check').checked   = dispatch.pinned;
-  document.getElementById('dispatch-edit-id').textContent = id;
-  document.getElementById('dispatch-cancel-edit').style.display = 'inline-flex';
-  document.getElementById('dispatch-textarea').focus();
-  document.getElementById('dispatch-textarea').scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-
-function cancelDispatchEdit() {
-  document.getElementById('dispatch-textarea').value = '';
-  document.getElementById('dispatch-tag-sel').value  = 'general';
-  document.getElementById('dispatch-pin-check').checked = false;
-  document.getElementById('dispatch-edit-id').textContent = '';
-  document.getElementById('dispatch-cancel-edit').style.display = 'none';
-}
-
-function togglePin(id) {
-  const dispatches = loadDispatches();
-  const idx = dispatches.findIndex(d => d.id == id);
-  if (idx > -1) { dispatches[idx].pinned = !dispatches[idx].pinned; }
-  saveDispatches(dispatches);
-  renderDispatches();
+function parseSheetDispatches(rows) {
+  if (!rows || !rows.length) return [];
+  // Skip header row if present
+  const dataRows = rows.filter(r => r[0] && r[1] && isNaN(Number(r[0])) === false || (r[0] && r[1] && r[0] !== 'ID'));
+  return dataRows.filter(r => r[1] && r[1].toString().trim()).map(r => ({
+    id:     r[0] || String(Date.now()),
+    text:   (r[1] || '').toString().trim(),
+    tag:    ((r[2] || 'general')).toString().trim().toLowerCase(),
+    pinned: (r[3] || '').toString().toLowerCase() === 'true' || r[3] === '1',
+    ts:     parseInt(r[4]) || Date.now(),
+    edited: r[5] ? parseInt(r[5]) : null,
+  })).filter(d => d.text);
 }
 
 function renderDispatches() {
   const filter = document.getElementById('dispatch-filter')?.value || 'all';
-  let dispatches = loadDispatches();
+  let dispatches = window._sheetDispatches || [];
 
-  // Show compose area + clear-all button for master only
+  // Show compose area + instructions for master only
   const compose = document.getElementById('dispatch-compose-wrap');
   if (compose) compose.style.display = isMasterAccess ? 'block' : 'none';
   const clearBtn = document.getElementById('dispatch-clear-all-btn');
-  if (clearBtn) clearBtn.style.display = isMasterAccess ? 'inline-block' : 'none';
+  if (clearBtn) clearBtn.style.display = 'none'; // delete is done in Sheet directly
 
-  // Filter
+  // Filter by tag
   if (filter !== 'all') dispatches = dispatches.filter(d => d.tag === filter);
 
   // Sort: pinned first, then newest
@@ -5488,14 +5416,16 @@ function renderDispatches() {
   });
 
   const countEl = document.getElementById('dispatch-count');
-  if (countEl) countEl.textContent = dispatches.length + (dispatches.length === 1 ? ' dispatch' : ' dispatches');
+  if (countEl) countEl.textContent = dispatches.length + (dispatches.length === 1 ? ' announcement' : ' announcements');
 
   const feed = document.getElementById('dispatch-feed');
   if (!feed) return;
 
   if (dispatches.length === 0) {
     feed.innerHTML = `<div style="color:var(--muted);font-size:13px;text-align:center;padding:40px 0;">
-      ${isMasterAccess ? 'No dispatches yet — write one above.' : 'No announcements yet.'}
+      ${isMasterAccess
+        ? 'No dispatches yet — add rows to the <b>Dispatches</b> sheet tab to post.'
+        : 'No announcements yet.'}
     </div>`;
     return;
   }
@@ -5511,21 +5441,13 @@ function renderDispatches() {
       return Math.round(diff/1440) + 'd ago';
     })();
 
-    const masterActions = isMasterAccess ? `
-      <div class="dispatch-actions">
-        <button class="dispatch-action-btn" onclick="editDispatch(${d.id})">✎ Edit</button>
-        <button class="dispatch-action-btn" onclick="togglePin(${d.id})">${d.pinned ? '📌 Unpin' : '📌 Pin'}</button>
-        <button class="dispatch-action-btn del" onclick="deleteDispatch(${d.id})">✕ Delete</button>
-      </div>` : '';
-
     return `
       <div class="dispatch-card${d.pinned ? ' pinned' : ''}">
         <div class="dispatch-header">
           <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;">
             ${d.pinned ? '<span class="dispatch-tag pinned-tag">📌 Pinned</span>' : ''}
-            <span class="dispatch-tag ${d.tag}">${TAG_LABELS[d.tag]||d.tag}</span>
+            <span class="dispatch-tag ${d.tag}">${TAG_LABELS[d.tag] || d.tag}</span>
           </div>
-          ${masterActions}
         </div>
         <div class="dispatch-body">${d.text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
         <div class="dispatch-meta">
@@ -5585,16 +5507,18 @@ async function launchDashboard(sheetId, apiKey) {
   $('loading-screen').style.display = 'flex';
   showSkeletons();
   try {
-    const [measureRows, posRows, invRows, txnRows] = await Promise.all([
+    const [measureRows, posRows, invRows, txnRows, dispRows] = await Promise.all([
       fetchSheet(sheetId, apiKey, SHEET_TABS.fundMeasures),
       fetchSheet(sheetId, apiKey, SHEET_TABS.positions),
       fetchSheet(sheetId, apiKey, SHEET_TABS.investors),
       fetchSheet(sheetId, apiKey, SHEET_TABS.transactions),
+      fetchSheet(sheetId, apiKey, SHEET_TABS.dispatches).catch(() => []),
     ]);
     const measures = parseFundMeasures(measureRows);
     measures.positions    = parsePositions(posRows);
     measures.investors    = parseInvestors(invRows);
     measures.transactions = parseTransactionLog(txnRows);
+    storeSheetDispatches(dispRows);
     $('loading-screen').style.display = 'none';
     $('app').style.display = 'block';
     renderAll(measures);
@@ -5604,16 +5528,18 @@ async function launchDashboard(sheetId, apiKey) {
     setTimeout(showInvestorMessage, 600);
     setInterval(async () => {
       try {
-        const [mr,pr,ir,tr] = await Promise.all([
+        const [mr,pr,ir,tr,dr] = await Promise.all([
           fetchSheet(sheetId,apiKey,SHEET_TABS.fundMeasures),
           fetchSheet(sheetId,apiKey,SHEET_TABS.positions),
           fetchSheet(sheetId,apiKey,SHEET_TABS.investors),
           fetchSheet(sheetId,apiKey,SHEET_TABS.transactions),
+          fetchSheet(sheetId,apiKey,SHEET_TABS.dispatches).catch(()=>[]),
         ]);
         const m=parseFundMeasures(mr);
         m.positions=parsePositions(pr);
         m.investors=parseInvestors(ir);
         m.transactions=parseTransactionLog(tr);
+        storeSheetDispatches(dr);
         renderAll(m);
       } catch(e) { console.warn('Refresh failed:',e); }
     }, REFRESH_INTERVAL);
