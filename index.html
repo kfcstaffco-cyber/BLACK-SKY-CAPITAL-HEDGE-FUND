@@ -5383,16 +5383,22 @@ function storeSheetDispatches(rows) {
 
 function parseSheetDispatches(rows) {
   if (!rows || !rows.length) return [];
-  // Skip header row if present
-  const dataRows = rows.filter(r => r[0] && r[1] && isNaN(Number(r[0])) === false || (r[0] && r[1] && r[0] !== 'ID'));
-  return dataRows.filter(r => r[1] && r[1].toString().trim()).map(r => ({
-    id:     r[0] || String(Date.now()),
-    text:   (r[1] || '').toString().trim(),
-    tag:    ((r[2] || 'general')).toString().trim().toLowerCase(),
-    pinned: (r[3] || '').toString().toLowerCase() === 'true' || r[3] === '1',
-    ts:     parseInt(r[4]) || Date.now(),
-    edited: r[5] ? parseInt(r[5]) : null,
-  })).filter(d => d.text);
+  return rows
+    .filter(r => {
+      if (!r[0] || !r[1]) return false;          // must have ID and text
+      if (r[0].toString().trim() === 'ID') return false; // skip header
+      if (r[1].toString().trim() === 'Text') return false; // skip header
+      return true;
+    })
+    .map(r => ({
+      id:     r[0].toString().trim(),
+      text:   r[1].toString().trim(),
+      tag:    (r[2] || 'general').toString().trim().toLowerCase(),
+      pinned: (r[3] || '').toString().toLowerCase() === 'true' || r[3] === '1',
+      ts:     parseInt(r[4]) || Date.now(),
+      edited: r[5] ? parseInt(r[5]) : null,
+    }))
+    .filter(d => d.text);
 }
 
 function renderDispatches() {
@@ -5493,7 +5499,6 @@ function renderAll(d) {
   renderCalendar(d.positions||[]);
   updateLiveTicker();
   renderActivityLog();
-  renderDispatches();
   renderRollingWinRate(d.positions||[]);
   renderHeroSparkline(d.positions||[], d.totalDeposited||0);
   startPositionTimers();
@@ -5541,6 +5546,7 @@ async function launchDashboard(sheetId, apiKey) {
         m.transactions=parseTransactionLog(tr);
         storeSheetDispatches(dr);
         renderAll(m);
+        renderDispatches(); // re-render after fresh sheet data
       } catch(e) { console.warn('Refresh failed:',e); }
     }, REFRESH_INTERVAL);
   } catch(err) {
@@ -5782,21 +5788,19 @@ function getDisplayInitial(name) {
 // ── ACCESS LEVEL ─────────────────────────────────────────────────
 function applyAccessLevel() {
   if (isMasterAccess) {
-    // Master: names visible, show master badge, hide privacy toggle
     document.body.classList.remove('privacy-on');
     privacyOn = false;
     const badge = document.getElementById('access-badge');
     if (badge) badge.style.display = 'flex';
-    // no toggle button for master - names always visible
-
   } else {
-    // Standard: names blurred by default, show privacy toggle
     document.body.classList.add('privacy-on');
     privacyOn = true;
     const badge = document.getElementById('access-badge');
     if (badge) badge.style.display = 'none';
-    // no toggle button for standard - names always encrypted
   }
+  // Always re-render dispatches after access level is known
+  // so compose panel and feed visibility are correct for both master and standard
+  renderDispatches();
 }
 
 // ── PRIVACY MODE ─────────────────────────────────────────────────
