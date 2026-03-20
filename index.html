@@ -1924,7 +1924,8 @@
         <div style="font-size:14px;font-weight:600;">Dispatches</div>
         <div style="font-size:11px;color:var(--muted);margin-top:2px;" id="dispatch-count">—</div>
       </div>
-      <div style="display:flex;gap:8px;">
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button id="dispatch-clear-all-btn" onclick="clearAllDispatches()" style="display:none;font-size:10px;color:var(--red);background:rgba(232,83,74,0.08);border:1px solid rgba(232,83,74,0.25);border-radius:6px;padding:5px 10px;cursor:pointer;letter-spacing:0.04em;transition:all 0.15s;" onmouseover="this.style.background='rgba(232,83,74,0.18)'" onmouseout="this.style.background='rgba(232,83,74,0.08)'">✕ Clear All</button>
         <select id="dispatch-filter" onchange="renderDispatches()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:5px 10px;font-size:11px;color:var(--text);outline:none;cursor:pointer;">
           <option value="all">All</option>
           <option value="general">General</option>
@@ -2056,7 +2057,6 @@ const SHEET_TABS = {
   positions:    'Positions',
   investors:    'Investor Withdrawals',
   transactions: 'Transaction Log',
-  dispatches:   'Dispatches',
 };
 const REFRESH_INTERVAL = 60000; // 60s — reduces API calls by half
 
@@ -5368,48 +5368,49 @@ function updateLivePnlChart(unrealisedPnl) {
 
 
 // ── DISPATCHES ────────────────────────────────────────────────────
-// Master writes to localStorage AND pushes to Sheets via the data layer.
-// All users (including standard) read from window._sheetDispatches which
-// is populated from the Dispatches sheet on every fetch cycle.
-const DISPATCH_KEY = 'bsc_dispatches';
+// Dispatches live in localStorage — master posts, all users on the same
+// browser/device see them. On first load we wipe any legacy stuck entries
+// that pre-date the current schema (they have no 'schema' marker).
+const DISPATCH_KEY    = 'bsc_dispatches';
+const DISPATCH_SCHEMA = 2; // bump this to nuke old entries on next load
 
-// Parse dispatches rows from Google Sheets
-// Expected columns: ID | Text | Tag | Pinned | Timestamp | Edited
-function parseSheetDispatches(rows) {
-  if (!rows || !rows.length) return [];
-  return rows.filter(r => r[0] && r[1]).map(r => ({
-    id:     r[0],
-    text:   (r[1] || '').trim(),
-    tag:    (r[2] || 'general').trim().toLowerCase(),
-    pinned: (r[3] || '').toString().toLowerCase() === 'true' || r[3] === '1',
-    ts:     parseInt(r[4]) || Date.now(),
-    edited: r[5] ? parseInt(r[5]) : null,
-    source: 'sheet',
-  })).filter(d => d.text);
-}
+(function migrateDispatches() {
+  try {
+    const raw = localStorage.getItem(DISPATCH_KEY);
+    if (!raw) return;
+    const arr = JSON.parse(raw);
+    // If any entry lacks a schema marker it's from the old version — wipe them
+    if (!Array.isArray(arr) || arr.some(d => !d._v)) {
+      localStorage.removeItem(DISPATCH_KEY);
+    }
+  } catch(e) { localStorage.removeItem(DISPATCH_KEY); }
+})();
 
 function loadDispatches() {
-  // Merge: sheet dispatches (visible to everyone) + any local-only ones
-  const local = (() => { try { return JSON.parse(localStorage.getItem(DISPATCH_KEY) || '[]'); } catch(e) { return []; } })();
-  const sheet = window._sheetDispatches || [];
-  // Sheet entries take precedence — deduplicate by id
-  const sheetIds = new Set(sheet.map(d => String(d.id)));
-  const localOnly = local.filter(d => !sheetIds.has(String(d.id)));
-  return [...sheet, ...localOnly];
+  try { return JSON.parse(localStorage.getItem(DISPATCH_KEY) || '[]'); }
+  catch(e) { return []; }
 }
 
 function saveDispatches(arr) {
-  try { localStorage.setItem(DISPATCH_KEY, JSON.stringify(arr)); } catch(e) {}
+  // Stamp schema version on every entry before saving
+  const stamped = arr.map(d => ({ ...d, _v: DISPATCH_SCHEMA }));
+  try { localStorage.setItem(DISPATCH_KEY, JSON.stringify(stamped)); } catch(e) {}
+}
+
+function clearAllDispatches() {
+  if (!confirm('Clear ALL dispatches? This cannot be undone.')) return;
+  localStorage.removeItem(DISPATCH_KEY);
+  renderDispatches();
 }
 
 function postDispatch() {
-  const text    = (document.getElementById('dispatch-textarea')?.value || '').trim();
-  const tag     = document.getElementById('dispatch-tag-sel')?.value || 'general';
-  const pinned  = document.getElementById('dispatch-pin-check')?.checked || false;
-  const editId  = document.getElementById('dispatch-edit-id')?.textContent || '';
+  const text   = (document.getElementById('dispatch-textarea')?.value || '').trim();
+  const tag    = document.getElementById('dispatch-tag-sel')?.value || 'general';
+  const pinned = document.getElementById('dispatch-pin-check')?.checked || false;
+  const editId = document.getElementById('dispatch-edit-id')?.textContent || '';
   if (!text) return;
 
-  const dispatches = (() => { try { return JSON.parse(localStorage.getItem(DISPATCH_KEY) || '[]'); } catch(e) { return []; } })();
+  const dispatches = loadDispatches();
   const now = Date.now();
 
   if (editId) {
@@ -5422,7 +5423,7 @@ function postDispatch() {
     }
     cancelDispatchEdit();
   } else {
-    dispatches.unshift({ id: now, text, tag, pinned, ts: now, edited: null });
+    dispatches.unshift({ id: now, text, tag, pinned, ts: now, edited: null, _v: DISPATCH_SCHEMA });
   }
 
   saveDispatches(dispatches);
@@ -5433,17 +5434,17 @@ function postDispatch() {
 
 function deleteDispatch(id) {
   if (!confirm('Delete this dispatch?')) return;
-  const dispatches = loadDispatches().filter(d => d.id != id);
-  saveDispatches(dispatches);
+  const filtered = loadDispatches().filter(d => d.id != id);
+  saveDispatches(filtered);
   renderDispatches();
 }
 
 function editDispatch(id) {
   const dispatch = loadDispatches().find(d => d.id == id);
   if (!dispatch) return;
-  document.getElementById('dispatch-textarea').value     = dispatch.text;
-  document.getElementById('dispatch-tag-sel').value      = dispatch.tag;
-  document.getElementById('dispatch-pin-check').checked  = dispatch.pinned;
+  document.getElementById('dispatch-textarea').value      = dispatch.text;
+  document.getElementById('dispatch-tag-sel').value       = dispatch.tag;
+  document.getElementById('dispatch-pin-check').checked   = dispatch.pinned;
   document.getElementById('dispatch-edit-id').textContent = id;
   document.getElementById('dispatch-cancel-edit').style.display = 'inline-flex';
   document.getElementById('dispatch-textarea').focus();
@@ -5470,14 +5471,16 @@ function renderDispatches() {
   const filter = document.getElementById('dispatch-filter')?.value || 'all';
   let dispatches = loadDispatches();
 
-  // Show compose area for master
+  // Show compose area + clear-all button for master only
   const compose = document.getElementById('dispatch-compose-wrap');
   if (compose) compose.style.display = isMasterAccess ? 'block' : 'none';
+  const clearBtn = document.getElementById('dispatch-clear-all-btn');
+  if (clearBtn) clearBtn.style.display = isMasterAccess ? 'inline-block' : 'none';
 
   // Filter
   if (filter !== 'all') dispatches = dispatches.filter(d => d.tag === filter);
 
-  // Sort: pinned first, then by timestamp
+  // Sort: pinned first, then newest
   dispatches.sort((a,b) => {
     if (a.pinned && !b.pinned) return -1;
     if (!a.pinned && b.pinned) return 1;
@@ -5502,8 +5505,8 @@ function renderDispatches() {
   feed.innerHTML = dispatches.map(d => {
     const ago = (() => {
       const diff = Math.round((Date.now() - d.ts) / 60000);
-      if (diff < 1)  return 'Just now';
-      if (diff < 60) return diff + 'm ago';
+      if (diff < 1)    return 'Just now';
+      if (diff < 60)   return diff + 'm ago';
       if (diff < 1440) return Math.round(diff/60) + 'h ago';
       return Math.round(diff/1440) + 'd ago';
     })();
@@ -5582,18 +5585,16 @@ async function launchDashboard(sheetId, apiKey) {
   $('loading-screen').style.display = 'flex';
   showSkeletons();
   try {
-    const [measureRows, posRows, invRows, txnRows, dispRows] = await Promise.all([
+    const [measureRows, posRows, invRows, txnRows] = await Promise.all([
       fetchSheet(sheetId, apiKey, SHEET_TABS.fundMeasures),
       fetchSheet(sheetId, apiKey, SHEET_TABS.positions),
       fetchSheet(sheetId, apiKey, SHEET_TABS.investors),
       fetchSheet(sheetId, apiKey, SHEET_TABS.transactions),
-      fetchSheet(sheetId, apiKey, SHEET_TABS.dispatches).catch(() => []),
     ]);
     const measures = parseFundMeasures(measureRows);
     measures.positions    = parsePositions(posRows);
     measures.investors    = parseInvestors(invRows);
     measures.transactions = parseTransactionLog(txnRows);
-    window._sheetDispatches = parseSheetDispatches(dispRows);
     $('loading-screen').style.display = 'none';
     $('app').style.display = 'block';
     renderAll(measures);
@@ -5603,18 +5604,16 @@ async function launchDashboard(sheetId, apiKey) {
     setTimeout(showInvestorMessage, 600);
     setInterval(async () => {
       try {
-        const [mr,pr,ir,tr,dr] = await Promise.all([
+        const [mr,pr,ir,tr] = await Promise.all([
           fetchSheet(sheetId,apiKey,SHEET_TABS.fundMeasures),
           fetchSheet(sheetId,apiKey,SHEET_TABS.positions),
           fetchSheet(sheetId,apiKey,SHEET_TABS.investors),
           fetchSheet(sheetId,apiKey,SHEET_TABS.transactions),
-          fetchSheet(sheetId,apiKey,SHEET_TABS.dispatches).catch(()=>[]),
         ]);
         const m=parseFundMeasures(mr);
         m.positions=parsePositions(pr);
         m.investors=parseInvestors(ir);
         m.transactions=parseTransactionLog(tr);
-        window._sheetDispatches = parseSheetDispatches(dr);
         renderAll(m);
       } catch(e) { console.warn('Refresh failed:',e); }
     }, REFRESH_INTERVAL);
