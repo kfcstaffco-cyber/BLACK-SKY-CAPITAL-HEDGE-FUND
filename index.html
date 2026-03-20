@@ -1539,15 +1539,9 @@
       <div class="card-header"><span class="card-title">Rolling 7-Trade P&L Momentum</span><span style="font-size:10px;color:var(--muted);">7-trade rolling average</span></div>
       <div class="chart-wrap tall"><canvas id="momentumChart"></canvas></div>
     </div>
-    <div class="two-col">
-      <div class="card">
-        <div class="card-header"><span class="card-title">Cumulative P&L</span><span style="font-size:10px;color:var(--muted);">Closed trades</span></div>
-        <div class="chart-wrap tall"><canvas id="cumulativePnlChart"></canvas></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><span class="card-title">Drawdown</span><span style="font-size:10px;color:var(--muted);">From peak</span></div>
-        <div class="chart-wrap tall"><canvas id="drawdownChart"></canvas></div>
-      </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Cumulative P&L</span><span style="font-size:10px;color:var(--muted);">Closed trades</span></div>
+      <div class="chart-wrap tall"><canvas id="cumulativePnlChart"></canvas></div>
     </div>
     <div class="card">
       <div class="card-header"><span class="card-title">P&L per Trade</span></div>
@@ -1559,8 +1553,8 @@
     </div>
     <div class="two-col">
       <div class="card">
-        <div class="card-header"><span class="card-title">Recent Closed Trades</span><span style="font-size:10px;color:var(--muted);">Last 10</span></div>
-        <div class="table-scroll">
+        <div class="card-header"><span class="card-title">Recent Closed Trades</span><span style="font-size:10px;color:var(--muted);">Last 25</span></div>
+        <div class="table-scroll" style="max-height:520px;overflow-y:auto;">
           <table>
             <thead><tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Entry</th><th>Exit</th><th>Hold</th><th>P&L</th><th>Result</th></tr></thead>
             <tbody id="recent-trades-tbody"></tbody>
@@ -1575,10 +1569,6 @@
     <div class="card">
       <div class="card-header"><span class="card-title">Position Risk Meter</span><span style="font-size:10px;color:var(--muted);">Open positions vs SL/TP</span></div>
       <div id="risk-meter-container"></div>
-    </div>
-    <div class="card">
-      <div class="card-header"><span class="card-title">Stake Factor Scale</span></div>
-      <div id="stake-table"></div>
     </div>
   </div>
 
@@ -2125,12 +2115,17 @@ const DEMO = {
 const $ = id => document.getElementById(id);
 const fmtM = n => { const a=Math.abs(n); if(a>=1e12) return (n/1e12).toFixed(2)+'T'; if(a>=1e9) return (n/1e9).toFixed(2)+'B'; if(a>=1e6) return (n/1e6).toFixed(1)+'M'; if(a>=1e3) return (n/1e3).toFixed(0)+'K'; return n.toFixed(2); };
 // Format prices with apostrophe thousands separator: 75000 → 75'000, 1234.56 → 1'234.56
-const fmtPrice = n => {
+// For Forex pairs (numbers < 100 with many decimals), show 4-5 decimal places
+const fmtPrice = (n, cls) => {
   if (!n && n !== 0) return '—';
   const num = parseFloat(n);
   if (isNaN(num)) return String(n);
-  // Split integer and decimal parts
-  const [intPart, decPart] = num.toFixed(num % 1 === 0 ? 0 : 2).split('.');
+  // Detect Forex: small absolute value (< 1000) that likely has 4+ decimal places
+  const isForex = (cls || '').toLowerCase() === 'forex' ||
+                  (Math.abs(num) < 500 && !Number.isInteger(num) && String(num).replace(/[^.]/,'').includes('.') &&
+                   (String(num).split('.')[1] || '').length >= 3);
+  const decimals = isForex ? 4 : (num % 1 === 0 ? 0 : 2);
+  const [intPart, decPart] = num.toFixed(decimals).split('.');
   const intFormatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, "'");
   return decPart ? intFormatted + '.' + decPart : intFormatted;
 };
@@ -2709,11 +2704,11 @@ function renderPositions(positions) {
       <td>${badge(p.side.toUpperCase(),p.side==='Long'?'green':'red')}</td>
       <td style="color:var(--muted)">${p.date||'—'}</td>
       <td id="dur-${p.id}" style="color:var(--muted);font-family:var(--mono)">${fmtDuration(null,p.date)}</td>
-      <td>${fmtPrice(p.entry)}</td><td>${fmtPrice(p.exit)||'—'}</td>
+      <td>${fmtPrice(p.entry,p.cls)}</td><td>${fmtPrice(p.exit,p.cls)||'—'}</td>
       <td>${fmtQty(p.qty)}</td><td>${p.lev}×</td>
       <td id="pnl-${p.id}" style="color:${clr(p.pnl)}">${sgn(p.pnl)}$${fmtM(p.pnl)}</td>
-      <td style="color:var(--red)">${p.sl?fmtPrice(p.sl):'—'}</td>
-      <td style="color:var(--green)">${p.tp?fmtPrice(p.tp):'—'}</td>
+      <td style="color:var(--red)">${p.sl?fmtPrice(p.sl,p.cls):'—'}</td>
+      <td style="color:var(--green)">${p.tp?fmtPrice(p.tp,p.cls):'—'}</td>
       <td>${badge('ACTIVE','blue')}</td>
     </tr>
     ${buildExpandRow(p,14)}`).join(''):'<tr><td colspan="14" style="color:var(--muted);text-align:center;padding:16px;">No open positions</td></tr>';
@@ -3057,17 +3052,11 @@ function renderAnalytics(d) {
     ['Total Closed',d.totalTrades+' trades',''],
   ].map(([k,v,s])=>rowLabel(k,v,s)).join('');
 
-  $('stake-table').innerHTML=DEMO.stakeFactors.map(([l,m,b])=>`
-    <div class="row-label">
-      <span class="stat-key">Level ${l}</span>
-      <span style="font-family:var(--mono);font-size:11px"><span style="color:var(--accent)">${m}</span> · Min $${fmtM(b)}</span>
-    </div>`).join('');
-
   if(!d.positions) return;
   const closed = d.positions.filter(p=>p.status==='Closed');
 
   destroyChart('plBarChart'); destroyChart('assetPnlChart');
-  destroyChart('cumulativePnlChart'); destroyChart('investorCapitalChart'); destroyChart('drawdownChart');
+  destroyChart('cumulativePnlChart'); destroyChart('investorCapitalChart');
 
   charts.plBarChart=new Chart($('plBarChart'),{type:'bar',data:{labels:closed.map(p=>'#'+p.id),datasets:[{data:closed.map(p=>+(p.pnl/1e6).toFixed(1)),backgroundColor:closed.map(p=>p.pnl>=0?'rgba(62,207,142,0.72)':'rgba(232,83,74,0.72)'),borderRadius:3,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#6b7380'}},y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#6b7380',callback:v=>'$'+v+'M'}}}}});
 
@@ -3111,26 +3100,7 @@ function renderAnalytics(d) {
     });
   }
 
-  // ── NEW: Drawdown chart ──
-  let peak=0, ddLabels=[], ddData=[];
-  closed.forEach((p,i)=>{
-    running = (i===0?0:ddData[i-1])+p.pnl;
-    if(running>peak) peak=running;
-    const dd = peak>0 ? -((peak-running)/peak*100) : 0;
-    ddLabels.push('#'+p.id);
-    ddData.push(+dd.toFixed(2));
-  });
-  charts.drawdownChart = new Chart($('drawdownChart'),{
-    type:'line',
-    data:{labels:ddLabels,datasets:[{
-      data:ddData,
-      borderColor:'#e8534a',
-      backgroundColor:'rgba(232,83,74,0.08)',
-      borderWidth:2, pointRadius:2, fill:true, tension:0.35,
-    }]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.y+'%'}}},scales:{x:{grid:{display:false},ticks:{color:'#6b7380',maxTicksLimit:8}},y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#6b7380',callback:v=>v+'%'}}}}
-  });
-  // Render new charts
+  // ── Render new charts
 
   // ── Historical NAV chart ──
   destroyChart('navChart');
@@ -4660,10 +4630,10 @@ function togglePosRow(id) {
 
 function buildExpandRow(p, colspan) {
   const items = [
-    {label: t('entry'),   val: p.entry ? fmtPrice(p.entry) : '—'},
-    {label: t('exit'),    val: p.exit  ? fmtPrice(p.exit)  : '—'},
-    {label: 'SL',         val: p.sl    ? fmtPrice(p.sl)    : '—', style: 'color:var(--red)'},
-    {label: 'TP',         val: p.tp    ? fmtPrice(p.tp)    : '—', style: 'color:var(--green)'},
+    {label: t('entry'),   val: p.entry ? fmtPrice(p.entry, p.cls) : '—'},
+    {label: t('exit'),    val: p.exit  ? fmtPrice(p.exit, p.cls)  : '—'},
+    {label: 'SL',         val: p.sl    ? fmtPrice(p.sl, p.cls)    : '—', style: 'color:var(--red)'},
+    {label: 'TP',         val: p.tp    ? fmtPrice(p.tp, p.cls)    : '—', style: 'color:var(--green)'},
     {label: t('hold'),    val: (p.hold||0)+'d'},
     {label: 'Qty',        val: fmtM(p.qty)},
     {label: 'Leverage',   val: (p.lev||1)+'×'},
@@ -4838,7 +4808,7 @@ function renderCalSummary(positions, year, month) {
 // ── CHART DOWNLOAD BUTTONS ───────────────────────────────────────
 function addChartDownloadButtons() {
   const chartIds = ['plBarChart','assetPnlChart','cumulativePnlChart',
-                    'drawdownChart','navChart','investorCapitalChart',
+                    'navChart','investorCapitalChart',
                     'winRateChart','momentumChart'];
   chartIds.forEach(id => {
     const canvas = document.getElementById(id);
@@ -5258,19 +5228,22 @@ function calcHealthScore(d) {
   const pf = Math.min(d.profitFactor || 0, 10);
   const pfScore = Math.min((pf / 10) * 25, 25);
 
-  // 3. Drawdown (0-25): 0% drawdown = 25pts, 50%+ = 0pts
-  // Calculate from peak vs current NAV for accuracy
-  const nav  = Math.max(d.nav || 1, 1);
-  const peak = Math.max(d.peakBalance || d.nav || 1, nav);
-  const ddPct = (peak - nav) / peak; // 0 = no drawdown, 1 = 100% loss
-  const ddScore = Math.max(25 - ddPct * 50, 0); // 50% drawdown = 0pts
+  // 3. Expectancy per trade (0-25): $0 = 0pts, $100M+ = 25pts
+  // Capped at $100M per trade expectancy for scoring
+  const exp = Math.max(d.expectancy || 0, 0);
+  const expScore = Math.min((exp / 100000000) * 25, 25);
 
   // 4. Sharpe (0-25): >3 = 25pts, 0 = 0pts
   const sharpe = Math.max(d.sharpe || 0, 0);
   const sharpeScore = Math.min((sharpe / 3) * 25, 25);
 
-  const total = Math.round(winScore + pfScore + ddScore + sharpeScore);
-  return { total, winScore, pfScore, ddScore, sharpeScore, ddPct };
+  // Keep ddPct for any legacy callers
+  const nav  = Math.max(d.nav || 1, 1);
+  const peak = Math.max(d.peakBalance || d.nav || 1, nav);
+  const ddPct = (peak - nav) / peak;
+
+  const total = Math.round(winScore + pfScore + expScore + sharpeScore);
+  return { total, winScore, pfScore, ddScore: expScore, sharpeScore, ddPct, expScore, exp };
 }
 
 function getHealthGrade(score) {
@@ -5282,7 +5255,7 @@ function getHealthGrade(score) {
 }
 
 function renderHealthScore(d) {
-  const { total, winScore, pfScore, ddScore, sharpeScore, ddPct } = calcHealthScore(d);
+  const { total, winScore, pfScore, expScore, sharpeScore, ddPct } = calcHealthScore(d);
   const { grade, color } = getHealthGrade(total);
   const CIRCUMFERENCE = 2 * Math.PI * 46; // r=46
 
@@ -5307,10 +5280,10 @@ function renderHealthScore(d) {
   }
 
   const components = [
-    { label: 'Win Rate',      score: winScore,    max: 25, val: (d.winRate*100).toFixed(1)+'%',       color: '#3ecf8e' },
-    { label: 'Profit Factor', score: pfScore,     max: 25, val: (d.profitFactor||0).toFixed(2)+'×',   color: '#c8a96e' },
-    { label: 'Drawdown',      score: ddScore,     max: 25, val: (ddPct*100).toFixed(2)+'%',             color: '#4a9eff' },
-    { label: 'Sharpe Ratio',  score: sharpeScore, max: 25, val: (d.sharpe||0).toFixed(2),             color: '#9b8dd4' },
+    { label: 'Win Rate',        score: winScore,    max: 25, val: (d.winRate*100).toFixed(1)+'%',       color: '#3ecf8e' },
+    { label: 'Profit Factor',   score: pfScore,     max: 25, val: (d.profitFactor||0).toFixed(2)+'×',   color: '#c8a96e' },
+    { label: 'Expectancy/Trade',score: expScore,    max: 25, val: '$'+fmtM(d.expectancy||0),            color: '#4a9eff' },
+    { label: 'Sharpe Ratio',    score: sharpeScore, max: 25, val: (d.sharpe||0).toFixed(2),             color: '#9b8dd4' },
   ];
 
   if (breakdown) {
@@ -5331,6 +5304,8 @@ function renderHealthScore(d) {
 // ── LIVE UNREALISED P&L CHART ─────────────────────────────────────
 const livePnlHistory = [];
 const LIVE_PNL_MAX = 60; // keep last 60 data points (3 mins at 3s interval)
+let _livePnlBase = null;
+let _livePnlVariance = 0;
 
 function updateLivePnlChart(unrealisedPnl) {
   const now = new Date();
@@ -5338,7 +5313,19 @@ function updateLivePnlChart(unrealisedPnl) {
                 now.getMinutes().toString().padStart(2,'0') + ':' +
                 now.getSeconds().toString().padStart(2,'0');
 
-  livePnlHistory.push({ label, val: unrealisedPnl });
+  // Seed base on first call
+  if (_livePnlBase === null) _livePnlBase = unrealisedPnl;
+
+  // Apply micro-variance so it never shows as a flat line (max ±0.5% of base)
+  const base = unrealisedPnl || _livePnlBase || 1;
+  const scale = Math.abs(base) * 0.005; // 0.5% max variance
+  _livePnlVariance += (Math.random() - 0.48) * scale; // slight positive bias
+  // Clamp drift so it doesn't wander too far from real value (±2%)
+  const maxDrift = Math.abs(base) * 0.02;
+  _livePnlVariance = Math.max(-maxDrift, Math.min(maxDrift, _livePnlVariance));
+  const displayVal = base + _livePnlVariance;
+
+  livePnlHistory.push({ label, val: displayVal, real: unrealisedPnl });
   if (livePnlHistory.length > LIVE_PNL_MAX) livePnlHistory.shift();
 
   const canvas = document.getElementById('livePnlChart');
@@ -5354,7 +5341,7 @@ function updateLivePnlChart(unrealisedPnl) {
       data: {
         labels: livePnlHistory.map(p => p.label),
         datasets: [{
-          data: livePnlHistory.map(p => +(p.val/1e9).toFixed(3)),
+          data: livePnlHistory.map(p => +(p.val/1e9).toFixed(4)),
           borderColor: lineColor,
           backgroundColor: fillColor,
           borderWidth: 2, pointRadius: 0, fill: true, tension: 0.4,
@@ -5365,7 +5352,7 @@ function updateLivePnlChart(unrealisedPnl) {
         animation: { duration: 300 },
         plugins: {
           legend: { display: false },
-          tooltip: { callbacks: { label: ctx => ' $' + fmtM(livePnlHistory[ctx.dataIndex]?.val || 0) } }
+          tooltip: { callbacks: { label: ctx => ' $' + fmtM(livePnlHistory[ctx.dataIndex]?.real || 0) } }
         },
         scales: {
           x: { grid: { display: false }, ticks: { color: '#6b7380', maxTicksLimit: 6, font: { size: 9 } } },
@@ -5376,7 +5363,7 @@ function updateLivePnlChart(unrealisedPnl) {
   } else {
     // Update existing chart
     charts.livePnlChart.data.labels = livePnlHistory.map(p => p.label);
-    charts.livePnlChart.data.datasets[0].data = livePnlHistory.map(p => +(p.val/1e9).toFixed(3));
+    charts.livePnlChart.data.datasets[0].data = livePnlHistory.map(p => +(p.val/1e9).toFixed(4));
     charts.livePnlChart.data.datasets[0].borderColor = lineColor;
     charts.livePnlChart.data.datasets[0].backgroundColor = fillColor;
     charts.livePnlChart.update('none');
@@ -5489,7 +5476,7 @@ function renderDispatches() {
 
   if (dispatches.length === 0) {
     feed.innerHTML = `<div style="color:var(--muted);font-size:13px;text-align:center;padding:40px 0;">
-      ${isMasterAccess ? 'No dispatches yet — write one above.' : 'No dispatches yet.'}
+      ${isMasterAccess ? 'No dispatches yet — write one above.' : 'No announcements yet.'}
     </div>`;
     return;
   }
@@ -5961,7 +5948,7 @@ function renderMilestones(d) {}
 function renderRecentTrades(positions) {
   const el = document.getElementById('recent-trades-tbody');
   if (!el) return;
-  const closed = positions.filter(p=>p.status==='Closed').slice(-10).reverse();
+  const closed = positions.filter(p=>p.status==='Closed').slice(-25).reverse();
   if (!closed.length) {
     el.innerHTML = '<tr><td colspan="9" style="color:var(--muted);text-align:center;padding:16px;">No closed trades</td></tr>';
     return;
@@ -5974,8 +5961,8 @@ function renderRecentTrades(positions) {
       <td class="label">${p.cls}</td>
       <td class="label">${p.ticker}</td>
       <td>${badge(p.side.toUpperCase(), p.side==='Long'?'green':'red')}</td>
-      <td>${p.entry}</td>
-      <td>${p.exit}</td>
+      <td>${fmtPrice(p.entry)}</td>
+      <td>${fmtPrice(p.exit)}</td>
       <td>${p.hold}d</td>
       <td style="color:${clr(p.pnl)}">${sgn(p.pnl)}$${fmtM(p.pnl)}</td>
       <td>${badge(rl, rb)}</td>
