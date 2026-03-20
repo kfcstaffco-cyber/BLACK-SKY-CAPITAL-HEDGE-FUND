@@ -5291,7 +5291,6 @@ function renderHealthScore(d) {
 
 // ── LIVE UNREALISED P&L CHART ─────────────────────────────────────
 const LIVE_PNL_KEY = 'bsc_live_pnl_history';
-const LIVE_PNL_MAX = 28800; // up to 8 hours × 3600s / 3s interval — full day
 let _livePnlBase = null;
 let _livePnlVariance = 0;
 
@@ -5304,24 +5303,25 @@ function _loadLivePnlHistory() {
   try {
     const raw = localStorage.getItem(LIVE_PNL_KEY);
     if (!raw) return [];
-    const { date, history } = JSON.parse(raw);
-    // If stored date is not today, discard — fresh day
-    if (date !== _todayKey()) return [];
-    return Array.isArray(history) ? history : [];
+    const parsed = JSON.parse(raw);
+    if (parsed.date !== _todayKey()) return []; // new day — start fresh
+    return Array.isArray(parsed.history) ? parsed.history : [];
   } catch(e) { return []; }
 }
 
-function _saveLivePnlHistory(history) {
+function _saveLivePnlHistory() {
   try {
-    // Cap storage size — keep last 28800 points but only save every 5th point
-    // to avoid localStorage bloat (~1 point per 3s = max ~2880 points per day)
-    const trimmed = history.length > 2880 ? history.slice(-2880) : history;
-    localStorage.setItem(LIVE_PNL_KEY, JSON.stringify({ date: _todayKey(), history: trimmed }));
+    const toSave = livePnlHistory.length > 2880 ? livePnlHistory.slice(-2880) : livePnlHistory;
+    localStorage.setItem(LIVE_PNL_KEY, JSON.stringify({ date: _todayKey(), history: toSave }));
   } catch(e) {}
 }
 
-// Load history from today on startup
+// Load today's history on startup
 const livePnlHistory = _loadLivePnlHistory();
+
+// Always save on page hide/refresh/close so nothing is lost
+window.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') _saveLivePnlHistory(); });
+window.addEventListener('beforeunload', _saveLivePnlHistory);
 
 function updateLivePnlChart(unrealisedPnl) {
   const now = new Date();
@@ -5329,14 +5329,14 @@ function updateLivePnlChart(unrealisedPnl) {
                 now.getMinutes().toString().padStart(2,'0') + ':' +
                 now.getSeconds().toString().padStart(2,'0');
 
-  // Seed base from first real value (or restore from history)
+  // Seed base — resume from last saved real value if history exists
   if (_livePnlBase === null) {
     _livePnlBase = livePnlHistory.length > 0
-      ? livePnlHistory[livePnlHistory.length - 1].real  // resume from last saved real value
+      ? livePnlHistory[livePnlHistory.length - 1].real
       : unrealisedPnl;
   }
 
-  // Apply micro-variance so it never shows as a flat line (max ±0.5% of base)
+  // Micro-variance so chart is never a flat line (±0.5%, clamped to ±2% drift)
   const base = unrealisedPnl || _livePnlBase || 1;
   const scale = Math.abs(base) * 0.005;
   _livePnlVariance += (Math.random() - 0.48) * scale;
@@ -5346,8 +5346,10 @@ function updateLivePnlChart(unrealisedPnl) {
 
   livePnlHistory.push({ label, val: displayVal, real: unrealisedPnl });
 
-  // Save to localStorage every 10 points to avoid excessive writes
-  if (livePnlHistory.length % 10 === 0) _saveLivePnlHistory(livePnlHistory);
+  // Save on first point (critical for reload recovery) and every 5 points after
+  if (livePnlHistory.length === 1 || livePnlHistory.length % 5 === 0) {
+    _saveLivePnlHistory();
+  }
 
   const canvas = document.getElementById('livePnlChart');
   if (!canvas) return;
@@ -5356,9 +5358,9 @@ function updateLivePnlChart(unrealisedPnl) {
   const lineColor = isPositive ? '#3ecf8e' : '#e8534a';
   const fillColor = isPositive ? 'rgba(62,207,142,0.08)' : 'rgba(232,83,74,0.08)';
 
-  // For display, show a rolling window of the last 240 points (12 min) if history is long,
-  // otherwise show everything from start of day
+  // Rolling display: last 240 points (~12 min); if less than that show full day so far
   const display = livePnlHistory.length > 240 ? livePnlHistory.slice(-240) : livePnlHistory;
+  const offset   = Math.max(0, livePnlHistory.length - 240);
 
   if (!charts.livePnlChart) {
     charts.livePnlChart = new Chart(canvas, {
@@ -5377,7 +5379,7 @@ function updateLivePnlChart(unrealisedPnl) {
         animation: { duration: 300 },
         plugins: {
           legend: { display: false },
-          tooltip: { callbacks: { label: ctx => ' $' + fmtM(display[ctx.dataIndex]?.real || 0) } }
+          tooltip: { callbacks: { label: ctx => ' $' + fmtM(livePnlHistory[offset + ctx.dataIndex]?.real || 0) } }
         },
         scales: {
           x: { grid: { display: false }, ticks: { color: '#6b7380', maxTicksLimit: 6, font: { size: 9 } } },
