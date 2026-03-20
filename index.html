@@ -1677,13 +1677,13 @@
   
   <!-- CALENDAR -->
   <div class="page" id="page-calendar">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-      <div style="display:flex;align-items:center;gap:12px;">
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;justify-content:center;gap:12px;">
         <button onclick="calNav(-1)" style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:6px 12px;color:var(--text);cursor:pointer;font-size:14px;">&#8592;</button>
         <div id="cal-title" style="font-size:16px;font-weight:600;min-width:160px;text-align:center;"></div>
         <button onclick="calNav(1)" style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:6px 12px;color:var(--text);cursor:pointer;font-size:14px;">&#8594;</button>
       </div>
-      <div style="display:flex;gap:10px;font-size:11px;">
+      <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:11px;justify-content:center;">
         <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:#3ecf8e;display:inline-block;"></span>TP Hit</span>
         <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:#e8534a;display:inline-block;"></span>SL Hit</span>
         <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:#4a9eff;display:inline-block;"></span>Closed</span>
@@ -2056,6 +2056,7 @@ const SHEET_TABS = {
   positions:    'Positions',
   investors:    'Investor Withdrawals',
   transactions: 'Transaction Log',
+  dispatches:   'Dispatches',
 };
 const REFRESH_INTERVAL = 60000; // 60s — reduces API calls by half
 
@@ -2677,12 +2678,6 @@ function renderOverview(d) {
     ['Avg Hold Period',d.avgHold.toFixed(2)+' days',''],
     ['Max Potential Loss','$'+fmtM(d.maxLoss),'color:var(--red)'],
     ['Active Liquidations',d.activeLiquidations,d.activeLiquidations>0?'color:var(--red)':'color:var(--green)'],
-    ['Current Drawdown',(()=>{
-      const dd = Math.abs(d.drawdown||0);
-      const peak = Math.max(d.peakBalance||d.nav||1, 1);
-      const pct = (dd/peak*100).toFixed(2);
-      return dd>0 ? '-$'+fmtM(dd)+' ('+pct+'%)' : '$0.00 (0.00%)';
-    })(),d.drawdown>0?'color:var(--red)':'color:var(--green)'],
   ].map(([k,v,s])=>rowLabel(k,v,s)).join('');
 
   destroyChart('pnlChart'); destroyChart('assetChart');
@@ -5373,13 +5368,36 @@ function updateLivePnlChart(unrealisedPnl) {
 
 
 // ── DISPATCHES ────────────────────────────────────────────────────
+// Master writes to localStorage AND pushes to Sheets via the data layer.
+// All users (including standard) read from window._sheetDispatches which
+// is populated from the Dispatches sheet on every fetch cycle.
 const DISPATCH_KEY = 'bsc_dispatches';
 
-function loadDispatches() {
-  try {
-    return JSON.parse(localStorage.getItem(DISPATCH_KEY) || '[]');
-  } catch(e) { return []; }
+// Parse dispatches rows from Google Sheets
+// Expected columns: ID | Text | Tag | Pinned | Timestamp | Edited
+function parseSheetDispatches(rows) {
+  if (!rows || !rows.length) return [];
+  return rows.filter(r => r[0] && r[1]).map(r => ({
+    id:     r[0],
+    text:   (r[1] || '').trim(),
+    tag:    (r[2] || 'general').trim().toLowerCase(),
+    pinned: (r[3] || '').toString().toLowerCase() === 'true' || r[3] === '1',
+    ts:     parseInt(r[4]) || Date.now(),
+    edited: r[5] ? parseInt(r[5]) : null,
+    source: 'sheet',
+  })).filter(d => d.text);
 }
+
+function loadDispatches() {
+  // Merge: sheet dispatches (visible to everyone) + any local-only ones
+  const local = (() => { try { return JSON.parse(localStorage.getItem(DISPATCH_KEY) || '[]'); } catch(e) { return []; } })();
+  const sheet = window._sheetDispatches || [];
+  // Sheet entries take precedence — deduplicate by id
+  const sheetIds = new Set(sheet.map(d => String(d.id)));
+  const localOnly = local.filter(d => !sheetIds.has(String(d.id)));
+  return [...sheet, ...localOnly];
+}
+
 function saveDispatches(arr) {
   try { localStorage.setItem(DISPATCH_KEY, JSON.stringify(arr)); } catch(e) {}
 }
@@ -5391,21 +5409,19 @@ function postDispatch() {
   const editId  = document.getElementById('dispatch-edit-id')?.textContent || '';
   if (!text) return;
 
-  const dispatches = loadDispatches();
+  const dispatches = (() => { try { return JSON.parse(localStorage.getItem(DISPATCH_KEY) || '[]'); } catch(e) { return []; } })();
   const now = Date.now();
 
   if (editId) {
-    // Edit existing
     const idx = dispatches.findIndex(d => d.id == editId);
     if (idx > -1) {
-      dispatches[idx].text    = text;
-      dispatches[idx].tag     = tag;
-      dispatches[idx].pinned  = pinned;
-      dispatches[idx].edited  = now;
+      dispatches[idx].text   = text;
+      dispatches[idx].tag    = tag;
+      dispatches[idx].pinned = pinned;
+      dispatches[idx].edited = now;
     }
     cancelDispatchEdit();
   } else {
-    // New dispatch
     dispatches.unshift({ id: now, text, tag, pinned, ts: now, edited: null });
   }
 
@@ -5566,16 +5582,18 @@ async function launchDashboard(sheetId, apiKey) {
   $('loading-screen').style.display = 'flex';
   showSkeletons();
   try {
-    const [measureRows, posRows, invRows, txnRows] = await Promise.all([
+    const [measureRows, posRows, invRows, txnRows, dispRows] = await Promise.all([
       fetchSheet(sheetId, apiKey, SHEET_TABS.fundMeasures),
       fetchSheet(sheetId, apiKey, SHEET_TABS.positions),
       fetchSheet(sheetId, apiKey, SHEET_TABS.investors),
       fetchSheet(sheetId, apiKey, SHEET_TABS.transactions),
+      fetchSheet(sheetId, apiKey, SHEET_TABS.dispatches).catch(() => []),
     ]);
     const measures = parseFundMeasures(measureRows);
     measures.positions    = parsePositions(posRows);
     measures.investors    = parseInvestors(invRows);
     measures.transactions = parseTransactionLog(txnRows);
+    window._sheetDispatches = parseSheetDispatches(dispRows);
     $('loading-screen').style.display = 'none';
     $('app').style.display = 'block';
     renderAll(measures);
@@ -5585,16 +5603,18 @@ async function launchDashboard(sheetId, apiKey) {
     setTimeout(showInvestorMessage, 600);
     setInterval(async () => {
       try {
-        const [mr,pr,ir,tr] = await Promise.all([
+        const [mr,pr,ir,tr,dr] = await Promise.all([
           fetchSheet(sheetId,apiKey,SHEET_TABS.fundMeasures),
           fetchSheet(sheetId,apiKey,SHEET_TABS.positions),
           fetchSheet(sheetId,apiKey,SHEET_TABS.investors),
           fetchSheet(sheetId,apiKey,SHEET_TABS.transactions),
+          fetchSheet(sheetId,apiKey,SHEET_TABS.dispatches).catch(()=>[]),
         ]);
         const m=parseFundMeasures(mr);
         m.positions=parsePositions(pr);
         m.investors=parseInvestors(ir);
         m.transactions=parseTransactionLog(tr);
+        window._sheetDispatches = parseSheetDispatches(dr);
         renderAll(m);
       } catch(e) { console.warn('Refresh failed:',e); }
     }, REFRESH_INTERVAL);
