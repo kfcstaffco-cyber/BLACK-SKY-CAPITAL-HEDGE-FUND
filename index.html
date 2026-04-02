@@ -1463,6 +1463,10 @@
       <div class="card-header"><span class="card-title">Open Positions</span><span class="live-badge"><div class="live-dot"></div>LIVE</span></div>
       <div class="table-scroll"><table><thead id="open-thead"></thead><tbody id="open-tbody"></tbody></table></div>
     </div>
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-header"><span class="card-title">Position Risk Meter</span><span style="font-size:10px;color:var(--muted);">Open positions · SL &amp; TP exposure</span></div>
+      <div id="risk-meter-container"></div>
+    </div>
     <div class="card">
       <div class="card-header">
         <span class="card-title">Closed Positions</span>
@@ -1508,7 +1512,7 @@
       <div class="card-header"><span class="card-title">Withdrawal Tracker</span></div>
       <div class="table-scroll">
         <table>
-          <thead><tr><th>Investor</th><th>Total Deposited</th><th>Total Withdrawn</th><th>Net Capital</th><th>Status</th><th>Lockup Remaining</th></tr></thead>
+          <thead><tr><th>Investor</th><th>Total Deposited</th><th>Total Withdrawn</th><th>Cost Basis</th><th>Units Burned</th><th>Avg Redemption Price</th><th>Realised P&L</th><th>Status</th><th>Lockup Remaining</th></tr></thead>
           <tbody id="withdrawal-tbody"></tbody>
         </table>
       </div>
@@ -1590,10 +1594,6 @@
         <div class="card-header"><span class="card-title">Investor Projections</span><span style="font-size:10px;color:var(--muted);">At current annualised rate</span></div>
         <div id="projections-container"></div>
       </div>
-    </div>
-    <div class="card">
-      <div class="card-header"><span class="card-title">Position Risk Meter</span><span style="font-size:10px;color:var(--muted);">Open positions vs SL/TP</span></div>
-      <div id="risk-meter-container"></div>
     </div>
   </div>
 
@@ -3105,8 +3105,8 @@ function renderInvestors(investors, transactions) {
             ${statusBadge}
             <div style="width:1px;height:32px;background:var(--border);"></div>
             <div style="text-align:right;min-width:80px;">
-              <div class="investor-total" style="font-size:16px;">$${fmtM(aggDeposited)}</div>
-              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">Deposited</div>
+              <div class="investor-total" style="font-size:16px;">$${fmtM(netCapital)}</div>
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">Net Capital</div>
             </div>
             <div style="width:1px;height:32px;background:var(--border);"></div>
             <div style="text-align:right;min-width:80px;">
@@ -3131,15 +3131,15 @@ function renderInvestors(investors, transactions) {
             </div>
             <div class="inv-stat-box">
               <div class="inv-stat-label">Total Withdrawn</div>
-              <div class="inv-stat-value" style="color:var(--red)">$${fmtM(aggWithdrawn)}</div>
+              <div class="inv-stat-value" style="color:${aggWithdrawn>0?'var(--red)':'var(--muted)'}">$${fmtM(aggWithdrawn)}</div>
             </div>
             <div class="inv-stat-box">
-              <div class="inv-stat-label">Net Capital</div>
-              <div class="inv-stat-value" style="color:var(--text)">$${fmtM(netCapital)}</div>
+              <div class="inv-stat-label">Cost Basis</div>
+              <div class="inv-stat-value" style="color:var(--text)">$${fmtM((()=>{const u=window.unitAccounting?.results?.[inv.name];return u?.costBasis??netCapital;})())}</div>
             </div>
             <div class="inv-stat-box">
               <div class="inv-stat-label">P&L (Unit NAV)</div>
-              <div class="inv-stat-value" style="color:var(--green)">${sgn(inv.pnlShare)}$${fmtM(inv.pnlShare)}</div>
+              <div class="inv-stat-value" style="color:${inv.pnlShare>=0?'var(--green)':'var(--red)'}">${sgn(inv.pnlShare)}$${fmtM(inv.pnlShare)}</div>
             </div>
             <div class="inv-stat-box">
               <div class="inv-stat-label">Units Held</div>
@@ -3150,9 +3150,18 @@ function renderInvestors(investors, transactions) {
               <div class="inv-stat-value" style="color:var(--accent2)">${inv._unitValue ? '$'+fmtM(inv._unitValue) : '—'}</div>
             </div>
             <div class="inv-stat-box">
-              <div class="inv-stat-label">Return on Capital</div>
+              <div class="inv-stat-label">Return on Cost Basis</div>
               <div class="inv-stat-value" style="color:${(inv._returnPct||0)>=0?'var(--green)':'var(--red)'}">${(inv._returnPct!==undefined?(inv._returnPct>=0?'+':'')+inv._returnPct.toFixed(2)+'%':'—')}</div>
             </div>
+            ${(()=>{
+              const wl = (window.unitAccounting?.withdrawalLedger||[]).filter(w=>w.name===inv.name);
+              if (!wl.length) return '';
+              const totalRealised = wl.reduce((s,w)=>s+w.realisedPnl,0);
+              return `<div class="inv-stat-box">
+                <div class="inv-stat-label">Realised on Exits</div>
+                <div class="inv-stat-value" style="color:${totalRealised>=0?'var(--green)':'var(--red)'}">${totalRealised>=0?'+':''}$${fmtM(totalRealised)}</div>
+              </div>`;
+            })()}
           </div>
           <div class="sparkline-wrap" id="spark-wrap-${idx}">
             <div class="sparkline-label">Deposit Growth</div>
@@ -3320,7 +3329,12 @@ function renderInvestors(investors, transactions) {
     const invT = txnsByName[inv.name] || { totalDeposit: 0, totalWithdrawal: 0 };
     const dep = invT.totalDeposit || inv.deposited;
     const wdr = invT.totalWithdrawal || inv.withdrawn;
-    const net = dep - wdr;
+    const uaResult = (window.unitAccounting?.results || {})[inv.name] || {};
+    const costBasis = uaResult.costBasis !== undefined ? uaResult.costBasis : (dep - wdr);
+    const wl = (window.unitAccounting?.withdrawalLedger || []).filter(w => w.name === inv.name);
+    const totalBurned = wl.reduce((s, w) => s + w.unitsBurned, 0);
+    const totalRealised = wl.reduce((s, w) => s + w.realisedPnl, 0);
+    const avgRedemptionPrice = totalBurned > 0 ? wl.reduce((s, w) => s + w.unitPrice * w.unitsBurned, 0) / totalBurned : null;
     const hasWithdrawals = wdr > 0;
     const lockText = inv.status === 'LOCKED'
       ? `<span style="color:var(--red);font-family:var(--mono);font-size:11px;">${inv.daysToUnlock}d remaining</span>`
@@ -3329,7 +3343,10 @@ function renderInvestors(investors, transactions) {
       <td class="label">${getDisplayName(inv.name)}</td>
       <td style="color:var(--accent2)">$${fmtM(dep)}</td>
       <td style="color:${hasWithdrawals?'var(--red)':'var(--muted)'}">$${fmtM(wdr)}</td>
-      <td style="color:var(--text)">$${fmtM(net)}</td>
+      <td style="color:var(--text)">$${fmtM(costBasis)}</td>
+      <td style="color:${totalBurned>0?'var(--red)':'var(--muted)'}">${totalBurned>0?'-'+fmtM(totalBurned):'—'}</td>
+      <td style="color:var(--accent)">${avgRedemptionPrice?'$'+avgRedemptionPrice.toFixed(4):'—'}</td>
+      <td style="color:${totalRealised>=0?'var(--green)':'var(--red)'}">${totalRealised!==0?(totalRealised>=0?'+':'')+'$'+fmtM(totalRealised):'—'}</td>
       <td>${inv.status==='LOCKED'?badge('LOCKED','red'):badge('UNLOCKED','green')}</td>
       <td>${lockText}</td>
     </tr>`;
@@ -4602,8 +4619,9 @@ function generateStatement() {
   const _uaStmt  = window.unitAccounting || {};
   const _uInv    = (_uaStmt.results || {})[name] || {};
   const pnl      = _uInv.pnlShare !== undefined ? _uInv.pnlShare : inv.pnlShare;
+  const costBasis = _uInv.costBasis !== undefined ? _uInv.costBasis : net; // remaining net invested capital
   const ownerPct = _uInv.ownershipPct !== undefined ? _uInv.ownershipPct.toFixed(6) : (totalCap>0?(dep/totalCap*100).toFixed(4):0);
-  const retPct   = dep>0?((pnl/dep)*100).toFixed(2):0;
+  const retPct   = costBasis>0?((pnl/costBasis)*100).toFixed(2):0;
   const stmtUnits = _uInv.units ? fmtM(_uInv.units) : '—';
   const stmtUnitPrice = _uaStmt.currentUnitPrice ? '$'+(_uaStmt.currentUnitPrice).toFixed(4) : '—';
   const stmtCurVal    = _uInv.currentValue ? '$'+fmtM(_uInv.currentValue) : '—';
@@ -6047,8 +6065,13 @@ function renderDispatches() {
 // ── RENDER ALL ───────────────────────────────────────────────────
 function renderAll(d) {
   window.lastData = d;
-  // Compute unit accounting on every data refresh
-  window.unitAccounting = calcUnitAccounting(d.transactions || [], d.positions || [], d.nav || d.totalDeposited || 0);
+  // Compute unit accounting — pass sheet NAV as the live value;
+  // if sheet NAV is zero/missing, the engine will use runningNAV (deposits minus withdrawals)
+  window.unitAccounting = calcUnitAccounting(d.transactions || [], d.positions || [], d.nav || 0);
+  // Sync d.nav to unit accounting liveNAV so all downstream consumers are consistent
+  if (window.unitAccounting.liveNAV > 0 && (!d.nav || d.nav === 0)) {
+    d.nav = window.unitAccounting.liveNAV;
+  }
   $('live-date').textContent = new Date().toLocaleString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}).replace(/\//g,'.');
   renderOverview(d);
   renderChips(d.positions||[]);
@@ -6214,7 +6237,7 @@ function selectDWType(type) {
   if (type === 'deposit') {
     notice.innerHTML = '<div class="dw-notice">&#9432; Minimum deposit is <strong>$200,000</strong>. Your request will be reviewed by the fund manager and you will be contacted with payment instructions.</div>';
   } else {
-    notice.innerHTML = '<div class="dw-notice warning">&#9888; <strong>Only unlocked funds may be withdrawn.</strong> Funds are subject to a lockup period from the date of deposit. Delays may be expected in receiving your funds after approval.</div>';
+    notice.innerHTML = '<div class="dw-notice warning">&#9888; <strong>Only unlocked funds may be withdrawn.</strong> Enter the <strong>total cash amount you are receiving</strong> — this includes your original capital plus any P&L gains. The system will automatically calculate how many units are redeemed at the current unit NAV price.</div>';
   }
 }
 
@@ -6240,9 +6263,23 @@ function dwNextStep(current) {
     document.getElementById('dw-step2-sub').textContent   = isDeposit
       ? 'Enter your details — minimum deposit $200,000'
       : 'Enter your details to submit a withdrawal request';
-    document.getElementById('dw-step2-notice').innerHTML  = isDeposit
-      ? '<div class="dw-notice" style="margin-bottom:14px;">&#9432; Minimum deposit: <strong>$200,000</strong>. Your request will be reviewed and you will be contacted with payment details.</div>'
-      : '<div class="dw-notice warning" style="margin-bottom:14px;">&#9888; Only funds past their lockup period are eligible for withdrawal. Processing delays may apply.</div>';
+
+    // Build the notice — for withdrawals, show unit NAV context
+    let noticeHtml;
+    if (isDeposit) {
+      noticeHtml = '<div class="dw-notice" style="margin-bottom:14px;">&#9432; Minimum deposit: <strong>$200,000</strong>. Your request will be reviewed and you will be contacted with payment details.</div>';
+    } else {
+      const ua  = window.unitAccounting || {};
+      const cup = ua.currentUnitPrice;
+      const unitLine = cup
+        ? `<br><span style="font-size:10px;opacity:0.85;">Current unit NAV price: <strong>$${cup.toFixed(4)}/unit</strong> &mdash; the engine will burn <em>withdrawal&nbsp;÷&nbsp;$${cup.toFixed(4)}</em> units automatically.</span>`
+        : '';
+      noticeHtml = `<div class="dw-notice warning" style="margin-bottom:14px;">
+        &#9432; <strong>Enter the total cash amount paid out</strong> — including the investor's original capital and any P&L gains. Do <em>not</em> subtract P&L first.${unitLine}
+        <br><span style="font-size:10px;opacity:0.85;">Only funds past their lockup period are eligible. Processing delays may apply.</span>
+      </div>`;
+    }
+    document.getElementById('dw-step2-notice').innerHTML = noticeHtml;
     dwGoStep(2);
   } else if (current === 2) {
     submitDWRequest();
