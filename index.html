@@ -1518,13 +1518,21 @@
     <div class="card" id="unit-ledger-card" style="display:none;">
       <div class="card-header">
         <span class="card-title">Unit NAV Ledger</span>
-        <span style="font-size:10px;color:var(--muted);">Full audit trail of unit issuance</span>
+        <span style="font-size:10px;color:var(--muted);">Full audit trail of unit issuance &amp; redemption</span>
       </div>
       <div id="unit-summary-strip" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:16px;"></div>
+      <div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Issuance Events (Deposits)</div>
       <div class="table-scroll">
         <table>
           <thead><tr><th>#</th><th>Date</th><th>Investor</th><th>Deposit</th><th>Cum. P&L at Date</th><th>NAV at Date</th><th>Unit Price</th><th>Units Issued</th><th>Total Units</th></tr></thead>
           <tbody id="unit-ledger-tbody"></tbody>
+        </table>
+      </div>
+      <div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin:16px 0 8px;">Redemption Events (Withdrawals)</div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>#</th><th>Date</th><th>Investor</th><th>Withdrawal</th><th>Unit Price</th><th>Units Burned</th><th>NAV at Date</th><th>Realised P&L</th><th>Total Units</th></tr></thead>
+          <tbody id="unit-withdrawal-tbody"></tbody>
         </table>
       </div>
     </div>
@@ -2517,92 +2525,148 @@ function parsePositions(rows) {
 
 // ════════════════════════════════════════════════════════════════
 // ── UNIT / NAV ACCOUNTING ENGINE ───────────────────────────────
-// Each deposit buys units at the NAV price per unit at that moment.
-// NAV at deposit date = total capital deposited so far + cumulative
-// P&L from trades whose EXIT DATE is on or before that deposit date.
-// Current unit price = Current Fund NAV / Total Units Outstanding.
-// P&L share = (units held * current unit price) - amount deposited.
+// Each deposit buys units at the NAV-per-unit price at that moment.
+// Each withdrawal redeems (burns) units at the NAV-per-unit price
+// at the time of withdrawal — proportionally reducing both the
+// investor's unit balance and the total units outstanding.
+//
+// NAV at any event = capital in fund at that point + cumulative P&L
+// from all trades whose exit date is on or before that event's date.
+// Current unit price = Live Fund NAV / Total Units Outstanding.
+// P&L share = (units held × current unit price) − net cost basis.
+// Net cost basis = total deposited − (units burned × their entry cost).
 // ════════════════════════════════════════════════════════════════
 function calcUnitAccounting(transactions, positions, currentNAV) {
   const parseDate = s => {
-    if (!s || s === "—") return 0;
+    if (!s || s === '—') return 0;
     const [dd, mm, yyyy] = s.split('/');
     return new Date(+yyyy, +mm - 1, +dd).getTime();
   };
 
-  // Closed trades sorted by exit date
+  // Closed trades sorted by exit date for cumulative P&L lookups
   const closedTrades = (positions || [])
     .filter(p => p.status === 'Closed' && (p.exitDate || p.date))
     .map(p => ({ ts: parseDate(p.exitDate || p.date), pnl: p.pnl || 0 }))
     .sort((a, b) => a.ts - b.ts);
 
-  // Cumulative P&L from all trades closed on or before timestamp ts
   function cumulativePnlAt(ts) {
     return closedTrades
       .filter(t => t.ts <= ts)
       .reduce((s, t) => s + t.pnl, 0);
   }
 
-  // All deposits sorted chronologically
-  const deposits = (transactions || [])
-    .filter(t => t.type === 'Deposit' && t.deposit > 0)
-    .map(t => ({ ...t, ts: parseDate(t.date) }))
-    .sort((a, b) => a.ts - b.ts);
+  // Merge deposits + withdrawals into a single chronological event stream
+  const events = (transactions || [])
+    .filter(t => (t.type === 'Deposit' && t.deposit > 0) || (t.type === 'Withdrawal' && t.withdrawal > 0))
+    .map(t => ({ ...t, ts: parseDate(t.date), isDeposit: t.type === 'Deposit' }))
+    .sort((a, b) => a.ts !== b.ts ? a.ts - b.ts : (a.isDeposit ? -1 : 1)); // deposits before withdrawals on same day
 
-  if (!deposits.length) return { results: {}, totalUnits: 0, currentUnitPrice: 1, liveNAV: currentNAV, unitLedger: [], totalPnlDistributed: 0 };
+  if (!events.filter(e => e.isDeposit).length) {
+    return { results: {}, totalUnits: 0, currentUnitPrice: 1, liveNAV: currentNAV, unitLedger: [], withdrawalLedger: [], totalPnlDistributed: 0 };
+  }
 
   const STARTING_UNIT_PRICE = 1.00;
-  let totalUnits = 0;
-  let totalDeposited = 0;
-  const unitsByInvestor = {};
-  const costByInvestor  = {};
-  const unitLedger      = [];
+  let totalUnits    = 0;
+  let runningNAV    = 0; // tracks capital in the fund (deposits in, withdrawals out)
+  const unitsByInvestor    = {}; // net units per investor after burns
+  const costBasisByInvestor = {}; // net cost basis per investor (deposits - redeemed cost)
+  const unitLedger       = []; // deposit events
+  const withdrawalLedger = []; // withdrawal / unit-burn events
 
-  deposits.forEach(dep => {
-    const cumPnl      = cumulativePnlAt(dep.ts);
-    // NAV at this deposit = total capital deposited so far + cumulative P&L
-    const navAtDeposit = totalDeposited > 0 ? totalDeposited + cumPnl : dep.deposit;
-    // Unit price = current NAV / current units (or starting price if first deposit)
-    const unitPrice   = totalUnits > 0 ? navAtDeposit / totalUnits : STARTING_UNIT_PRICE;
-    const unitsReceived = dep.deposit / unitPrice;
+  events.forEach(ev => {
+    const cumPnl = cumulativePnlAt(ev.ts);
+    // Current NAV at this moment = capital in fund + P&L earned so far
+    const navNow   = runningNAV > 0 ? runningNAV + cumPnl : (ev.isDeposit ? ev.deposit : 0);
+    // Unit price at this moment
+    const unitPriceNow = totalUnits > 0 ? navNow / totalUnits : STARTING_UNIT_PRICE;
+    const n = ev.name;
 
-    totalUnits     += unitsReceived;
-    totalDeposited += dep.deposit;
+    if (ev.isDeposit) {
+      // ── DEPOSIT: issue new units ──────────────────────────────
+      const unitsIssued = ev.deposit / unitPriceNow;
+      totalUnits   += unitsIssued;
+      runningNAV   += ev.deposit;
 
-    const n = dep.name;
-    unitsByInvestor[n] = (unitsByInvestor[n] || 0) + unitsReceived;
-    costByInvestor[n]  = (costByInvestor[n]  || 0) + dep.deposit;
+      unitsByInvestor[n]     = (unitsByInvestor[n]     || 0) + unitsIssued;
+      costBasisByInvestor[n] = (costBasisByInvestor[n] || 0) + ev.deposit;
 
-    unitLedger.push({
-      date:            dep.date,
-      name:            n,
-      deposit:         dep.deposit,
-      cumPnlAtDeposit: cumPnl,
-      navAtDeposit,
-      unitPrice:       +unitPrice.toFixed(8),
-      unitsReceived:   +unitsReceived.toFixed(4),
-      totalUnitsAfter: +totalUnits.toFixed(4),
-    });
+      unitLedger.push({
+        date:            ev.date,
+        name:            n,
+        deposit:         ev.deposit,
+        cumPnlAtDeposit: cumPnl,
+        navAtDeposit:    navNow,
+        unitPrice:       +unitPriceNow.toFixed(8),
+        unitsReceived:   +unitsIssued.toFixed(4),
+        remainingUnits:  +unitsIssued.toFixed(4), // decremented on each withdrawal
+        totalUnitsAfter: +totalUnits.toFixed(4),
+      });
+
+    } else {
+      // ── WITHDRAWAL: burn units at current price ───────────────
+      const amount      = ev.withdrawal;
+      const unitsBurned = unitPriceNow > 0 ? amount / unitPriceNow : 0;
+
+      // Clamp to investor's actual balance (can't redeem more than held)
+      const unitsHeld      = unitsByInvestor[n] || 0;
+      const actualBurned   = Math.min(unitsBurned, unitsHeld);
+      const actualRedeemed = actualBurned * unitPriceNow;
+
+      // Reduce cost basis proportionally: cost_redeemed = (burned / held) * total_cost
+      const costRedeemed   = unitsHeld > 0 ? (actualBurned / unitsHeld) * (costBasisByInvestor[n] || 0) : 0;
+
+      totalUnits   = Math.max(0, totalUnits - actualBurned);
+      runningNAV   = Math.max(0, runningNAV - actualRedeemed);
+
+      unitsByInvestor[n]     = Math.max(0, unitsHeld - actualBurned);
+      costBasisByInvestor[n] = Math.max(0, (costBasisByInvestor[n] || 0) - costRedeemed);
+
+      // Proportionally reduce remainingUnits on each of this investor's ledger entries
+      // (burn fraction = actualBurned / unitsHeld, applied to every tranche equally)
+      if (unitsHeld > 0) {
+        const burnFraction = actualBurned / unitsHeld;
+        unitLedger
+          .filter(l => l.name === n)
+          .forEach(l => {
+            l.remainingUnits = Math.max(0, l.remainingUnits - l.remainingUnits * burnFraction);
+          });
+      }
+
+      // P&L realised on this redemption = redeemed value − cost basis redeemed
+      const realisedPnl = actualRedeemed - costRedeemed;
+
+      withdrawalLedger.push({
+        date:            ev.date,
+        name:            n,
+        withdrawal:      amount,
+        unitPrice:       +unitPriceNow.toFixed(8),
+        unitsBurned:     +actualBurned.toFixed(4),
+        navAtWithdrawal: navNow,
+        realisedPnl:     +realisedPnl.toFixed(2),
+        totalUnitsAfter: +totalUnits.toFixed(4),
+      });
+    }
   });
 
-  // Current unit price uses live NAV (includes unrealised P&L from open positions)
-  const liveNAV          = currentNAV || totalDeposited;
+  // Live NAV uses the real-time value passed in (includes unrealised P&L from open positions)
+  const liveNAV          = currentNAV || runningNAV;
   const currentUnitPrice = totalUnits > 0 ? liveNAV / totalUnits : STARTING_UNIT_PRICE;
 
   const results = {};
   Object.keys(unitsByInvestor).forEach(name => {
     const units        = unitsByInvestor[name];
-    const deposited    = costByInvestor[name];
+    const costBasis    = costBasisByInvestor[name] || 0;
     const currentValue = units * currentUnitPrice;
-    const pnlShare     = currentValue - deposited;
+    const pnlShare     = currentValue - costBasis;
     const ownershipPct = totalUnits > 0 ? (units / totalUnits) * 100 : 0;
     results[name] = {
       units:          +units.toFixed(4),
-      deposited,
+      costBasis:      +costBasis.toFixed(2),
+      deposited:      costBasis, // alias kept for backward compat
       currentValue:   +currentValue.toFixed(2),
       pnlShare:       +pnlShare.toFixed(2),
       ownershipPct:   +ownershipPct.toFixed(6),
-      returnPct:      deposited > 0 ? +((pnlShare / deposited) * 100).toFixed(4) : 0,
+      returnPct:      costBasis > 0 ? +((pnlShare / costBasis) * 100).toFixed(4) : 0,
     };
   });
 
@@ -2612,6 +2676,7 @@ function calcUnitAccounting(transactions, positions, currentNAV) {
     currentUnitPrice:      +currentUnitPrice.toFixed(8),
     liveNAV,
     unitLedger,
+    withdrawalLedger,
     totalPnlDistributed:   Object.values(results).reduce((s, r) => s + r.pnlShare, 0),
   };
 }
@@ -2970,17 +3035,27 @@ function renderInvestors(investors, transactions) {
             const le = _ledger[ti];
             let unitInfoHtml = '';
             if (le && _cup) {
+              const remaining   = le.remainingUnits;
+              const redeemed    = le.unitsReceived - remaining;
               const unitGain    = _cup - le.unitPrice;
               const unitGainPct = le.unitPrice > 0 ? ((unitGain / le.unitPrice) * 100).toFixed(2) : '0.00';
-              const trancheVal  = le.unitsReceived * _cup;
-              const tranchePnl  = le.unitsReceived * unitGain;
+              const trancheVal  = remaining * _cup;
+              const tranchePnl  = remaining * unitGain;
               const gainColor   = unitGain >= 0 ? 'var(--green)' : 'var(--red)';
               const gainSign    = unitGain >= 0 ? '+' : '';
               unitInfoHtml = `
                 <div style="margin-top:7px;padding:8px 10px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;display:flex;flex-wrap:wrap;gap:12px 20px;">
                   <div>
-                    <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">Units Received</div>
+                    <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">Units Issued</div>
                     <div style="font-size:12px;font-family:var(--mono);color:var(--blue);">${fmtM(le.unitsReceived)}</div>
+                  </div>
+                  ${redeemed > 0.0001 ? `<div>
+                    <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">Units Redeemed</div>
+                    <div style="font-size:12px;font-family:var(--mono);color:var(--red);">-${fmtM(redeemed)}</div>
+                  </div>` : ''}
+                  <div>
+                    <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">Units Held</div>
+                    <div style="font-size:12px;font-family:var(--mono);color:var(--blue);">${fmtM(remaining)}</div>
                   </div>
                   <div>
                     <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">Entry Unit Price</div>
@@ -3035,8 +3110,8 @@ function renderInvestors(investors, transactions) {
             </div>
             <div style="width:1px;height:32px;background:var(--border);"></div>
             <div style="text-align:right;min-width:80px;">
-              <div style="font-size:16px;font-weight:600;font-family:var(--mono);color:var(--green);">${(inv.pnlShare>=0?'+':'')}$${fmtM(aggDeposited + inv.pnlShare)}</div>
-              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">Net payout</div>
+              <div style="font-size:16px;font-weight:600;font-family:var(--mono);color:var(--green);">${(inv.pnlShare>=0?'+':'')}$${fmtM((inv._unitValue || 0) + aggWithdrawn)}</div>
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">Total value</div>
             </div>
             <div style="width:1px;height:32px;background:var(--border);"></div>
             <div style="text-align:right;min-width:80px;">
@@ -3087,6 +3162,43 @@ function renderInvestors(investors, transactions) {
             <div class="section-title" style="margin-bottom:8px;">Deposit History</div>
             ${depositRows}
           </div>
+          ${(() => {
+            const _ua = window.unitAccounting || {};
+            const _cup = _ua.currentUnitPrice || null;
+            const wRows = (_ua.withdrawalLedger || []).filter(w => w.name === inv.name);
+            if (!wRows.length) return '';
+            const rows = wRows.map(w => {
+              const realisedColor = w.realisedPnl >= 0 ? 'var(--green)' : 'var(--red)';
+              const realisedSign  = w.realisedPnl >= 0 ? '+' : '';
+              return `
+              <div style="display:grid;grid-template-columns:120px 1fr 1fr;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--border);gap:12px;">
+                <div class="deposit-date">${w.date}</div>
+                <div>
+                  <div style="font-size:13px;font-family:var(--mono);font-weight:500;color:var(--red);">-$${fmtM(w.withdrawal)}</div>
+                  <div style="margin-top:7px;padding:8px 10px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;display:flex;flex-wrap:wrap;gap:12px 20px;">
+                    <div>
+                      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">Units Burned</div>
+                      <div style="font-size:12px;font-family:var(--mono);color:var(--red);">-${fmtM(w.unitsBurned)}</div>
+                    </div>
+                    <div>
+                      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">Redemption Price</div>
+                      <div style="font-size:12px;font-family:var(--mono);color:var(--accent);">$${w.unitPrice.toFixed(4)}</div>
+                    </div>
+                    <div>
+                      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">NAV at Redemption</div>
+                      <div style="font-size:12px;font-family:var(--mono);color:var(--accent2);">$${fmtM(w.navAtWithdrawal)}</div>
+                    </div>
+                    <div>
+                      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">Realised P&L</div>
+                      <div style="font-size:12px;font-family:var(--mono);color:${realisedColor};">${realisedSign}$${fmtM(w.realisedPnl)}</div>
+                    </div>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:4px;">${badge('REDEEMED','red')}</div>
+              </div>`;
+            }).join('');
+            return `<div style="padding:12px 0 4px;"><div class="section-title" style="margin-bottom:8px;">Withdrawal History</div>${rows}</div>`;
+          })()}
         </div>
       </div>`;
   }).join('');
@@ -3129,8 +3241,9 @@ function renderInvestors(investors, transactions) {
       let share, unitInfo = '';
       const le = _uaL[ti];
       if (le) {
-        share = le.unitsReceived * (_uaCP - le.unitPrice);
-        unitInfo = `<span style="color:var(--muted);font-size:9px;font-family:var(--mono);margin-top:1px;">${fmtM(le.unitsReceived)} units @ $${le.unitPrice.toFixed(4)}/u · entry NAV $${fmtM(le.navAtDeposit)}</span>`;
+        share = le.remainingUnits * (_uaCP - le.unitPrice);
+        const redeemed = le.unitsReceived - le.remainingUnits;
+        unitInfo = `<span style="color:var(--muted);font-size:9px;font-family:var(--mono);margin-top:1px;">${fmtM(le.remainingUnits)} units held @ $${le.unitPrice.toFixed(4)}/u · entry NAV $${fmtM(le.navAtDeposit)}${redeemed > 0.0001 ? ` · ${fmtM(redeemed)} redeemed` : ''}</span>`;
       } else {
         share = investorTotal > 0 ? (t.deposit / investorTotal) * inv.pnlShare : 0;
       }
@@ -3819,12 +3932,14 @@ function renderUnitLedger() {
   if (!ua || !ua.unitLedger) return;
   const strip = document.getElementById('unit-summary-strip');
   if (strip) {
+    const totalRedeemed = (ua.withdrawalLedger || []).reduce((s, w) => s + w.unitsBurned, 0);
     strip.innerHTML = [
-      { label: 'Total Units',        val: fmtM(ua.totalUnits),                          cls: 'var(--blue)'    },
-      { label: 'Current Unit Price', val: '$' + ua.currentUnitPrice.toFixed(4),         cls: 'var(--accent2)' },
-      { label: 'Fund NAV',           val: '$' + fmtM(ua.liveNAV),                       cls: 'var(--green)'   },
-      { label: 'Total P&L Dist.',    val: (ua.totalPnlDistributed >= 0 ? '+' : '') + '$' + fmtM(ua.totalPnlDistributed),
-                                                                                          cls: ua.totalPnlDistributed >= 0 ? 'var(--green)' : 'var(--red)' },
+      { label: 'Total Units Outstanding', val: fmtM(ua.totalUnits),                          cls: 'var(--blue)'    },
+      { label: 'Current Unit Price',       val: '$' + ua.currentUnitPrice.toFixed(4),         cls: 'var(--accent2)' },
+      { label: 'Fund NAV',                 val: '$' + fmtM(ua.liveNAV),                       cls: 'var(--green)'   },
+      { label: 'Units Ever Redeemed',      val: fmtM(totalRedeemed),                          cls: 'var(--red)'     },
+      { label: 'Total P&L Dist.',          val: (ua.totalPnlDistributed >= 0 ? '+' : '') + '$' + fmtM(ua.totalPnlDistributed),
+                                                                                               cls: ua.totalPnlDistributed >= 0 ? 'var(--green)' : 'var(--red)' },
     ].map(s =>
       '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">'
       + '<div style="font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:3px;">' + s.label + '</div>'
@@ -3832,21 +3947,46 @@ function renderUnitLedger() {
       + '</div>'
     ).join('');
   }
+
+  // ── Issuance table ──
   const tbody = document.getElementById('unit-ledger-tbody');
-  if (!tbody) return;
-  tbody.innerHTML = ua.unitLedger.map((l, i) =>
-    '<tr>'
-    + '<td style="color:var(--muted)">' + (i+1) + '</td>'
-    + '<td style="color:var(--muted)">' + l.date + '</td>'
-    + '<td class="label">' + l.name + '</td>'
-    + '<td style="color:var(--green)">+$' + fmtM(l.deposit) + '</td>'
-    + '<td style="color:' + (l.cumPnlAtDeposit >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (l.cumPnlAtDeposit >= 0 ? '+' : '') + '$' + fmtM(l.cumPnlAtDeposit) + '</td>'
-    + '<td style="color:var(--accent2)">$' + fmtM(l.navAtDeposit) + '</td>'
-    + '<td style="color:var(--accent);font-weight:600;">$' + l.unitPrice.toFixed(4) + '</td>'
-    + '<td style="color:var(--blue)">' + fmtM(l.unitsReceived) + '</td>'
-    + '<td style="color:var(--muted)">' + fmtM(l.totalUnitsAfter) + '</td>'
-    + '</tr>'
-  ).join('');
+  if (tbody) {
+    tbody.innerHTML = ua.unitLedger.length > 0 ? ua.unitLedger.map((l, i) =>
+      '<tr>'
+      + '<td style="color:var(--muted)">' + (i+1) + '</td>'
+      + '<td style="color:var(--muted)">' + l.date + '</td>'
+      + '<td class="label">' + l.name + '</td>'
+      + '<td style="color:var(--green)">+$' + fmtM(l.deposit) + '</td>'
+      + '<td style="color:' + (l.cumPnlAtDeposit >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (l.cumPnlAtDeposit >= 0 ? '+' : '') + '$' + fmtM(l.cumPnlAtDeposit) + '</td>'
+      + '<td style="color:var(--accent2)">$' + fmtM(l.navAtDeposit) + '</td>'
+      + '<td style="color:var(--accent);font-weight:600;">$' + l.unitPrice.toFixed(4) + '</td>'
+      + '<td style="color:var(--blue)">' + fmtM(l.unitsReceived) + '</td>'
+      + '<td style="color:var(--muted)">' + fmtM(l.totalUnitsAfter) + '</td>'
+      + '</tr>'
+    ).join('')
+    : '<tr><td colspan="9" style="color:var(--muted);padding:12px 0;">No deposit events</td></tr>';
+  }
+
+  // ── Redemption table ──
+  const wTbody = document.getElementById('unit-withdrawal-tbody');
+  if (wTbody) {
+    const wl = ua.withdrawalLedger || [];
+    wTbody.innerHTML = wl.length > 0 ? wl.map((w, i) =>
+      '<tr>'
+      + '<td style="color:var(--muted)">' + (i+1) + '</td>'
+      + '<td style="color:var(--muted)">' + w.date + '</td>'
+      + '<td class="label">' + w.name + '</td>'
+      + '<td style="color:var(--red)">-$' + fmtM(w.withdrawal) + '</td>'
+      + '<td style="color:var(--accent);font-weight:600;">$' + w.unitPrice.toFixed(4) + '</td>'
+      + '<td style="color:var(--red)">-' + fmtM(w.unitsBurned) + '</td>'
+      + '<td style="color:var(--accent2)">$' + fmtM(w.navAtWithdrawal) + '</td>'
+      + '<td style="color:' + (w.realisedPnl >= 0 ? 'var(--green)' : 'var(--red)') + ';">'
+        + (w.realisedPnl >= 0 ? '+' : '') + '$' + fmtM(w.realisedPnl) + '</td>'
+      + '<td style="color:var(--muted)">' + fmtM(w.totalUnitsAfter) + '</td>'
+      + '</tr>'
+    ).join('')
+    : '<tr><td colspan="9" style="color:var(--muted);padding:12px 0;">No withdrawal events recorded</td></tr>';
+  }
 }
 
 // ── SPARKLINE FOR INVESTOR DEPOSIT GROWTH ───────────────────────
@@ -4475,21 +4615,38 @@ function generateStatement() {
 
   // ── Unit ledger entries for this investor ──
   const _unitLedger = (_uaStmt.unitLedger || []).filter(l => l.name === name);
+  const _withdrawalLedger = (_uaStmt.withdrawalLedger || []).filter(w => w.name === name);
   const _cup = _uaStmt.currentUnitPrice || null;
+
+  // Total realised P&L from redemptions
+  const totalRealisedOnWithdrawals = _withdrawalLedger.reduce((s, w) => s + w.realisedPnl, 0);
 
   const depositRows = invTxns.deposits.map((t, ti) => {
     const le = _unitLedger[ti];
     let unitCells = '<td>—</td><td>—</td><td>—</td><td>—</td>';
     if (le && _cup) {
-      const trancheVal = le.unitsReceived * _cup;
-      const tranchePnl = le.unitsReceived * (_cup - le.unitPrice);
+      const remaining  = le.remainingUnits;
+      const tranchePnl = remaining * (_cup - le.unitPrice);
       const pnlSign    = tranchePnl >= 0 ? '+' : '';
-      unitCells = `<td style="color:#1d4ed8">${fmtM(le.unitsReceived)}</td>`
+      unitCells = `<td style="color:#1d4ed8">${fmtM(le.unitsReceived)}${remaining < le.unitsReceived - 0.0001 ? ` <span style="color:#dc2626;font-size:9px;">(${fmtM(remaining)} held)</span>` : ''}</td>`
         + `<td style="color:#b45309">$${le.unitPrice.toFixed(4)}</td>`
         + `<td style="color:#b45309">$${_cup.toFixed(4)}</td>`
         + `<td style="color:${tranchePnl>=0?'#16a34a':'#dc2626'}">${pnlSign}$${fmtM(tranchePnl)}</td>`;
     }
     return `<tr><td>${t.date}</td><td>Deposit</td><td style="color:#16a34a">+$${fmtM(t.deposit)}</td><td style="color:#16a34a">${t.verified?'Verified':'Pending'}</td><td>${t.note||'—'}</td>${unitCells}</tr>`;
+  }).join('');
+
+  const withdrawalRows = _withdrawalLedger.map(w => {
+    const rSign = w.realisedPnl >= 0 ? '+' : '';
+    return `<tr>
+      <td>${w.date}</td><td>Withdrawal</td>
+      <td style="color:#dc2626">-$${fmtM(w.withdrawal)}</td>
+      <td style="color:#16a34a">Processed</td><td>—</td>
+      <td style="color:#dc2626">-${fmtM(w.unitsBurned)}</td>
+      <td style="color:#b45309">$${w.unitPrice.toFixed(4)}</td>
+      <td style="color:#b45309">$${w.unitPrice.toFixed(4)}</td>
+      <td style="color:${w.realisedPnl>=0?'#16a34a':'#dc2626'}">${rSign}$${fmtM(w.realisedPnl)}</td>
+    </tr>`;
   }).join('');
 
   const win = window.open('','_blank');
@@ -4715,15 +4872,28 @@ function generateStatement() {
   ${_cup ? `
   <h3>Unit Holdings</h3>
   <div style="background:#f8f9fa;border-radius:8px;padding:14px 18px;margin-bottom:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
-    <div><div style="font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:#888;margin-bottom:3px;">Units Held</div><div style="font-size:16px;font-weight:700;font-family:monospace;color:#1d4ed8;">${stmtUnits}</div></div>
-    <div><div style="font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:#888;margin-bottom:3px;">Avg Entry Price</div><div style="font-size:16px;font-weight:700;font-family:monospace;color:#b45309;">${_unitLedger.length > 0 ? ('$'+((_unitLedger.reduce((s,l)=>s+l.unitPrice*l.unitsReceived,0)/(_uInv.units||1)).toFixed(4))) : '—'}</div></div>
+    <div><div style="font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:#888;margin-bottom:3px;">Units Currently Held</div><div style="font-size:16px;font-weight:700;font-family:monospace;color:#1d4ed8;">${stmtUnits}</div></div>
+    <div><div style="font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:#888;margin-bottom:3px;">Cost Basis / Unit</div><div style="font-size:16px;font-weight:700;font-family:monospace;color:#b45309;">${(_uInv.units > 0 && _uInv.costBasis > 0) ? '$'+((_uInv.costBasis / _uInv.units).toFixed(4)) : '—'}</div></div>
     <div><div style="font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:#888;margin-bottom:3px;">Current Unit Price</div><div style="font-size:16px;font-weight:700;font-family:monospace;color:#b45309;">${stmtUnitPrice}</div></div>
     <div><div style="font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:#888;margin-bottom:3px;">Current Value</div><div style="font-size:16px;font-weight:700;font-family:monospace;color:#16a34a;">${stmtCurVal}</div></div>
+    ${_withdrawalLedger.length > 0 ? `
+    <div><div style="font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:#888;margin-bottom:3px;">Units Redeemed</div><div style="font-size:16px;font-weight:700;font-family:monospace;color:#dc2626;">-${fmtM(_withdrawalLedger.reduce((s,w)=>s+w.unitsBurned,0).toFixed(4))}</div></div>
+    <div><div style="font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:#888;margin-bottom:3px;">Realised P&L on Exits</div><div style="font-size:16px;font-weight:700;font-family:monospace;color:${totalRealisedOnWithdrawals>=0?'#16a34a':'#dc2626'};">${totalRealisedOnWithdrawals>=0?'+':''}$${fmtM(totalRealisedOnWithdrawals)}</div></div>
+    ` : ''}
   </div>` : ''}
 
   <h3>Transaction History</h3>
-  <table><thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Status</th><th>Reference</th><th>Units Issued</th><th>Entry Price</th><th>Current Price</th><th>Tranche P&amp;L</th></tr></thead>
-  <tbody>${depositRows||'<tr><td colspan=9 style="color:#aaa">No transactions found</td></tr>'}</tbody></table>
+  <table><thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Status</th><th>Reference</th><th>Units</th><th>Entry/Redemp. Price</th><th>Current Price</th><th>P&amp;L</th></tr></thead>
+  <tbody>
+    ${depositRows || ''}
+    ${withdrawalRows || ''}
+    ${(!depositRows && !withdrawalRows) ? '<tr><td colspan=9 style="color:#aaa">No transactions found</td></tr>' : ''}
+  </tbody></table>
+  ${_withdrawalLedger.length > 0 ? `
+  <div style="margin-top:12px;padding:10px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:11px;display:flex;justify-content:space-between;align-items:center;">
+    <span><b>Realised P&L from Withdrawals:</b> Units redeemed at the NAV price prevailing on each withdrawal date.</span>
+    <span style="font-family:monospace;font-weight:700;font-size:13px;color:${totalRealisedOnWithdrawals>=0?'#16a34a':'#dc2626'};">${totalRealisedOnWithdrawals>=0?'+':''}$${fmtM(totalRealisedOnWithdrawals)}</span>
+  </div>` : ''}
   <div class="lockup-box ${isLocked?'lockup-locked':'lockup-unlocked'}">
     ${isLocked
       ? `<b>Funds Locked</b> — ${inv.daysToUnlock} days remaining until withdrawal is available. Lockup period: ${inv.lockDays} days from deposit date.`
