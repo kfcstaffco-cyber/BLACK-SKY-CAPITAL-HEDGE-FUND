@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Black-Sky Capital</title>
-    <link rel="icon" type="image/png" href="200pxbsc.png">
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/KimmosFabulousCasino/KimmosFabulousCasino.github.io/refs/heads/main/200pxbsc.png">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -376,6 +376,9 @@
       border-radius: 8px; padding: 10px 14px; font-size: 11px;
       min-width: 160px; opacity: 0; transition: opacity 0.15s;
       box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      opacity: 0; transition: opacity 0.1s;
+      min-width: 160px;
     }
     #heatmap-tooltip.visible { opacity: 1; }
     .ht-date  { font-size: 10px; color: var(--muted); margin-bottom: 5px; letter-spacing: 0.04em; }
@@ -1291,7 +1294,7 @@
   <div class="pw-box">
     <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
       <div id="pw-logo-wrap" style="width:108px;height:108px;border-radius:22px;border:1px solid var(--accent);background:var(--bg3);display:flex;align-items:center;justify-content:center;box-shadow:0 0 28px rgba(200,169,110,0.2);padding:4px;overflow:hidden;">
-        <img src="200pxbsc.png" style="width:100%;height:100%;border-radius:18px;object-fit:cover;">
+        <img src="https://raw.githubusercontent.com/KimmosFabulousCasino/KimmosFabulousCasino.github.io/refs/heads/main/200pxbsc.png" style="width:100%;height:100%;border-radius:18px;object-fit:cover;">
       </div>
       <div class="pw-title">Black-Sky Capital</div>
       <div style="height:4px;"></div>
@@ -1324,7 +1327,7 @@
   <div class="header">
     <div class="logo-group">
       <div id="header-logo-wrap" style="width:42px;height:42px;border-radius:10px;border:1px solid var(--accent);background:var(--bg3);display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(200,169,110,0.1);flex-shrink:0;">
-        <img src="200pxbsc.png" style="width:38px;height:38px;border-radius:8px;object-fit:contain;">
+        <img src="https://raw.githubusercontent.com/KimmosFabulousCasino/KimmosFabulousCasino.github.io/refs/heads/main/200pxbsc.png" style="width:38px;height:38px;border-radius:8px;object-fit:contain;">
       </div>
       <div>
         <div class="logo-text">Black-Sky Capital</div>
@@ -1505,6 +1508,21 @@
         <table>
           <thead><tr><th>Investor</th><th>Total Deposited</th><th>Total Withdrawn</th><th>Net Capital</th><th>Status</th><th>Lockup Remaining</th></tr></thead>
           <tbody id="withdrawal-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Unit NAV Ledger — master only -->
+    <div class="card" id="unit-ledger-card" style="display:none;">
+      <div class="card-header">
+        <span class="card-title">Unit NAV Ledger</span>
+        <span style="font-size:10px;color:var(--muted);">Full audit trail of unit issuance</span>
+      </div>
+      <div id="unit-summary-strip" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:16px;"></div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>#</th><th>Date</th><th>Investor</th><th>Deposit</th><th>Cum. P&L at Date</th><th>NAV at Date</th><th>Unit Price</th><th>Units Issued</th><th>Total Units</th></tr></thead>
+          <tbody id="unit-ledger-tbody"></tbody>
         </table>
       </div>
     </div>
@@ -1938,7 +1956,7 @@
       <div style="display:flex;flex-direction:column;align-items:flex-start;gap:8px;justify-content:center;">
         <div style="font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);">Affiliated with KFC</div>
         <div style="width:64px;height:64px;border-radius:12px;border:1px solid var(--border2);background:#000000 !important;display:flex;align-items:center;justify-content:center;overflow:hidden;">
-          <img src="KFC_LOGO.png" style="width:64px;height:64px;object-fit:contain;background:#000000;display:block;">
+          <img src="https://raw.githubusercontent.com/KimmosFabulousCasino/KimmosFabulousCasino.github.io/refs/heads/main/KFC_LOGO.png" style="width:64px;height:64px;object-fit:contain;background:#000000;display:block;">
         </div>
         <div style="font-size:10px;color:var(--muted);line-height:1.6;">Premium gambling &amp; entertainment<br>Where the odds are ever in your favor.</div>
       </div>
@@ -1946,7 +1964,7 @@
       <!-- CENTER: BSC logo -->
       <div class="footer-center" style="display:flex;flex-direction:column;align-items:center;gap:8px;">
         <div style="width:80px;height:80px;border-radius:14px;border:1px solid var(--accent);background:#000;display:flex;align-items:center;justify-content:center;box-shadow:0 0 18px rgba(200,169,110,0.2);overflow:hidden;">
-          <img src="200pxbsc.png" style="width:80px;height:80px;object-fit:contain;background:#000;display:block;">
+          <img src="https://raw.githubusercontent.com/KimmosFabulousCasino/KimmosFabulousCasino.github.io/refs/heads/main/200pxbsc.png" style="width:80px;height:80px;object-fit:contain;background:#000;display:block;">
         </div>
         <div style="font-size:13px;font-weight:500;color:var(--text);">Black Sky Capital</div>
         <div style="font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);">KFC Hedge Fund</div>
@@ -2006,6 +2024,14 @@ function checkRemembered() {
   return false;
 }
 
+// Clear remember me on logout (patch into existing logout)
+const _origLogout = logout;
+function logout() {
+  localStorage.removeItem(REMEMBER_KEY);
+  _origLogout();
+}
+
+
 async function checkPassword() {
   const val = document.getElementById('pw-input').value;
   const err = document.getElementById('pw-error');
@@ -2029,8 +2055,6 @@ async function checkPassword() {
 }
 document.getElementById('pw-input').addEventListener('keydown', e => { if(e.key==='Enter') checkPassword(); });
 function logout() {
-  localStorage.removeItem(REMEMBER_KEY);
-  localStorage.removeItem('bsc_access_level');
   document.getElementById('app').style.display = 'none';
   document.getElementById('pw-screen').style.display = 'flex';
   document.getElementById('pw-input').value = '';
@@ -2488,6 +2512,111 @@ function parsePositions(rows) {
   }));
 }
 
+
+// ════════════════════════════════════════════════════════════════
+// ── UNIT / NAV ACCOUNTING ENGINE ───────────────────────────────
+// Each deposit buys units at the NAV price per unit at that moment.
+// NAV at deposit date = total capital deposited so far + cumulative
+// P&L from trades whose EXIT DATE is on or before that deposit date.
+// Current unit price = Current Fund NAV / Total Units Outstanding.
+// P&L share = (units held * current unit price) - amount deposited.
+// ════════════════════════════════════════════════════════════════
+function calcUnitAccounting(transactions, positions, currentNAV) {
+  const parseDate = s => {
+    if (!s || s === "—") return 0;
+    const [dd, mm, yyyy] = s.split('/');
+    return new Date(+yyyy, +mm - 1, +dd).getTime();
+  };
+
+  // Closed trades sorted by exit date
+  const closedTrades = (positions || [])
+    .filter(p => p.status === 'Closed' && (p.exitDate || p.date))
+    .map(p => ({ ts: parseDate(p.exitDate || p.date), pnl: p.pnl || 0 }))
+    .sort((a, b) => a.ts - b.ts);
+
+  // Cumulative P&L from all trades closed on or before timestamp ts
+  function cumulativePnlAt(ts) {
+    return closedTrades
+      .filter(t => t.ts <= ts)
+      .reduce((s, t) => s + t.pnl, 0);
+  }
+
+  // All deposits sorted chronologically
+  const deposits = (transactions || [])
+    .filter(t => t.type === 'Deposit' && t.deposit > 0)
+    .map(t => ({ ...t, ts: parseDate(t.date) }))
+    .sort((a, b) => a.ts - b.ts);
+
+  if (!deposits.length) return { results: {}, totalUnits: 0, currentUnitPrice: 1, liveNAV: currentNAV, unitLedger: [], totalPnlDistributed: 0 };
+
+  const STARTING_UNIT_PRICE = 1.00;
+  let totalUnits = 0;
+  let totalDeposited = 0;
+  const unitsByInvestor = {};
+  const costByInvestor  = {};
+  const unitLedger      = [];
+
+  deposits.forEach(dep => {
+    const cumPnl      = cumulativePnlAt(dep.ts);
+    // NAV at this deposit = total capital deposited so far + cumulative P&L
+    const navAtDeposit = totalDeposited > 0 ? totalDeposited + cumPnl : dep.deposit;
+    // Unit price = current NAV / current units (or starting price if first deposit)
+    const unitPrice   = totalUnits > 0 ? navAtDeposit / totalUnits : STARTING_UNIT_PRICE;
+    const unitsReceived = dep.deposit / unitPrice;
+
+    totalUnits     += unitsReceived;
+    totalDeposited += dep.deposit;
+
+    const n = dep.name;
+    unitsByInvestor[n] = (unitsByInvestor[n] || 0) + unitsReceived;
+    costByInvestor[n]  = (costByInvestor[n]  || 0) + dep.deposit;
+
+    unitLedger.push({
+      date:            dep.date,
+      name:            n,
+      deposit:         dep.deposit,
+      cumPnlAtDeposit: cumPnl,
+      navAtDeposit,
+      unitPrice:       +unitPrice.toFixed(8),
+      unitsReceived:   +unitsReceived.toFixed(4),
+      totalUnitsAfter: +totalUnits.toFixed(4),
+    });
+  });
+
+  // Current unit price uses live NAV (includes unrealised P&L from open positions)
+  const liveNAV          = currentNAV || totalDeposited;
+  const currentUnitPrice = totalUnits > 0 ? liveNAV / totalUnits : STARTING_UNIT_PRICE;
+
+  const results = {};
+  Object.keys(unitsByInvestor).forEach(name => {
+    const units        = unitsByInvestor[name];
+    const deposited    = costByInvestor[name];
+    const currentValue = units * currentUnitPrice;
+    const pnlShare     = currentValue - deposited;
+    const ownershipPct = totalUnits > 0 ? (units / totalUnits) * 100 : 0;
+    results[name] = {
+      units:          +units.toFixed(4),
+      deposited,
+      currentValue:   +currentValue.toFixed(2),
+      pnlShare:       +pnlShare.toFixed(2),
+      ownershipPct:   +ownershipPct.toFixed(6),
+      returnPct:      deposited > 0 ? +((pnlShare / deposited) * 100).toFixed(4) : 0,
+    };
+  });
+
+  return {
+    results,
+    totalUnits:            +totalUnits.toFixed(4),
+    currentUnitPrice:      +currentUnitPrice.toFixed(8),
+    liveNAV,
+    unitLedger,
+    totalPnlDistributed:   Object.values(results).reduce((s, r) => s + r.pnlShare, 0),
+  };
+}
+
+// Cached result — recomputed every renderAll()
+window.unitAccounting = null;
+
 // ── PARSE INVESTOR WITHDRAWALS ───────────────────────────────────
 // The sheet may have multiple rows per investor (one per deposit tranche).
 // We parse every raw row, then collapse by name so each investor appears once,
@@ -2763,8 +2892,16 @@ function renderInvestors(investors, transactions) {
     }
   });
 
+  // ── Enrich investors with unit-accurate P&L ──
+  const _ua = window.unitAccounting || {};
+  const _uaR = _ua.results || {};
+  investors = investors.map(inv => {
+    const u = _uaR[inv.name];
+    if (!u) return inv;
+    return { ...inv, pnlShare: u.pnlShare, _unitPct: u.ownershipPct, _units: u.units, _unitValue: u.currentValue, _returnPct: u.returnPct };
+  });
+
   // ── Investor summary metric cards ──
-  // Use transaction log as source of truth for capital totals to avoid double-counting
   const totalCapital   = investors.reduce((s,i) => s + (txnsByName[i.name]?.totalDeposit || i.deposited), 0);
   const totalWithdrawn = investors.reduce((s,i) => s + (txnsByName[i.name]?.totalWithdrawal || i.withdrawn), 0);
   const totalPnlShared = investors.reduce((s,i) => s + i.pnlShare, 0);
@@ -2799,7 +2936,7 @@ function renderInvestors(investors, transactions) {
     const aggWithdrawn  = invTxns.totalWithdrawal || inv.withdrawn;
     const netCapital    = aggDeposited - aggWithdrawn;
     // Recalculate ownership % from transaction totals to avoid doubled sheet values
-    const ownershipPct  = totalCapital > 0 ? (aggDeposited / totalCapital) * 100 : 0;
+    const ownershipPct  = inv._unitPct !== undefined ? inv._unitPct : (totalCapital > 0 ? (aggDeposited / totalCapital) * 100 : 0);
 
     const depositRows = invTxns.deposits.length > 0
       ? (() => {
@@ -2857,7 +2994,7 @@ function renderInvestors(investors, transactions) {
             <div style="width:1px;height:32px;background:var(--border);"></div>
             <div style="text-align:right;min-width:80px;">
               <div style="font-size:16px;font-weight:500;font-family:var(--mono);color:${inv.pnlShare>=0?'var(--green)':'var(--red)'};">${(inv.pnlShare>=0?'+':'')}$${fmtM(inv.pnlShare)}</div>
-              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">P&L share</div>
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">P&L (Unit NAV)</div>
             </div>
             <button class="chevron" id="chev-${idx}">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
@@ -2879,8 +3016,20 @@ function renderInvestors(investors, transactions) {
               <div class="inv-stat-value" style="color:var(--text)">$${fmtM(netCapital)}</div>
             </div>
             <div class="inv-stat-box">
-              <div class="inv-stat-label">P&L Share</div>
+              <div class="inv-stat-label">P&L (Unit NAV)</div>
               <div class="inv-stat-value" style="color:var(--green)">${sgn(inv.pnlShare)}$${fmtM(inv.pnlShare)}</div>
+            </div>
+            <div class="inv-stat-box">
+              <div class="inv-stat-label">Units Held</div>
+              <div class="inv-stat-value" style="color:var(--blue)">${inv._units ? fmtM(inv._units) : '—'}</div>
+            </div>
+            <div class="inv-stat-box">
+              <div class="inv-stat-label">Current Value</div>
+              <div class="inv-stat-value" style="color:var(--accent2)">${inv._unitValue ? '$'+fmtM(inv._unitValue) : '—'}</div>
+            </div>
+            <div class="inv-stat-box">
+              <div class="inv-stat-label">Return on Capital</div>
+              <div class="inv-stat-value" style="color:${(inv._returnPct||0)>=0?'var(--green)':'var(--red)'}">${(inv._returnPct!==undefined?(inv._returnPct>=0?'+':'')+inv._returnPct.toFixed(2)+'%':'—')}</div>
             </div>
           </div>
           <div class="sparkline-wrap" id="spark-wrap-${idx}">
@@ -2906,7 +3055,7 @@ function renderInvestors(investors, transactions) {
   });
   $('ownership-bars').innerHTML = sortedByOwnership.map(inv => {
     const dep = txnsByName[inv.name]?.totalDeposit || inv.deposited;
-    const ownerPct = totalCapital > 0 ? (dep / totalCapital) * 100 : 0;
+    const ownerPct = inv._unitPct !== undefined ? inv._unitPct : (totalCapital > 0 ? (dep / totalCapital) * 100 : 0);
     return `
     <div style="margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
@@ -2926,11 +3075,24 @@ function renderInvestors(investors, transactions) {
     const investorTotal = invTxnsForPnl.deposits.reduce((s,t) => s + t.deposit, 0);
     // Each deposit's P&L = (that deposit / investor's total deposits) * investor's total P&L share
     // This guarantees sub-rows always sum exactly to inv.pnlShare
-    const depositBreakdown = invTxnsForPnl.deposits.map(t => {
-      const share = investorTotal > 0 ? (t.deposit / investorTotal) * inv.pnlShare : 0;
-      return `<div style="display:flex;justify-content:space-between;padding:6px 0 6px 12px;border-top:1px solid var(--border);font-size:11px;">
-        <span style="color:var(--muted)">${t.date} · +$${fmtM(t.deposit)}</span>
-        <span style="font-family:var(--mono);color:var(--green)">${sgn(share)}$${fmtM(share)}</span>
+    // Unit-based per-deposit breakdown
+    const _uaL = ((window.unitAccounting||{}).unitLedger||[]).filter(l=>l.name===inv.name);
+    const _uaCP = (window.unitAccounting||{}).currentUnitPrice || 1;
+    const depositBreakdown = invTxnsForPnl.deposits.map((t, ti) => {
+      let share, unitInfo = '';
+      const le = _uaL[ti];
+      if (le) {
+        share = le.unitsReceived * (_uaCP - le.unitPrice);
+        unitInfo = `<span style="color:var(--muted);font-size:9px;font-family:var(--mono);margin-top:1px;">${fmtM(le.unitsReceived)} units @ $${le.unitPrice.toFixed(4)}/u · entry NAV $${fmtM(le.navAtDeposit)}</span>`;
+      } else {
+        share = investorTotal > 0 ? (t.deposit / investorTotal) * inv.pnlShare : 0;
+      }
+      return `<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0 7px 12px;border-top:1px solid var(--border);font-size:11px;gap:8px;">
+        <div style="display:flex;flex-direction:column;gap:2px;">
+          <span style="color:var(--muted)">${t.date} · +$${fmtM(t.deposit)}</span>
+          ${unitInfo}
+        </div>
+        <span style="font-family:var(--mono);color:${share>=0?'var(--green)':'var(--red)'};white-space:nowrap;">${sgn(share)}$${fmtM(share)}</span>
       </div>`;
     }).join('');
 
@@ -2978,6 +3140,11 @@ function renderInvestors(investors, transactions) {
           </div>`;
       }).join('')}</div>`
     : `<div style="color:var(--muted);font-size:12px;padding:16px 0;">No transaction data available</div>`;
+
+  // ── Unit NAV Ledger (master only) ──
+  const _ulCard = document.getElementById('unit-ledger-card');
+  if (_ulCard) _ulCard.style.display = isMasterAccess ? 'block' : 'none';
+  if (isMasterAccess) renderUnitLedger();
 
   // ── Withdrawal tracker table — unlocked first, then locked ──
   const sortedForWithdrawal = [...investors].sort((a,b) => {
@@ -3206,18 +3373,22 @@ function calcPayout() {
   });
   const totalCap = Object.values(txMap).reduce((s,v)=>s+v, 0);
 
+  const _uaPO = (window.unitAccounting || {}).results || {};
   const rows = d.investors.map(inv => {
-    const cap = txMap[inv.name] || inv.deposited;
-    const pct = totalCap > 0 ? cap / totalCap : inv.pct;
+    const cap  = txMap[inv.name] || inv.deposited;
+    const uInv = _uaPO[inv.name];
+    // Use unit-based ownership — correct for when each investor joined
+    const pct  = uInv ? uInv.ownershipPct / 100 : (totalCap > 0 ? cap / totalCap : inv.pct);
     const payout = amount * pct;
     const locked = inv.status === 'LOCKED';
     const lockInfo = locked
       ? `<span style="color:var(--red);font-size:10px;">${inv.daysToUnlock}d to unlock</span>`
       : `<span style="color:var(--green);font-size:10px;">Available</span>`;
+    const unitLine = uInv ? `<span style="color:var(--muted);font-size:9px;">${fmtM(uInv.units)} units</span>` : '';
     return `<div class="payout-row">
       <div>
         <div class="payout-name">${getDisplayName(inv.name)}</div>
-        <div class="payout-meta">${(pct*100).toFixed(4)}% · \$${fmtM(cap)} deposited · ${lockInfo}</div>
+        <div class="payout-meta" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">${(pct*100).toFixed(4)}% ownership ${unitLine} · ${lockInfo}</div>
       </div>
       <div style="text-align:right">
         <div class="payout-amount" style="color:var(--green)">+\$${fmtM(payout)}</div>
@@ -3497,6 +3668,43 @@ function renderWLDonut(d) {
       }
     }
   });
+}
+
+
+// ── RENDER UNIT NAV LEDGER ────────────────────────────────────────
+function renderUnitLedger() {
+  const ua = window.unitAccounting;
+  if (!ua || !ua.unitLedger) return;
+  const strip = document.getElementById('unit-summary-strip');
+  if (strip) {
+    strip.innerHTML = [
+      { label: 'Total Units',        val: fmtM(ua.totalUnits),                          cls: 'var(--blue)'    },
+      { label: 'Current Unit Price', val: '$' + ua.currentUnitPrice.toFixed(4),         cls: 'var(--accent2)' },
+      { label: 'Fund NAV',           val: '$' + fmtM(ua.liveNAV),                       cls: 'var(--green)'   },
+      { label: 'Total P&L Dist.',    val: (ua.totalPnlDistributed >= 0 ? '+' : '') + '$' + fmtM(ua.totalPnlDistributed),
+                                                                                          cls: ua.totalPnlDistributed >= 0 ? 'var(--green)' : 'var(--red)' },
+    ].map(s =>
+      '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">'
+      + '<div style="font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:3px;">' + s.label + '</div>'
+      + '<div style="font-size:15px;font-family:var(--mono);font-weight:600;color:' + s.cls + ';">' + s.val + '</div>'
+      + '</div>'
+    ).join('');
+  }
+  const tbody = document.getElementById('unit-ledger-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = ua.unitLedger.map((l, i) =>
+    '<tr>'
+    + '<td style="color:var(--muted)">' + (i+1) + '</td>'
+    + '<td style="color:var(--muted)">' + l.date + '</td>'
+    + '<td class="label">' + l.name + '</td>'
+    + '<td style="color:var(--green)">+$' + fmtM(l.deposit) + '</td>'
+    + '<td style="color:' + (l.cumPnlAtDeposit >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (l.cumPnlAtDeposit >= 0 ? '+' : '') + '$' + fmtM(l.cumPnlAtDeposit) + '</td>'
+    + '<td style="color:var(--accent2)">$' + fmtM(l.navAtDeposit) + '</td>'
+    + '<td style="color:var(--accent);font-weight:600;">$' + l.unitPrice.toFixed(4) + '</td>'
+    + '<td style="color:var(--blue)">' + fmtM(l.unitsReceived) + '</td>'
+    + '<td style="color:var(--muted)">' + fmtM(l.totalUnitsAfter) + '</td>'
+    + '</tr>'
+  ).join('');
 }
 
 // ── SPARKLINE FOR INVESTOR DEPOSIT GROWTH ───────────────────────
@@ -4109,9 +4317,14 @@ function generateStatement() {
   const dep      = invTxns.totalDeposit || inv.deposited;
   const wdr      = invTxns.totalWithdrawal || inv.withdrawn;
   const net      = dep - wdr;
-  const pnl      = inv.pnlShare;
-  const ownerPct = totalCap>0?(dep/totalCap*100).toFixed(4):0;
+  const _uaStmt  = window.unitAccounting || {};
+  const _uInv    = (_uaStmt.results || {})[name] || {};
+  const pnl      = _uInv.pnlShare !== undefined ? _uInv.pnlShare : inv.pnlShare;
+  const ownerPct = _uInv.ownershipPct !== undefined ? _uInv.ownershipPct.toFixed(6) : (totalCap>0?(dep/totalCap*100).toFixed(4):0);
   const retPct   = dep>0?((pnl/dep)*100).toFixed(2):0;
+  const stmtUnits = _uInv.units ? fmtM(_uInv.units) : '—';
+  const stmtUnitPrice = _uaStmt.currentUnitPrice ? '$'+(_uaStmt.currentUnitPrice).toFixed(4) : '—';
+  const stmtCurVal    = _uInv.currentValue ? '$'+fmtM(_uInv.currentValue) : '—';
   const isLocked = inv.status==='LOCKED';
 
   // Get BSC logo
@@ -5495,6 +5708,8 @@ function renderDispatches() {
 // ── RENDER ALL ───────────────────────────────────────────────────
 function renderAll(d) {
   window.lastData = d;
+  // Compute unit accounting on every data refresh
+  window.unitAccounting = calcUnitAccounting(d.transactions || [], d.positions || [], d.nav || d.totalDeposited || 0);
   $('live-date').textContent = new Date().toLocaleString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}).replace(/\//g,'.');
   renderOverview(d);
   renderChips(d.positions||[]);
@@ -5868,7 +6083,7 @@ function showHeatTip(e, date, count, pnl, tradesHTML) {
   document.getElementById('ht-pnl').textContent  = (pnl>=0?'+':'') + '$' + fmtM(pnl);
   document.getElementById('ht-pnl').style.color  = pnl>=0 ? 'var(--green)' : 'var(--red)';
   document.getElementById('ht-count').textContent = count + (count==1?' trade':' trades') + ' on this day';
-  try { document.getElementById('ht-trades').innerHTML = tradesHTML; }
+  try { document.getElementById('ht-trades').innerHTML = decodeURIComponent(encodedTrades); }
   catch(e) { document.getElementById('ht-trades').innerHTML = ''; }
   positionHeatTip(e);
   tip.classList.add('visible');
@@ -5971,12 +6186,15 @@ function renderProjections(d) {
   });
   const totalCap = Object.values(txMap).reduce((s,v)=>s+v,0);
 
+  const _uaProj = (window.unitAccounting || {}).results || {};
   const rows = d.investors.map(inv=>{
-    const cap = txMap[inv.name]||inv.deposited;
-    const pct = totalCap>0?cap/totalCap:inv.pct;
+    const cap  = txMap[inv.name]||inv.deposited;
+    const uInv = _uaProj[inv.name];
+    // Use current unit value as projection base (not just deposit)
+    const base = uInv ? uInv.currentValue : cap;
     const proj = (m) => {
       const r = annRate * (m/12);
-      const gain = cap * r;
+      const gain = base * r;
       return (gain>=0?'+':'-')+'$'+fmtM(Math.abs(gain));
     };
     return '<div class="proj-row">'
