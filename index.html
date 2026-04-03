@@ -1387,6 +1387,13 @@
     <div id="unit-nav-banner" style="display:none;margin-bottom:14px;"></div>
     <div class="metric-grid" id="overview-metrics"></div>
     <div class="card" style="margin-bottom:14px;">
+      <div class="card-header">
+        <span class="card-title">Unit NAV Price History</span>
+        <span style="font-size:10px;color:var(--muted);">Price per unit since inception · $1.0000 base</span>
+      </div>
+      <div class="chart-wrap tall"><canvas id="unitNavChart"></canvas></div>
+    </div>
+    <div class="card" style="margin-bottom:14px;">
       <div class="card-header"><span class="card-title">Fund Health Score</span><span id="health-grade" style="font-size:11px;font-weight:600;letter-spacing:0.05em;"></span></div>
       <div style="display:flex;align-items:center;gap:20px;" id="health-score-container">
         <div class="health-score-ring">
@@ -1545,6 +1552,29 @@
   <!-- ANALYTICS -->
   <div class="page" id="page-analytics">
     <div id="calc-btn-wrap" style="display:none;margin-bottom:14px;"><button class="modal-btn" style="margin:0;width:auto;padding:10px 20px;" onclick="openCalcModal()">&#9881; Deposit Sizing Calculator</button></div>
+    <!-- Fund NAV & Unit Price History — master only -->
+    <div id="nav-history-master-wrap" style="display:none;">
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-header">
+          <span class="card-title">Fund NAV vs BTC</span>
+          <span style="font-size:10px;color:var(--muted);">Normalised % return since first trade</span>
+        </div>
+        <div class="chart-wrap tall"><canvas id="navChart"></canvas></div>
+      </div>
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-header">
+          <span class="card-title">Daily Unit NAV Price Log</span>
+          <span style="font-size:10px;color:var(--muted);">Reconstructed from closed trades · master only</span>
+        </div>
+        <div id="unit-nav-summary" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:16px;"></div>
+        <div class="table-scroll" style="max-height:400px;overflow-y:auto;">
+          <table>
+            <thead><tr><th>#</th><th>Date</th><th>Event</th><th>Cum. P&L</th><th>Fund NAV</th><th>Total Units</th><th>Unit Price</th><th>Change</th></tr></thead>
+            <tbody id="unit-nav-log-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
     <div class="two-col">
       <div class="card">
         <div class="card-header"><span class="card-title">Trade Statistics</span></div>
@@ -2770,6 +2800,7 @@ function parseTransactionLog(rows) {
 function renderOverview(d) {
   // ── Unit NAV card (injected separately, not in the animated metric grid) ──
   renderUnitNavCard(d);
+  renderUnitNavChart(d);
 
   const metrics = [
     {label:'Total P&L',      val:(d.totalPnl>=0?'+':'-')+'$'+fmtM(Math.abs(d.totalPnl)),    cls:d.totalPnl>=0?'green':'red', sub:'All closed + open positions',         key:'totalPnl'},
@@ -3105,8 +3136,8 @@ function renderInvestors(investors, transactions) {
             ${statusBadge}
             <div style="width:1px;height:32px;background:var(--border);"></div>
             <div style="text-align:right;min-width:80px;">
-              <div class="investor-total" style="font-size:16px;">$${fmtM(netCapital)}</div>
-              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">Net Capital</div>
+              <div class="investor-total" style="font-size:16px;">$${fmtM((()=>{const u=window.unitAccounting?.results?.[inv.name];return u?.costBasis??netCapital;})())}</div>
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">Capital Invested</div>
             </div>
             <div style="width:1px;height:32px;background:var(--border);"></div>
             <div style="text-align:right;min-width:80px;">
@@ -3134,8 +3165,12 @@ function renderInvestors(investors, transactions) {
               <div class="inv-stat-value" style="color:${aggWithdrawn>0?'var(--red)':'var(--muted)'}">$${fmtM(aggWithdrawn)}</div>
             </div>
             <div class="inv-stat-box">
-              <div class="inv-stat-label">Cost Basis</div>
-              <div class="inv-stat-value" style="color:var(--text)">$${fmtM((()=>{const u=window.unitAccounting?.results?.[inv.name];return u?.costBasis??netCapital;})())}</div>
+              <div class="inv-stat-label">Net Capital</div>
+              <div class="inv-stat-value" style="color:var(--muted)">$${fmtM(netCapital)}</div>
+            </div>
+            <div class="inv-stat-box">
+              <div class="inv-stat-label">Capital Invested</div>
+              <div class="inv-stat-value" style="color:var(--text)" title="Original capital still at work after accounting for the capital portion of any withdrawals">$${fmtM((()=>{const u=window.unitAccounting?.results?.[inv.name];return u?.costBasis??netCapital;})())}</div>
             </div>
             <div class="inv-stat-box">
               <div class="inv-stat-label">P&L (Unit NAV)</div>
@@ -3150,7 +3185,7 @@ function renderInvestors(investors, transactions) {
               <div class="inv-stat-value" style="color:var(--accent2)">${inv._unitValue ? '$'+fmtM(inv._unitValue) : '—'}</div>
             </div>
             <div class="inv-stat-box">
-              <div class="inv-stat-label">Return on Cost Basis</div>
+              <div class="inv-stat-label">Return on Capital</div>
               <div class="inv-stat-value" style="color:${(inv._returnPct||0)>=0?'var(--green)':'var(--red)'}">${(inv._returnPct!==undefined?(inv._returnPct>=0?'+':'')+inv._returnPct.toFixed(2)+'%':'—')}</div>
             </div>
             ${(()=>{
@@ -3942,6 +3977,214 @@ function renderUnitNavCard(d) {
       }
     });
   }, 60);
+}
+
+// ── UNIT NAV PRICE HISTORY BUILDER ──────────────────────────────
+// Reconstructs a chronological series of unit price snapshots.
+// Each event is either:
+//   • a closed trade (P&L recognised, unit price updates)
+//   • a deposit      (new units issued at that price)
+//   • a withdrawal   (units burned at that price)
+// Returns array of { date, label, cumPnl, fundNAV, totalUnits, unitPrice, change }
+function buildUnitNavHistory(transactions, positions) {
+  const parseDate = s => {
+    if (!s || s === '—') return 0;
+    const [dd, mm, yyyy] = (s||'').split('/');
+    return new Date(+yyyy, +mm - 1, +dd).getTime();
+  };
+
+  // Closed trades by exit date
+  const trades = (positions || [])
+    .filter(p => p.status === 'Closed' && (p.exitDate || p.date))
+    .map(p => ({ ts: parseDate(p.exitDate || p.date), date: p.exitDate || p.date, pnl: p.pnl || 0, label: p.ticker || ('#' + p.id), type: 'trade' }))
+    .sort((a, b) => a.ts - b.ts);
+
+  // Deposit / withdrawal events
+  const txnEvents = (transactions || [])
+    .filter(t => (t.type === 'Deposit' && t.deposit > 0) || (t.type === 'Withdrawal' && t.withdrawal > 0))
+    .map(t => ({ ts: parseDate(t.date), date: t.date, amount: t.type === 'Deposit' ? t.deposit : -t.withdrawal, label: t.type + ' · ' + t.name, type: t.type.toLowerCase() }))
+    .sort((a, b) => a.ts - b.ts);
+
+  // Merge all events chronologically; deposits/withdrawals before trades on same day
+  const allEvents = [...trades, ...txnEvents].sort((a, b) =>
+    a.ts !== b.ts ? a.ts - b.ts : (a.type === 'trade' ? 1 : -1)
+  );
+
+  if (!allEvents.length) return [];
+
+  const STARTING_PRICE = 1.0;
+  let cumPnl      = 0;
+  let runningNAV  = 0;
+  let totalUnits  = 0;
+  const history   = [];
+  let prevPrice   = STARTING_PRICE;
+
+  allEvents.forEach((ev, i) => {
+    if (ev.type === 'trade') {
+      cumPnl += ev.pnl;
+    } else if (ev.type === 'deposit') {
+      runningNAV += ev.amount;
+    } else if (ev.type === 'withdrawal') {
+      runningNAV = Math.max(0, runningNAV + ev.amount); // ev.amount is negative
+    }
+
+    const fundNAV   = runningNAV > 0 ? runningNAV + cumPnl : Math.max(0, cumPnl);
+    const unitPrice = totalUnits > 0 ? fundNAV / totalUnits : STARTING_PRICE;
+
+    // Issue/burn units for deposit/withdrawal events
+    if (ev.type === 'deposit') {
+      const navBeforeDeposit = runningNAV - ev.amount + cumPnl; // NAV before this deposit
+      const priceAtDeposit   = totalUnits > 0 ? navBeforeDeposit / totalUnits : STARTING_PRICE;
+      totalUnits += ev.amount / priceAtDeposit;
+    } else if (ev.type === 'withdrawal') {
+      const burned = Math.abs(ev.amount) / unitPrice;
+      totalUnits   = Math.max(0, totalUnits - burned);
+    }
+
+    // Recompute after unit adjustment
+    const finalNAV   = runningNAV > 0 ? runningNAV + cumPnl : Math.max(0, cumPnl);
+    const finalPrice = totalUnits > 0 ? finalNAV / totalUnits : STARTING_PRICE;
+    const change     = prevPrice > 0 ? ((finalPrice - prevPrice) / prevPrice * 100) : 0;
+
+    history.push({
+      date:       ev.date,
+      label:      ev.label,
+      type:       ev.type,
+      cumPnl,
+      fundNAV:    finalNAV,
+      totalUnits: +totalUnits.toFixed(4),
+      unitPrice:  +finalPrice.toFixed(8),
+      change:     +change.toFixed(4),
+    });
+    prevPrice = finalPrice;
+  });
+
+  return history;
+}
+
+// ── UNIT NAV CHART (Overview — all users) ───────────────────────
+function renderUnitNavChart(d) {
+  destroyChart('unitNavChart');
+  const canvas = document.getElementById('unitNavChart');
+  if (!canvas) return;
+
+  const history = buildUnitNavHistory(d.transactions || [], d.positions || []);
+  if (history.length < 2) {
+    canvas.parentElement.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:12px 0;">Not enough closed trade data yet</div>';
+    return;
+  }
+
+  // Group by date — take last price of each day
+  const byDate = {};
+  history.forEach(h => { byDate[h.date] = h.unitPrice; });
+  // Also always include $1.00 at inception
+  const sortedDates = Object.keys(byDate).sort((a, b) => {
+    const pd = s => { const [dd,mm,yy]=(s||'').split('/'); return new Date(+yy,+mm-1,+dd); };
+    return pd(a) - pd(b);
+  });
+
+  const labels = ['Inception', ...sortedDates];
+  const data   = [1.0, ...sortedDates.map(d => byDate[d])];
+  const currentPrice = data[data.length - 1];
+  const gain = currentPrice - 1.0;
+  const lineColor = gain >= 0 ? '#c8a96e' : '#e8534a';
+  const fillColor = gain >= 0 ? 'rgba(200,169,110,0.08)' : 'rgba(232,83,74,0.06)';
+
+  charts.unitNavChart = new Chart(canvas, {
+    type: 'line',
+    data: { labels, datasets: [{
+      label: 'Unit NAV Price',
+      data,
+      borderColor: lineColor,
+      backgroundColor: fillColor,
+      borderWidth: 2.5, pointRadius: 2, pointHoverRadius: 5,
+      pointBackgroundColor: lineColor,
+      fill: true, tension: 0.35,
+    }]},
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(10,12,15,0.95)',
+          borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
+          padding: 10, cornerRadius: 8,
+          callbacks: {
+            title: ctx => ctx[0].label === 'Inception' ? 'Fund Inception · $1.0000' : ctx[0].label,
+            label: ctx => {
+              const v = ctx.parsed.y;
+              const chg = ((v - 1.0) * 100).toFixed(2);
+              return ` Unit Price: $${v.toFixed(4)}  (${chg >= 0 ? '+' : ''}${chg}% vs inception)`;
+            }
+          }
+        },
+        annotation: undefined,
+      },
+      scales: {
+        x: { grid:{ display:false }, ticks:{ color:'#6b7380', maxTicksLimit:10 } },
+        y: {
+          grid: { color:'rgba(255,255,255,0.05)' },
+          ticks: { color:'#6b7380', callback: v => '$' + v.toFixed(4) },
+        }
+      }
+    }
+  });
+}
+
+// ── UNIT NAV MASTER LOG (Analytics — master only) ────────────────
+function renderUnitNavMasterLog(d) {
+  // Show/hide master wrapper
+  const wrap = document.getElementById('nav-history-master-wrap');
+  if (wrap) wrap.style.display = isMasterAccess ? 'block' : 'none';
+  if (!isMasterAccess) return;
+
+  const history = buildUnitNavHistory(d.transactions || [], d.positions || []);
+  if (!history.length) return;
+
+  // Summary strip
+  const summary = document.getElementById('unit-nav-summary');
+  if (summary) {
+    const first = history[0];
+    const last  = history[history.length - 1];
+    const allTime  = ((last.unitPrice - 1.0) * 100).toFixed(2);
+    const best  = history.reduce((a, b) => b.unitPrice > a.unitPrice ? b : a);
+    const worst = history.reduce((a, b) => b.unitPrice < a.unitPrice ? b : a);
+    summary.innerHTML = [
+      { label: 'Current Unit Price', val: '$' + last.unitPrice.toFixed(4),   cls: 'var(--accent2)' },
+      { label: 'All-time Return',    val: (allTime >= 0 ? '+' : '') + allTime + '%', cls: allTime >= 0 ? 'var(--green)' : 'var(--red)' },
+      { label: 'Peak Unit Price',    val: '$' + best.unitPrice.toFixed(4),    cls: 'var(--green)'   },
+      { label: 'Peak Date',          val: best.date,                          cls: 'var(--text)'    },
+      { label: 'Total Events',       val: history.length,                     cls: 'var(--blue)'    },
+    ].map(s =>
+      '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">'
+      + '<div style="font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:3px;">' + s.label + '</div>'
+      + '<div style="font-size:14px;font-family:var(--mono);font-weight:600;color:' + s.cls + ';">' + s.val + '</div>'
+      + '</div>'
+    ).join('');
+  }
+
+  // Log table — most recent first
+  const tbody = document.getElementById('unit-nav-log-tbody');
+  if (!tbody) return;
+  const rows = [...history].reverse();
+  tbody.innerHTML = rows.map((h, i) => {
+    const priceColor  = h.unitPrice >= 1.0 ? 'var(--green)' : 'var(--red)';
+    const changeColor = h.change >= 0 ? 'var(--green)' : 'var(--red)';
+    const changeSign  = h.change >= 0 ? '+' : '';
+    const typeIcon    = h.type === 'trade' ? '📈' : h.type === 'deposit' ? '⬇️' : '⬆️';
+    const rowBg       = h.type !== 'trade' ? 'background:rgba(200,169,110,0.03);' : '';
+    return '<tr style="' + rowBg + '">'
+      + '<td style="color:var(--muted)">' + (history.length - i) + '</td>'
+      + '<td style="color:var(--muted)">' + h.date + '</td>'
+      + '<td class="label" style="font-size:11px;">' + typeIcon + ' ' + h.label + '</td>'
+      + '<td style="color:' + (h.cumPnl >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (h.cumPnl >= 0 ? '+' : '') + '$' + fmtM(h.cumPnl) + '</td>'
+      + '<td style="color:var(--accent2)">$' + fmtM(h.fundNAV) + '</td>'
+      + '<td style="color:var(--blue)">' + fmtM(h.totalUnits) + '</td>'
+      + '<td style="color:' + priceColor + ';font-weight:600;">$' + h.unitPrice.toFixed(4) + '</td>'
+      + '<td style="color:' + changeColor + '">' + changeSign + h.change.toFixed(4) + '%</td>'
+      + '</tr>';
+  }).join('');
 }
 
 function renderUnitLedger() {
@@ -4881,7 +5124,8 @@ function generateStatement() {
   <div class="metrics" style="grid-template-columns:repeat(3,1fr);">
     <div class="metric-box"><div class="label">Total Deposited</div><div class="value gold">$${fmtM(dep)}</div></div>
     <div class="metric-box"><div class="label">Total Withdrawn</div><div class="value red">$${fmtM(wdr)}</div></div>
-    <div class="metric-box"><div class="label">Net Capital</div><div class="value">$${fmtM(net)}</div></div>
+    <div class="metric-box"><div class="label">Net Capital</div><div class="value" style="color:#888">$${fmtM(net)}</div></div>
+    <div class="metric-box" style="border-color:#c8a96e40;"><div class="label">Capital Invested</div><div class="value gold">$${fmtM(costBasis)}</div><div style="font-size:9px;color:#aaa;margin-top:3px;">Original capital still at work</div></div>
     <div class="metric-box"><div class="label">P&amp;L Share</div><div class="value ${pnl>=0?'green':'red'}">${pnl>=0?'+':''}$${fmtM(pnl)}</div></div>
     <div class="metric-box"><div class="label">Return on Capital</div><div class="value ${retPct>=0?'green':'red'}">${retPct>=0?'+':''}${retPct}%</div></div>
     <div class="metric-box"><div class="label">Current Value</div><div class="value gold">${stmtCurVal}</div></div>
@@ -4891,7 +5135,7 @@ function generateStatement() {
   <h3>Unit Holdings</h3>
   <div style="background:#f8f9fa;border-radius:8px;padding:14px 18px;margin-bottom:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
     <div><div style="font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:#888;margin-bottom:3px;">Units Currently Held</div><div style="font-size:16px;font-weight:700;font-family:monospace;color:#1d4ed8;">${stmtUnits}</div></div>
-    <div><div style="font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:#888;margin-bottom:3px;">Cost Basis / Unit</div><div style="font-size:16px;font-weight:700;font-family:monospace;color:#b45309;">${(_uInv.units > 0 && _uInv.costBasis > 0) ? '$'+((_uInv.costBasis / _uInv.units).toFixed(4)) : '—'}</div></div>
+    <div><div style="font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:#888;margin-bottom:3px;">Capital Invested / Unit</div><div style="font-size:16px;font-weight:700;font-family:monospace;color:#b45309;">${(_uInv.units > 0 && _uInv.costBasis > 0) ? '$'+((_uInv.costBasis / _uInv.units).toFixed(4)) : '—'}</div></div>
     <div><div style="font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:#888;margin-bottom:3px;">Current Unit Price</div><div style="font-size:16px;font-weight:700;font-family:monospace;color:#b45309;">${stmtUnitPrice}</div></div>
     <div><div style="font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:#888;margin-bottom:3px;">Current Value</div><div style="font-size:16px;font-weight:700;font-family:monospace;color:#16a34a;">${stmtCurVal}</div></div>
     ${_withdrawalLedger.length > 0 ? `
@@ -5365,7 +5609,7 @@ function renderCalSummary(positions, year, month) {
 function addChartDownloadButtons() {
   const chartIds = ['plBarChart','assetPnlChart','cumulativePnlChart',
                     'navChart','investorCapitalChart',
-                    'winRateChart','momentumChart'];
+                    'winRateChart','momentumChart','unitNavChart'];
   chartIds.forEach(id => {
     const canvas = document.getElementById(id);
     if (!canvas) return;
@@ -6089,6 +6333,7 @@ function renderAll(d) {
   renderHeroNav(d);
   renderInceptionStats(d);
   renderNAVWithBenchmark(d);
+  renderUnitNavMasterLog(d);
   setTimeout(colorPositionRows, 100);
   setTimeout(addChartDownloadButtons, 300);
   // Show statement button for master
