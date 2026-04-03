@@ -3980,84 +3980,138 @@ function renderUnitNavCard(d) {
 }
 
 // ── UNIT NAV PRICE HISTORY BUILDER ──────────────────────────────
-// Reconstructs a chronological series of unit price snapshots.
-// Each event is either:
-//   • a closed trade (P&L recognised, unit price updates)
-//   • a deposit      (new units issued at that price)
-//   • a withdrawal   (units burned at that price)
-// Returns array of { date, label, cumPnl, fundNAV, totalUnits, unitPrice, change }
-function buildUnitNavHistory(transactions, positions) {
+// Derives a chronological unit price series using EXACTLY the same
+// logic as calcUnitAccounting so the two engines always agree.
+//
+// Strategy:
+//   1. Replay deposits/withdrawals in chronological order (same as
+//      calcUnitAccounting) to get totalUnits and runningNAV at each
+//      capital event — these are ground truth checkpoints.
+//   2. Between checkpoints, insert each closed trade as a P&L event:
+//      unitPrice = (runningNAV + cumPnlSoFar) / totalUnitsAtThatPoint
+//   3. The final current price uses d.nav (live NAV from sheet) just
+//      like calcUnitAccounting does, so they are identical.
+function buildUnitNavHistory(transactions, positions, currentNAV) {
   const parseDate = s => {
     if (!s || s === '—') return 0;
     const [dd, mm, yyyy] = (s||'').split('/');
     return new Date(+yyyy, +mm - 1, +dd).getTime();
   };
 
-  // Closed trades by exit date
-  const trades = (positions || [])
-    .filter(p => p.status === 'Closed' && (p.exitDate || p.date))
-    .map(p => ({ ts: parseDate(p.exitDate || p.date), date: p.exitDate || p.date, pnl: p.pnl || 0, label: p.ticker || ('#' + p.id), type: 'trade' }))
-    .sort((a, b) => a.ts - b.ts);
-
-  // Deposit / withdrawal events
-  const txnEvents = (transactions || [])
-    .filter(t => (t.type === 'Deposit' && t.deposit > 0) || (t.type === 'Withdrawal' && t.withdrawal > 0))
-    .map(t => ({ ts: parseDate(t.date), date: t.date, amount: t.type === 'Deposit' ? t.deposit : -t.withdrawal, label: t.type + ' · ' + t.name, type: t.type.toLowerCase() }))
-    .sort((a, b) => a.ts - b.ts);
-
-  // Merge all events chronologically; deposits/withdrawals before trades on same day
-  const allEvents = [...trades, ...txnEvents].sort((a, b) =>
-    a.ts !== b.ts ? a.ts - b.ts : (a.type === 'trade' ? 1 : -1)
-  );
-
-  if (!allEvents.length) return [];
-
   const STARTING_PRICE = 1.0;
-  let cumPnl      = 0;
-  let runningNAV  = 0;
-  let totalUnits  = 0;
-  const history   = [];
-  let prevPrice   = STARTING_PRICE;
 
-  allEvents.forEach((ev, i) => {
-    if (ev.type === 'trade') {
-      cumPnl += ev.pnl;
-    } else if (ev.type === 'deposit') {
-      runningNAV += ev.amount;
-    } else if (ev.type === 'withdrawal') {
-      runningNAV = Math.max(0, runningNAV + ev.amount); // ev.amount is negative
+  // Closed trades sorted by exit date — same filter as calcUnitAccounting
+  const closedTrades = (positions || [])
+    .filter(p => p.status === 'Closed' && (p.exitDate || p.date))
+    .map(p => ({ ts: parseDate(p.exitDate || p.date), date: p.exitDate || p.date, pnl: p.pnl || 0, label: p.ticker || ('#' + p.id) }))
+    .sort((a, b) => a.ts - b.ts);
+
+  // Capital events — same filter and sort as calcUnitAccounting
+  const capitalEvents = (transactions || [])
+    .filter(t => (t.type === 'Deposit' && t.deposit > 0) || (t.type === 'Withdrawal' && t.withdrawal > 0))
+    .map(t => ({ ...t, ts: parseDate(t.date), isDeposit: t.type === 'Deposit' }))
+    .sort((a, b) => a.ts !== b.ts ? a.ts - b.ts : (a.isDeposit ? -1 : 1));
+
+  if (!capitalEvents.filter(e => e.isDeposit).length) return [];
+
+  // Helper: cumulative P&L from all trades on or before ts
+  const cumulativePnlAt = ts => closedTrades
+    .filter(t => t.ts <= ts)
+    .reduce((s, t) => s + t.pnl, 0);
+
+  const history = [];
+  let totalUnits = 0;
+  let runningNAV = 0;
+  let prevPrice  = STARTING_PRICE;
+  let lastCapitalTs = 0;
+
+  // Process each capital event — same logic as calcUnitAccounting
+  capitalEvents.forEach((ev, i) => {
+    // ── Insert any closed trades that happened between last capital event and this one ──
+    const tradesInWindow = closedTrades.filter(t =>
+      t.ts > lastCapitalTs && t.ts <= ev.ts && !(ev.isDeposit && t.ts === ev.ts)
+    );
+    tradesInWindow.forEach(tr => {
+      if (totalUnits <= 0) return;
+      const cumPnl   = cumulativePnlAt(tr.ts);
+      const nav      = runningNAV + cumPnl;
+      const price    = nav / totalUnits;
+      const change   = prevPrice > 0 ? ((price - prevPrice) / prevPrice * 100) : 0;
+      history.push({
+        date: tr.date, label: tr.label, type: 'trade',
+        cumPnl, fundNAV: nav, totalUnits: +totalUnits.toFixed(4),
+        unitPrice: +price.toFixed(8), change: +change.toFixed(4),
+      });
+      prevPrice = price;
+    });
+
+    // ── Process this capital event (same math as calcUnitAccounting) ──
+    const cumPnl      = cumulativePnlAt(ev.ts);
+    const navNow      = runningNAV > 0 ? runningNAV + cumPnl : (ev.isDeposit ? ev.deposit : 0);
+    const unitPriceNow = totalUnits > 0 ? navNow / totalUnits : STARTING_PRICE;
+
+    if (ev.isDeposit) {
+      const unitsIssued = ev.deposit / unitPriceNow;
+      totalUnits += unitsIssued;
+      runningNAV += ev.deposit;
+    } else {
+      // Withdrawal — burn units proportional to amount
+      const unitsBurned    = unitPriceNow > 0 ? ev.withdrawal / unitPriceNow : 0;
+      const actualBurned   = Math.min(unitsBurned, totalUnits);
+      const actualRedeemed = actualBurned * unitPriceNow;
+      totalUnits   = Math.max(0, totalUnits - actualBurned);
+      runningNAV   = Math.max(0, runningNAV - actualRedeemed);
     }
 
-    const fundNAV   = runningNAV > 0 ? runningNAV + cumPnl : Math.max(0, cumPnl);
-    const unitPrice = totalUnits > 0 ? fundNAV / totalUnits : STARTING_PRICE;
-
-    // Issue/burn units for deposit/withdrawal events
-    if (ev.type === 'deposit') {
-      const navBeforeDeposit = runningNAV - ev.amount + cumPnl; // NAV before this deposit
-      const priceAtDeposit   = totalUnits > 0 ? navBeforeDeposit / totalUnits : STARTING_PRICE;
-      totalUnits += ev.amount / priceAtDeposit;
-    } else if (ev.type === 'withdrawal') {
-      const burned = Math.abs(ev.amount) / unitPrice;
-      totalUnits   = Math.max(0, totalUnits - burned);
-    }
-
-    // Recompute after unit adjustment
+    // Post-event unit price
     const finalNAV   = runningNAV > 0 ? runningNAV + cumPnl : Math.max(0, cumPnl);
     const finalPrice = totalUnits > 0 ? finalNAV / totalUnits : STARTING_PRICE;
     const change     = prevPrice > 0 ? ((finalPrice - prevPrice) / prevPrice * 100) : 0;
 
     history.push({
       date:       ev.date,
-      label:      ev.label,
-      type:       ev.type,
+      label:      (ev.isDeposit ? 'Deposit' : 'Withdrawal') + ' · ' + ev.name,
+      type:       ev.isDeposit ? 'deposit' : 'withdrawal',
       cumPnl,
       fundNAV:    finalNAV,
       totalUnits: +totalUnits.toFixed(4),
       unitPrice:  +finalPrice.toFixed(8),
       change:     +change.toFixed(4),
     });
-    prevPrice = finalPrice;
+    prevPrice     = finalPrice;
+    lastCapitalTs = ev.ts;
   });
+
+  // ── Trades after the last capital event ──
+  closedTrades.filter(t => t.ts > lastCapitalTs).forEach(tr => {
+    if (totalUnits <= 0) return;
+    const cumPnl  = cumulativePnlAt(tr.ts);
+    const nav     = runningNAV + cumPnl;
+    const price   = nav / totalUnits;
+    const change  = prevPrice > 0 ? ((price - prevPrice) / prevPrice * 100) : 0;
+    history.push({
+      date: tr.date, label: tr.label, type: 'trade',
+      cumPnl, fundNAV: nav, totalUnits: +totalUnits.toFixed(4),
+      unitPrice: +price.toFixed(8), change: +change.toFixed(4),
+    });
+    prevPrice = price;
+  });
+
+  // ── Final snapshot uses live NAV (same as calcUnitAccounting) ──
+  if (currentNAV && totalUnits > 0) {
+    const livePrice = currentNAV / totalUnits;
+    const change    = prevPrice > 0 ? ((livePrice - prevPrice) / prevPrice * 100) : 0;
+    // Only add if it differs from last entry
+    if (!history.length || Math.abs(livePrice - history[history.length-1].unitPrice) > 0.000001) {
+      history.push({
+        date: new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\//g,'/'),
+        label: 'Live (open P&L)', type: 'live',
+        cumPnl: cumulativePnlAt(Date.now()),
+        fundNAV: currentNAV, totalUnits: +totalUnits.toFixed(4),
+        unitPrice: +livePrice.toFixed(8), change: +change.toFixed(4),
+      });
+    }
+  }
 
   return history;
 }
@@ -4068,24 +4122,33 @@ function renderUnitNavChart(d) {
   const canvas = document.getElementById('unitNavChart');
   if (!canvas) return;
 
-  const history = buildUnitNavHistory(d.transactions || [], d.positions || []);
+  const history = buildUnitNavHistory(d.transactions || [], d.positions || [], d.nav || 0);
   if (history.length < 2) {
     canvas.parentElement.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:12px 0;">Not enough closed trade data yet</div>';
     return;
   }
 
-  // Group by date — take last price of each day
+  // Group by date — take last price of each day, keeping chronological order
   const byDate = {};
-  history.forEach(h => { byDate[h.date] = h.unitPrice; });
-  // Also always include $1.00 at inception
-  const sortedDates = Object.keys(byDate).sort((a, b) => {
-    const pd = s => { const [dd,mm,yy]=(s||'').split('/'); return new Date(+yy,+mm-1,+dd); };
-    return pd(a) - pd(b);
+  const dateOrder = [];
+  history.forEach(h => {
+    if (!byDate[h.date]) dateOrder.push(h.date);
+    byDate[h.date] = h.unitPrice; // last event of that date wins
   });
 
-  const labels = ['Inception', ...sortedDates];
-  const data   = [1.0, ...sortedDates.map(d => byDate[d])];
-  const currentPrice = data[data.length - 1];
+  // Use calcUnitAccounting's currentUnitPrice as the authoritative final value
+  const ua = window.unitAccounting;
+  const authoritative = ua && ua.currentUnitPrice ? ua.currentUnitPrice : (byDate[dateOrder[dateOrder.length-1]] || 1.0);
+
+  // Overwrite today's entry with the authoritative price
+  const today = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\//g,'/');
+  if (dateOrder[dateOrder.length-1] === today || history[history.length-1]?.type === 'live') {
+    byDate[dateOrder[dateOrder.length-1]] = authoritative;
+  }
+
+  const labels = ['Inception', ...dateOrder];
+  const data   = [1.0, ...dateOrder.map(dt => byDate[dt])];
+  const currentPrice = authoritative;
   const gain = currentPrice - 1.0;
   const lineColor = gain >= 0 ? '#c8a96e' : '#e8534a';
   const fillColor = gain >= 0 ? 'rgba(200,169,110,0.08)' : 'rgba(232,83,74,0.06)';
@@ -4115,11 +4178,10 @@ function renderUnitNavChart(d) {
             label: ctx => {
               const v = ctx.parsed.y;
               const chg = ((v - 1.0) * 100).toFixed(2);
-              return ` Unit Price: $${v.toFixed(4)}  (${chg >= 0 ? '+' : ''}${chg}% vs inception)`;
+              return ` Unit Price: $${v.toFixed(4)}  (${Number(chg) >= 0 ? '+' : ''}${chg}% vs inception)`;
             }
           }
         },
-        annotation: undefined,
       },
       scales: {
         x: { grid:{ display:false }, ticks:{ color:'#6b7380', maxTicksLimit:10 } },
@@ -4139,23 +4201,26 @@ function renderUnitNavMasterLog(d) {
   if (wrap) wrap.style.display = isMasterAccess ? 'block' : 'none';
   if (!isMasterAccess) return;
 
-  const history = buildUnitNavHistory(d.transactions || [], d.positions || []);
+  const history = buildUnitNavHistory(d.transactions || [], d.positions || [], d.nav || 0);
   if (!history.length) return;
 
-  // Summary strip
+  // Summary strip — use window.unitAccounting as authoritative source
   const summary = document.getElementById('unit-nav-summary');
   if (summary) {
-    const first = history[0];
-    const last  = history[history.length - 1];
-    const allTime  = ((last.unitPrice - 1.0) * 100).toFixed(2);
-    const best  = history.reduce((a, b) => b.unitPrice > a.unitPrice ? b : a);
-    const worst = history.reduce((a, b) => b.unitPrice < a.unitPrice ? b : a);
+    const ua          = window.unitAccounting || {};
+    const livePrice   = ua.currentUnitPrice || history[history.length-1]?.unitPrice || 1;
+    const liveTotalU  = ua.totalUnits       || history[history.length-1]?.totalUnits || 0;
+    const allTime     = ((livePrice - 1.0) * 100).toFixed(2);
+    // Peak from history (exclude live entry which may include open P&L)
+    const closedOnly  = history.filter(h => h.type !== 'live');
+    const best        = closedOnly.length ? closedOnly.reduce((a, b) => b.unitPrice > a.unitPrice ? b : a) : history[0];
     summary.innerHTML = [
-      { label: 'Current Unit Price', val: '$' + last.unitPrice.toFixed(4),   cls: 'var(--accent2)' },
-      { label: 'All-time Return',    val: (allTime >= 0 ? '+' : '') + allTime + '%', cls: allTime >= 0 ? 'var(--green)' : 'var(--red)' },
-      { label: 'Peak Unit Price',    val: '$' + best.unitPrice.toFixed(4),    cls: 'var(--green)'   },
-      { label: 'Peak Date',          val: best.date,                          cls: 'var(--text)'    },
-      { label: 'Total Events',       val: history.length,                     cls: 'var(--blue)'    },
+      { label: 'Current Unit Price',   val: '$' + livePrice.toFixed(4),                                         cls: 'var(--accent2)' },
+      { label: 'Total Units',          val: fmtM(liveTotalU),                                                   cls: 'var(--blue)'    },
+      { label: 'All-time Return',      val: (Number(allTime) >= 0 ? '+' : '') + allTime + '%',                  cls: Number(allTime) >= 0 ? 'var(--green)' : 'var(--red)' },
+      { label: 'Peak Unit Price',      val: '$' + (best?.unitPrice||1).toFixed(4),                              cls: 'var(--green)'   },
+      { label: 'Peak Date',            val: best?.date || '—',                                                   cls: 'var(--text)'    },
+      { label: 'Total Events',         val: history.length,                                                      cls: 'var(--muted)'   },
     ].map(s =>
       '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">'
       + '<div style="font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:3px;">' + s.label + '</div>'
