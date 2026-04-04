@@ -1377,7 +1377,7 @@
   <div class="page active" id="page-overview">
     <div class="hero-nav" id="hero-nav-block" style="display:none;">
       <div>
-        <div class="hero-nav-label">Fund NAV</div>
+        <div class="hero-nav-label">${t('fundNav')}</div>
         <div class="hero-nav-val" id="hero-nav-val">—</div>
         <div class="hero-nav-sub" id="hero-nav-sub"></div>
       </div>
@@ -1388,13 +1388,13 @@
     <div class="metric-grid" id="overview-metrics"></div>
     <div class="card" style="margin-bottom:14px;">
       <div class="card-header">
-        <span class="card-title">Unit NAV Price History</span>
-        <span style="font-size:10px;color:var(--muted);">Price per unit since inception · $1.0000 base</span>
+        <span class="card-title" data-i18n="unitNavPriceHistory">Unit NAV Price History</span>
+        <span style="font-size:10px;color:var(--muted);" data-i18n="unitNavSince">Price per unit since inception · $1.0000 base</span>
       </div>
       <div class="chart-wrap tall"><canvas id="unitNavChart"></canvas></div>
     </div>
     <div class="card" style="margin-bottom:14px;">
-      <div class="card-header"><span class="card-title">Fund Health Score</span><span id="health-grade" style="font-size:11px;font-weight:600;letter-spacing:0.05em;"></span></div>
+      <div class="card-header"><span class="card-title" data-i18n="fundHealthScore">Fund Health Score</span><span id="health-grade" style="font-size:11px;font-weight:600;letter-spacing:0.05em;"></span></div>
       <div style="display:flex;align-items:center;gap:20px;" id="health-score-container">
         <div class="health-score-ring">
           <svg viewBox="0 0 110 110"><circle cx="55" cy="55" r="46" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10"/><circle id="health-ring-fill" cx="55" cy="55" r="46" fill="none" stroke="#3ecf8e" stroke-width="10" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="289"/></svg>
@@ -1405,40 +1405,40 @@
     </div>
     <div class="two-col">
       <div class="card">
-        <div class="card-header"><span class="card-title">P&L Breakdown</span></div>
+        <div class="card-header"><span class="card-title" data-i18n="pnlBreakdown">P&L Breakdown</span></div>
         <div class="chart-wrap"><canvas id="pnlChart"></canvas></div>
       </div>
       <div class="card">
-        <div class="card-header"><span class="card-title">Asset Class P&L</span></div>
+        <div class="card-header"><span class="card-title" data-i18n="assetClassPnl">Asset Class P&L</span></div>
         <div class="chart-wrap"><canvas id="assetChart"></canvas></div>
       </div>
     </div>
     <div class="two-col">
       <div class="card">
-        <div class="card-header"><span class="card-title">Trade Outcomes</span></div>
+        <div class="card-header"><span class="card-title" data-i18n="tradeOutcomes">Trade Outcomes</span></div>
         <div style="display:grid;grid-template-columns:1fr 140px;gap:16px;align-items:center;">
           <div id="trade-outcomes"></div>
           <div style="position:relative;width:130px;height:130px;">
             <canvas id="wlDonut"></canvas>
             <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
               <div id="donut-center-val" style="font-size:18px;font-weight:600;font-family:var(--mono);color:var(--green);"></div>
-              <div style="font-size:9px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;">Win Rate</div>
+              <div style="font-size:9px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;" data-i18n="winRate">Win Rate</div>
             </div>
           </div>
         </div>
         <div class="separator"></div>
-        <div class="section-title">Win / Loss Heatmap</div>
+        <div class="section-title" data-i18n="winLossHeatmap">Win / Loss Heatmap</div>
         <div class="wl-viz" id="wlViz"></div>
       </div>
       <div class="card">
-        <div class="card-header"><span class="card-title">Risk Metrics</span></div>
+        <div class="card-header"><span class="card-title" data-i18n="riskMetrics">Risk Metrics</span></div>
         <div id="risk-metrics"></div>
       </div>
     </div>
     <div class="card" style="margin-bottom:14px;">
       <div class="card-header">
-        <span class="card-title">Live Unrealised P&L</span>
-        <span style="font-size:10px;color:var(--muted);">Session track · updates every 3s</span>
+        <span class="card-title" data-i18n="liveUnrealisedPnl">Live Unrealised P&L</span>
+        <span style="font-size:10px;color:var(--muted);" data-i18n="sessionTrack">Session track · updates every 3s</span>
       </div>
       <div class="live-pnl-chart-wrap"><canvas id="livePnlChart"></canvas></div>
     </div>
@@ -1467,16 +1467,16 @@
     </div>
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;" id="pos-badges"></div>
     <div class="card" style="margin-bottom:14px;">
-      <div class="card-header"><span class="card-title">Open Positions</span><span class="live-badge"><div class="live-dot"></div>LIVE</span></div>
+      <div class="card-header"><span class="card-title" data-i18n="openPos">Open Positions</span><span class="live-badge"><div class="live-dot"></div>LIVE</span></div>
       <div class="table-scroll"><table><thead id="open-thead"></thead><tbody id="open-tbody"></tbody></table></div>
     </div>
     <div class="card" style="margin-bottom:14px;">
-      <div class="card-header"><span class="card-title">Position Risk Meter</span><span style="font-size:10px;color:var(--muted);">Open positions · SL &amp; TP exposure</span></div>
+      <div class="card-header"><span class="card-title" data-i18n="posRiskMeter">Position Risk Meter</span><span style="font-size:10px;color:var(--muted);" data-i18n="posRiskSub">Open positions · SL &amp; TP exposure</span></div>
       <div id="risk-meter-container"></div>
     </div>
     <div class="card">
       <div class="card-header">
-        <span class="card-title">Closed Positions</span>
+        <span class="card-title" data-i18n="closedPos">Closed Positions</span>
         <div style="display:flex;align-items:center;gap:8px;">
           <span id="closed-sort-label" style="font-size:10px;color:var(--muted);display:none;"></span>
           <button id="closed-sort-clear" onclick="clearClosedSort()" style="display:none;font-size:9px;padding:3px 10px;background:rgba(255,255,255,0.06);border:1px solid var(--border2);border-radius:6px;color:var(--muted);cursor:pointer;letter-spacing:0.05em;transition:all 0.15s;" onmouseover="this.style.color='var(--red)';this.style.borderColor='var(--red)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border2)'">✕ CLEAR SORT</button>
@@ -1496,11 +1496,11 @@
 
     <div class="two-col">
       <div class="card">
-        <div class="card-header"><span class="card-title">Fund Ownership</span></div>
+        <div class="card-header"><span class="card-title" data-i18n="fundOwnership">Fund Ownership</span></div>
         <div id="ownership-bars"></div>
       </div>
       <div class="card">
-        <div class="card-header"><span class="card-title">P&L Share</span></div>
+        <div class="card-header"><span class="card-title" data-i18n="pnlShare">P&L Share</span></div>
         <div id="pnl-shares"></div>
       </div>
     </div>
@@ -1508,7 +1508,7 @@
     <!-- Transaction Timeline -->
     <div class="card">
       <div class="card-header">
-        <span class="card-title">Transaction History</span>
+        <span class="card-title" data-i18n="txnHistory">Transaction History</span>
         <span id="txn-count" style="font-size:11px;color:var(--muted);"></span>
       </div>
       <div id="transaction-timeline"></div>
@@ -1516,10 +1516,10 @@
 
     <!-- Withdrawal Summary Table -->
     <div class="card">
-      <div class="card-header"><span class="card-title">Withdrawal Tracker</span></div>
+      <div class="card-header"><span class="card-title" data-i18n="withdrawalTracker">Withdrawal Tracker</span></div>
       <div class="table-scroll">
         <table>
-          <thead><tr><th>Investor</th><th>Total Deposited</th><th>Total Withdrawn</th><th>Cost Basis</th><th>Units Burned</th><th>Avg Redemption Price</th><th>Realised P&L</th><th>Status</th><th>Lockup Remaining</th></tr></thead>
+          <thead id='wdr-tracker-thead'><tr><th>Investor</th><th>Total Deposited</th><th>Total Withdrawn</th><th>Cost Basis</th><th>Units Burned</th><th>Avg Redemption Price</th><th>Realised P&L</th><th>Status</th><th>Lockup Remaining</th></tr></thead>
           <tbody id="withdrawal-tbody"></tbody>
         </table>
       </div>
@@ -1528,18 +1528,18 @@
     <!-- Unit NAV Ledger — master only -->
     <div class="card" id="unit-ledger-card" style="display:none;">
       <div class="card-header">
-        <span class="card-title">Unit NAV Ledger</span>
-        <span style="font-size:10px;color:var(--muted);">Full audit trail of unit issuance &amp; redemption</span>
+        <span class="card-title" data-i18n="unitNavLedger">Unit NAV Ledger</span>
+        <span style="font-size:10px;color:var(--muted);" data-i18n="unitAuditSub">Full audit trail of unit issuance &amp; redemption</span>
       </div>
       <div id="unit-summary-strip" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:16px;"></div>
-      <div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Issuance Events (Deposits)</div>
+      <div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;" data-i18n="issuanceEvents">Issuance Events (Deposits)</div>
       <div class="table-scroll">
         <table>
           <thead><tr><th>#</th><th>Date</th><th>Investor</th><th>Deposit</th><th>Cum. P&L at Date</th><th>NAV at Date</th><th>Unit Price</th><th>Units Issued</th><th>Total Units</th></tr></thead>
           <tbody id="unit-ledger-tbody"></tbody>
         </table>
       </div>
-      <div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin:16px 0 8px;">Redemption Events (Withdrawals)</div>
+      <div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin:16px 0 8px;" data-i18n="redemptionEvents">Redemption Events (Withdrawals)</div>
       <div class="table-scroll">
         <table>
           <thead><tr><th>#</th><th>Date</th><th>Investor</th><th>Withdrawal</th><th>Unit Price</th><th>Units Burned</th><th>NAV at Date</th><th>Realised P&L</th><th>Total Units</th></tr></thead>
@@ -1556,15 +1556,15 @@
     <div id="nav-history-master-wrap" style="display:none;">
       <div class="card" style="margin-bottom:14px;">
         <div class="card-header">
-          <span class="card-title">Fund NAV vs BTC</span>
-          <span style="font-size:10px;color:var(--muted);">Normalised % return since first trade</span>
+          <span class="card-title" data-i18n="fundNavVsBtc">Fund NAV vs BTC</span>
+          <span style="font-size:10px;color:var(--muted);" data-i18n="normalisedReturn">Normalised % return since first trade</span>
         </div>
         <div class="chart-wrap tall"><canvas id="navChart"></canvas></div>
       </div>
       <div class="card" style="margin-bottom:14px;">
         <div class="card-header">
-          <span class="card-title">Daily Unit NAV Price Log</span>
-          <span style="font-size:10px;color:var(--muted);">Reconstructed from closed trades · master only</span>
+          <span class="card-title" data-i18n="dailyUnitNavLog">Daily Unit NAV Price Log</span>
+          <span style="font-size:10px;color:var(--muted);" data-i18n="reconstructedSub">Reconstructed from closed trades · master only</span>
         </div>
         <div id="unit-nav-summary" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:16px;"></div>
         <div class="table-scroll" style="max-height:400px;overflow-y:auto;">
@@ -1577,42 +1577,42 @@
     </div>
     <div class="two-col">
       <div class="card">
-        <div class="card-header"><span class="card-title">Trade Statistics</span></div>
+        <div class="card-header"><span class="card-title" data-i18n="tradeStatistics">Trade Statistics</span></div>
         <div id="trade-stats"></div>
         <div id="streak-display" style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px;"></div>
       </div>
       <div class="card">
-        <div class="card-header"><span class="card-title">Win Rate by Asset Class</span></div>
+        <div class="card-header"><span class="card-title" data-i18n="winRateByClass">Win Rate by Asset Class</span></div>
         <div class="chart-wrap"><canvas id="winRateChart"></canvas></div>
       </div>
     </div>
     <div class="card">
-      <div class="card-header"><span class="card-title">P&L by Asset Class</span></div>
+      <div class="card-header"><span class="card-title" data-i18n="pnlByClass">P&L by Asset Class</span></div>
       <div class="chart-wrap"><canvas id="assetPnlChart"></canvas></div>
     </div>
     <div class="card">
-      <div class="card-header"><span class="card-title">Trade P&L Heatmap</span><span style="font-size:10px;color:var(--muted);">Hover for details</span></div>
+      <div class="card-header"><span class="card-title" data-i18n="tradeHeatmap">Trade P&L Heatmap</span><span style="font-size:10px;color:var(--muted);" data-i18n="hoverDetails">Hover for details</span></div>
       <div id="heatmap-container"></div>
     </div>
     <div class="card">
-      <div class="card-header"><span class="card-title">Rolling 7-Trade P&L Momentum</span><span style="font-size:10px;color:var(--muted);">7-trade rolling average</span></div>
+      <div class="card-header"><span class="card-title" data-i18n="rollingMomentum">Rolling 7-Trade P&L Momentum</span><span style="font-size:10px;color:var(--muted);" data-i18n="rollingAvg">7-trade rolling average</span></div>
       <div class="chart-wrap tall"><canvas id="momentumChart"></canvas></div>
     </div>
     <div class="card">
-      <div class="card-header"><span class="card-title">Cumulative P&L</span><span style="font-size:10px;color:var(--muted);">Closed trades</span></div>
+      <div class="card-header"><span class="card-title" data-i18n="cumulativePnl">Cumulative P&L</span><span style="font-size:10px;color:var(--muted);" data-i18n="closedTradesLabel">Closed trades</span></div>
       <div class="chart-wrap tall"><canvas id="cumulativePnlChart"></canvas></div>
     </div>
     <div class="card">
-      <div class="card-header"><span class="card-title">P&L per Trade</span></div>
+      <div class="card-header"><span class="card-title" data-i18n="pnlPerTrade">P&L per Trade</span></div>
       <div class="chart-wrap tall"><canvas id="plBarChart"></canvas></div>
     </div>
     <div class="card">
-      <div class="card-header"><span class="card-title">Investor Capital Over Time</span></div>
+      <div class="card-header"><span class="card-title" data-i18n="investorCapital">Investor Capital Over Time</span></div>
       <div class="chart-wrap"><canvas id="investorCapitalChart"></canvas></div>
     </div>
     <div class="two-col">
       <div class="card">
-        <div class="card-header"><span class="card-title">Recent Closed Trades</span><span style="font-size:10px;color:var(--muted);">Last 25</span></div>
+        <div class="card-header"><span class="card-title" data-i18n="recentClosedTrades">Recent Closed Trades</span><span style="font-size:10px;color:var(--muted);" data-i18n="last25">Last 25</span></div>
         <div class="table-scroll" style="max-height:520px;overflow-y:auto;">
           <table>
             <thead><tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Entry</th><th>Exit</th><th>Hold</th><th>P&L</th><th>Result</th></tr></thead>
@@ -1621,7 +1621,7 @@
         </div>
       </div>
       <div class="card">
-        <div class="card-header"><span class="card-title">Investor Projections</span><span style="font-size:10px;color:var(--muted);">At current annualised rate</span></div>
+        <div class="card-header"><span class="card-title" data-i18n="investorProjections">Investor Projections</span><span style="font-size:10px;color:var(--muted);" data-i18n="annualisedRate">At current annualised rate</span></div>
         <div id="projections-container"></div>
       </div>
     </div>
@@ -1631,8 +1631,8 @@
   <div class="modal-overlay" id="payout-modal" onclick="closePayoutModal(event)">
     <div class="modal-box" style="position:relative;">
       <button class="modal-close" onclick="closePayoutModal(null,true)">&#x2715;</button>
-      <div class="modal-title">Payout Calculator</div>
-      <div class="modal-sub">Simulate a fund distribution &mdash; see what each investor receives</div>
+      <div class="modal-title" data-i18n="payoutCalc">Payout Calculator</div>
+      <div class="modal-sub" data-i18n="payoutSub">Simulate a fund distribution &mdash; see what each investor receives</div>
       <label style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Distribution Amount ($)</label>
       <input class="modal-input" id="payout-input" type="text" placeholder="e.g. 1,000,000,000" oninput="calcPayout()" />
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
@@ -1640,7 +1640,7 @@
         <button class="modal-btn" style="margin-bottom:0;font-size:10px;padding:7px 12px;" onclick="setPayoutPreset('pnl')">Total P&amp;L</button>
         <button class="modal-btn" style="margin-bottom:0;font-size:10px;padding:7px 12px;" onclick="setPayoutPreset('half')">50% of NAV</button>
       </div>
-      <div id="payout-results"><div style="color:var(--muted);font-size:12px;">Enter an amount above to see payouts</div></div>
+      <div id="payout-results"><div style="color:var(--muted);font-size:12px;">${t('enterAmountPayout')}</div></div>
     </div>
   </div>
 
@@ -1670,18 +1670,18 @@
 
       <!-- STEP 1: Choose type -->
       <div class="dw-step active" id="dw-step-1">
-        <div class="modal-title">Fund Transaction</div>
+        <div class="modal-title" data-i18n="fundTransaction">Fund Transaction</div>
         <div class="modal-sub" style="margin-bottom:20px;">What would you like to do?</div>
         <div class="dw-type-grid">
           <div class="dw-type-btn" id="dw-btn-deposit" onclick="selectDWType('deposit')">
             <div class="dw-type-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></div>
-            <div class="dw-type-label">Deposit</div>
-            <div class="dw-type-sub">Add funds to the fund</div>
+            <div class="dw-type-label" data-i18n="depositLabel">Deposit</div>
+            <div class="dw-type-sub" data-i18n="addFunds">Add funds to the fund</div>
           </div>
           <div class="dw-type-btn" id="dw-btn-withdrawal" onclick="selectDWType('withdrawal')">
             <div class="dw-type-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></div>
-            <div class="dw-type-label">Withdrawal</div>
-            <div class="dw-type-sub">Request fund payout</div>
+            <div class="dw-type-label" data-i18n="withdrawalLabel">Withdrawal</div>
+            <div class="dw-type-sub" data-i18n="requestPayout">Request fund payout</div>
           </div>
         </div>
         <div id="dw-type-notice" style="margin-top:14px;"></div>
@@ -1750,7 +1750,7 @@
       <div id="cal-grid"></div>
     </div>
     <div class="card" style="margin-top:14px;">
-      <div class="card-header"><span class="card-title">Trades This Month</span></div>
+      <div class="card-header"><span class="card-title" data-i18n="tradesThisMonth">Trades This Month</span></div>
       <div id="cal-trade-list"></div>
     </div>
   </div>
@@ -1788,7 +1788,7 @@
   <div class="modal-overlay" id="stmt-req-modal" onclick="closeStmtReqModal(event)">
     <div class="modal-box" style="position:relative;max-width:460px;">
       <button class="modal-close" onclick="closeStmtReqModal(null,true)">&#x2715;</button>
-      <div class="modal-title">Request Account Statement</div>
+      <div class="modal-title" data-i18n="stmtRequest">Request Account Statement</div>
       <div class="modal-sub" style="margin-bottom:20px;">Submit your details and the fund manager will send your statement directly.</div>
       <label style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Your Name</label>
       <input class="modal-input" id="stmt-req-name" type="text" placeholder="e.g. Gustavo Fring" />
@@ -2803,37 +2803,37 @@ function renderOverview(d) {
   renderUnitNavChart(d);
 
   const metrics = [
-    {label:'Total P&L',      val:(d.totalPnl>=0?'+':'-')+'$'+fmtM(Math.abs(d.totalPnl)),    cls:d.totalPnl>=0?'green':'red', sub:'All closed + open positions',         key:'totalPnl'},
-    {label:'Total Return',   val:sgn(d.totalReturn)+fmtPct(d.totalReturn), cls:d.totalReturn>=0?'green':'red', sub:'Since fund inception',          key:'totalReturn'},
-    {label:'Win Rate',       val:(d.winRate*100).toFixed(2)+'%',           cls:'gold',  sub:d.winTrades+' wins / '+d.lossTrades+' losses', key:'winRate'},
-    {label:'Realised P&L',   val:sgn(d.realisedPnl)+'$'+fmtM(d.realisedPnl), cls:d.realisedPnl>=0?'green':'red', sub:d.totalTrades+' closed trades', key:'realisedPnl'},
-    {label:'Unrealised P&L', val:(d.unrealisedPnl>=0?'+':'-')+'$'+fmtM(Math.abs(d.unrealisedPnl)), cls:d.unrealisedPnl>=0?'green':'red', sub:'From open positions',         key:'unrealisedPnl'},
-    {label:'Margin Deployed',val:'$'+fmtM(d.marginDeployed), cls:'blue',  sub:'Currently deployed',                          key:'marginDeployed'},
-    {label:'Notional Exp.',  val:'$'+fmtM(d.notional),       cls:'blue',  sub:'Gross notional value',                           key:'notional'},
-    {label:"Today's P&L", val:(()=>{
-      const t=getTodayPnl(d.positions);
-      return (t>=0?'+':(t<0?'-':''))+'$'+fmtM(Math.abs(t));
-    })(), cls:(()=>{const t=getTodayPnl(d.positions);return t>0?'green':t<0?'red':'muted';})(),
+    {label:t('totalPnl'),      val:(d.totalPnl>=0?'+':'-')+'$'+fmtM(Math.abs(d.totalPnl)),    cls:d.totalPnl>=0?'green':'red', sub:t('allClosedOpen'),         key:'totalPnl'},
+    {label:t('totalReturn'),   val:sgn(d.totalReturn)+fmtPct(d.totalReturn), cls:d.totalReturn>=0?'green':'red', sub:t('sinceInception'),          key:'totalReturn'},
+    {label:t('winRate'),       val:(d.winRate*100).toFixed(2)+'%',           cls:'gold',  sub:d.winTrades+' '+t('winsLosses')+' '+d.lossTrades, key:'winRate'},
+    {label:t('realisedPnl'),   val:sgn(d.realisedPnl)+'$'+fmtM(d.realisedPnl), cls:d.realisedPnl>=0?'green':'red', sub:d.totalTrades+' '+t('closedTradesCount'), key:'realisedPnl'},
+    {label:t('unrealisedPnl'), val:(d.unrealisedPnl>=0?'+':'-')+'$'+fmtM(Math.abs(d.unrealisedPnl)), cls:d.unrealisedPnl>=0?'green':'red', sub:t('fromOpenPos'),         key:'unrealisedPnl'},
+    {label:t('marginDeployed'),val:'$'+fmtM(d.marginDeployed), cls:'blue',  sub:t('currentlyDeployed'),                          key:'marginDeployed'},
+    {label:t('notional'),  val:'$'+fmtM(d.notional),       cls:'blue',  sub:t('grossNotional'),                           key:'notional'},
+    {label:t('todayPnl'), val:(()=>{
+      const t2=getTodayPnl(d.positions);
+      return (t2>=0?'+':(t2<0?'-':''))+'$'+fmtM(Math.abs(t2));
+    })(), cls:(()=>{const t2=getTodayPnl(d.positions);return t2>0?'green':t2<0?'red':'muted';})(),
     sub:(()=>{
-      const t=getTodayPnl(d.positions);
+      const t2=getTodayPnl(d.positions);
       const nav=Math.max(d.nav||d.totalDeposited||1,1);
-      const pct=(t/nav*100);
-      return t!==0?(pct>=0?'+':'')+pct.toFixed(2)+'% daily return':'No closed trades today';
+      const pct=(t2/nav*100);
+      return t2!==0?(pct>=0?'+':'')+pct.toFixed(2)+'% '+t('dailyReturn'):t('noTradesDay');
     })(), key:'todayPnl'},
-    {label:'Fund Age',       val:(()=>{
-      const txns=(d.transactions||[]).filter(t=>t.type==='Deposit');
+    {label:t('fundAge'),       val:(()=>{
+      const txns=(d.transactions||[]).filter(tx=>tx.type==='Deposit');
       if(!txns.length) return '—';
       const pd=s=>{const[dd,mm,yy]=s.split('/');return new Date(+yy,+mm-1,+dd);};
       const first=txns.reduce((a,b)=>pd(a.date)<pd(b.date)?a:b);
       const days=Math.round((Date.now()-pd(first.date))/(1000*60*60*24));
       return days+'d';
     })(), cls:'blue', sub:(()=>{
-      const txns=(d.transactions||[]).filter(t=>t.type==='Deposit');
-      if(!txns.length) return 'Since fund inception';
+      const txns=(d.transactions||[]).filter(tx=>tx.type==='Deposit');
+      if(!txns.length) return t('sinceInception');
       const pd=s=>{const[dd,mm,yy]=s.split('/');return new Date(+yy,+mm-1,+dd);};
       const first=txns.reduce((a,b)=>pd(a.date)<pd(b.date)?a:b);
       const days=Math.max(1,Math.round((Date.now()-pd(first.date))/(1000*60*60*24)));
-      return 'Since '+first.date+' · '+((d.totalTrades||0)/(days/7)).toFixed(1)+' trades/wk';
+      return t('since')+' '+first.date+' · '+((d.totalTrades||0)/(days/7)).toFixed(1)+' trades/wk';
     })(), key:'inception'},
   ];
   const grid = $('overview-metrics');
@@ -2885,18 +2885,18 @@ function renderOverview(d) {
   });
 
   $('trade-outcomes').innerHTML=[
-    ['Take Profit Hits',d.tpHits+' / '+d.totalTrades,'color:var(--green)'],
-    ['Stop Loss Hits',d.slHits+' / '+d.totalTrades,'color:var(--red)'],
-    ['Closed (other)',(d.totalTrades-d.tpHits-d.slHits)+' / '+d.totalTrades,''],
-    ['Active Positions',d.positions?d.positions.filter(p=>p.status==='Open').length:2,'color:var(--blue)'],
+    [t('tpHits')+'  (TP)',d.tpHits+' / '+d.totalTrades,'color:var(--green)'],
+    [t('slHits')+'  (SL)',d.slHits+' / '+d.totalTrades,'color:var(--red)'],
+    [t('closedTradesCount'),(d.totalTrades-d.tpHits-d.slHits)+' / '+d.totalTrades,''],
+    [t('activePositions'),d.positions?d.positions.filter(p=>p.status==='Open').length:0,'color:var(--blue)'],
   ].map(([k,v,s])=>rowLabel(k,v,s)).join('');
 
   renderWLDonut(d);
   $('risk-metrics').innerHTML=[
-    ['Profit Factor',d.profitFactor.toFixed(2)+'×','color:var(--green)'],
-    ['Sharpe Ratio',d.sharpe.toFixed(2),''],
+    [t('profitFactor'),d.profitFactor.toFixed(2)+'×','color:var(--green)'],
+    ['Sharpe',d.sharpe.toFixed(2),''],
     ['Expectancy / Trade','$'+fmtM(d.expectancy),'color:var(--green)'],
-    ['Avg Hold Period',d.avgHold.toFixed(2)+' days',''],
+    ['Avg Hold',d.avgHold.toFixed(2)+' days',''],
     ['Max Potential Loss','$'+fmtM(d.maxLoss),'color:var(--red)'],
     ['Active Liquidations',d.activeLiquidations,d.activeLiquidations>0?'color:var(--red)':'color:var(--green)'],
   ].map(([k,v,s])=>rowLabel(k,v,s)).join('');
@@ -2912,7 +2912,7 @@ function renderOverview(d) {
 function renderPositions(positions) {
   const open=positions.filter(p=>p.status==='Open'); let closed=positions.filter(p=>p.status==='Closed');
   $('pos-badges').innerHTML=badge(open.length+' OPEN','blue')+' '+badge(closed.length+' CLOSED','gray')+`<span style="font-size:11px;color:var(--muted);margin-left:8px;">${positions.length} total trades</span>`;
-  const th=`<tr><th>#</th><th>Class</th><th>Ticker</th><th>Side</th><th>Entry Date</th><th>Duration</th><th>Entry</th><th>Cur/Exit</th><th>Qty</th><th>Lev</th><th>Unrealised P&L</th><th>SL</th><th>TP</th><th>Status</th></tr>`;
+  const th=`<tr><th>#</th><th>${t('class')}</th><th>${t('ticker')}</th><th>${t('side')}</th><th>${t('entryDate')}</th><th>${t('duration')}</th><th>${t('entry')}</th><th>Cur/${t('exit')}</th><th>Qty</th><th>Lev</th><th>${t('unrealisedPnlCol')}</th><th>SL</th><th>TP</th><th>${t('result')}</th></tr>`;
   $('open-thead').innerHTML=th;
   $('open-tbody').innerHTML=open.length?open.map(p=>`
     <tr class="pos-row" style="${getPnlRowStyle(p.pnl, window.lastData?.positions||[])}" onclick="togglePosRow(${p.id})">
@@ -2927,19 +2927,19 @@ function renderPositions(positions) {
       <td style="color:var(--green)">${p.tp?fmtPrice(p.tp,p.cls):'—'}</td>
       <td>${badge('ACTIVE','blue')}</td>
     </tr>
-    ${buildExpandRow(p,14)}`).join(''):'<tr><td colspan="14" style="color:var(--muted);text-align:center;padding:16px;">No open positions</td></tr>';
+    ${buildExpandRow(p,14)}`).join(''):`<tr><td colspan="14" style="color:var(--muted);text-align:center;padding:16px;">${t('noOpenPositions')}</td></tr>`;
   $('closed-thead').innerHTML=`<tr>
     <th>#</th>
-    <th class="sort-th" onclick="sortClosed('cls')" style="cursor:pointer;user-select:none;white-space:nowrap;">Class ${closedSortField==='cls'?(closedSortDir==='asc'?'↑':'↓'):'⇅'}</th>
-    <th class="sort-th" onclick="sortClosed('ticker')" style="cursor:pointer;user-select:none;white-space:nowrap;">Ticker ${closedSortField==='ticker'?(closedSortDir==='asc'?'↑':'↓'):'⇅'}</th>
-    <th>Side</th>
-    <th class="sort-th" onclick="sortClosed('date')" style="cursor:pointer;user-select:none;white-space:nowrap;">Entry ${closedSortField==='date'?(closedSortDir==='asc'?'↑':'↓'):'⇅'}</th>
-    <th class="sort-th" onclick="sortClosed('exitDate')" style="cursor:pointer;user-select:none;white-space:nowrap;">Exit ${closedSortField==='exitDate'?(closedSortDir==='asc'?'↑':'↓'):'⇅'}</th>
-    <th>Entry</th>
-    <th>Exit</th>
-    <th class="sort-th" onclick="sortClosed('hold')" style="cursor:pointer;user-select:none;white-space:nowrap;">Hold ${closedSortField==='hold'?(closedSortDir==='asc'?'↑':'↓'):'⇅'}</th>
+    <th class="sort-th" onclick="sortClosed('cls')" style="cursor:pointer;user-select:none;white-space:nowrap;">${t('class')} ${closedSortField==='cls'?(closedSortDir==='asc'?'↑':'↓'):'⇅'}</th>
+    <th class="sort-th" onclick="sortClosed('ticker')" style="cursor:pointer;user-select:none;white-space:nowrap;">${t('ticker')} ${closedSortField==='ticker'?(closedSortDir==='asc'?'↑':'↓'):'⇅'}</th>
+    <th>${t('side')}</th>
+    <th class="sort-th" onclick="sortClosed('date')" style="cursor:pointer;user-select:none;white-space:nowrap;">${t('entry')} ${closedSortField==='date'?(closedSortDir==='asc'?'↑':'↓'):'⇅'}</th>
+    <th class="sort-th" onclick="sortClosed('exitDate')" style="cursor:pointer;user-select:none;white-space:nowrap;">${t('exit')} ${closedSortField==='exitDate'?(closedSortDir==='asc'?'↑':'↓'):'⇅'}</th>
+    <th>${t('entry')}</th>
+    <th>${t('exit')}</th>
+    <th class="sort-th" onclick="sortClosed('hold')" style="cursor:pointer;user-select:none;white-space:nowrap;">${t('hold')} ${closedSortField==='hold'?(closedSortDir==='asc'?'↑':'↓'):'⇅'}</th>
     <th class="sort-th" onclick="sortClosed('pnl')" style="cursor:pointer;user-select:none;white-space:nowrap;">P&amp;L ${closedSortField==='pnl'?(closedSortDir==='asc'?'↑':'↓'):'⇅'}</th>
-    <th class="sort-th" onclick="sortClosed('result')" style="cursor:pointer;user-select:none;white-space:nowrap;">Result ${closedSortField==='result'?(closedSortDir==='asc'?'↑':'↓'):'⇅'}</th>
+    <th class="sort-th" onclick="sortClosed('result')" style="cursor:pointer;user-select:none;white-space:nowrap;">${t('result')} ${closedSortField==='result'?(closedSortDir==='asc'?'↑':'↓'):'⇅'}</th>
   </tr>`;
   // Apply closed sort
   if (closedSortField) {
@@ -3008,10 +3008,10 @@ function renderInvestors(investors, transactions) {
   const totalPnlShared = investors.reduce((s,i) => s + i.pnlShare, 0);
   const metricsEl = $('investor-metrics');
   metricsEl.innerHTML = [
-    {label:'Total Capital',   val:'$'+fmtM(totalCapital),   cls:'gold',  sub:investors.length+' investors'},
-    {label:'Total Withdrawn', val:'$'+fmtM(totalWithdrawn), cls:'red',   sub:'All time'},
-    {label:'Total P&L Dist.', val:'$'+fmtM(totalPnlShared), cls:'green', sub:'Unit NAV weighted'},
-    {label:'Total Investors', val:investors.length,          cls:'blue',  sub:txns.length+' transactions'},
+    {label:t('totalCapital'),   val:'$'+fmtM(totalCapital),   cls:'gold',  sub:investors.length+' '+t('investors')},
+    {label:t('totalWithdrawn'), val:'$'+fmtM(totalWithdrawn), cls:'red',   sub:t('allTime')},
+    {label:t('totalPnlDist'),   val:'$'+fmtM(totalPnlShared), cls:'green', sub:t('unitNavWeighted')},
+    {label:t('totalInvestors'), val:investors.length,          cls:'blue',  sub:txns.length+' '+t('transactions')},
   ].map(c=>`
     <div class="metric-card">
       <div class="metric-label">${c.label}</div>
@@ -3029,8 +3029,8 @@ function renderInvestors(investors, transactions) {
   container.innerHTML = sortedInvestors.map((inv, idx) => {
     const avStyle = getAvatarStyle(inv.name);
     const isLocked = inv.status === 'LOCKED';
-    const statusBadge = isLocked ? badge('LOCKED','red') : badge('UNLOCKED','green');
-    const daysText = isLocked ? `${inv.daysToUnlock}d to unlock` : 'Available';
+    const statusBadge = isLocked ? badge(t('locked'),'red') : badge(t('unlockedBadge'),'green');
+    const daysText = isLocked ? `${inv.daysToUnlock}${t('dToUnlock')}` : t('available');
     const invTxns = txnsByName[inv.name] || { deposits:[], totalDeposit:0, totalWithdrawal:0 };
     // Use aggregated transaction totals as source of truth for the dropdown
     const aggDeposited  = invTxns.totalDeposit    || inv.deposited;
@@ -3050,16 +3050,16 @@ function renderInvestors(investors, transactions) {
             const lockLabel = (() => {
               // Calculate days remaining for THIS specific deposit tranche
               if (!inv.lockDays || inv.lockDays === 0) {
-                return `<span style="color:var(--green);font-size:10px;">Unlocked</span>`;
+                return `<span style="color:var(--green);font-size:10px;">${t('unlocked')}</span>`;
               }
               const parseD = s => { const [dd,mm,yy] = s.split('/'); return new Date(+yy,+mm-1,+dd); };
               const depositDate = parseD(t.date);
               const unlockDate  = new Date(depositDate.getTime() + inv.lockDays * 24*60*60*1000);
               const daysLeft    = Math.ceil((unlockDate - Date.now()) / (24*60*60*1000));
               if (daysLeft <= 0) {
-                return `<span style="color:var(--green);font-size:10px;">Unlocked</span>`;
+                return `<span style="color:var(--green);font-size:10px;">${t('unlocked')}</span>`;
               }
-              return `<span style="color:var(--red);font-size:10px;font-family:var(--mono);">${daysLeft}d to unlock</span>`;
+              return `<span style="color:var(--red);font-size:10px;font-family:var(--mono);">${daysLeft}${t('dToUnlock')}</span>`;
             })();
 
             // ── Unit NAV info for this tranche ──
@@ -3077,31 +3077,31 @@ function renderInvestors(investors, transactions) {
               unitInfoHtml = `
                 <div style="margin-top:7px;padding:8px 10px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;display:flex;flex-wrap:wrap;gap:12px 20px;">
                   <div>
-                    <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">Units Issued</div>
+                    <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">${t('unitsIssued')}</div>
                     <div style="font-size:12px;font-family:var(--mono);color:var(--blue);">${fmtM(le.unitsReceived)}</div>
                   </div>
                   ${redeemed > 0.0001 ? `<div>
-                    <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">Units Redeemed</div>
+                    <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">${t('unitsRedeemed')}</div>
                     <div style="font-size:12px;font-family:var(--mono);color:var(--red);">-${fmtM(redeemed)}</div>
                   </div>` : ''}
                   <div>
-                    <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">Units Held</div>
+                    <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">${t('unitsHeld')}</div>
                     <div style="font-size:12px;font-family:var(--mono);color:var(--blue);">${fmtM(remaining)}</div>
                   </div>
                   <div>
-                    <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">Entry Unit Price</div>
+                    <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">${t('entryUnitPrice')}</div>
                     <div style="font-size:12px;font-family:var(--mono);color:var(--accent);">$${le.unitPrice.toFixed(4)}</div>
                   </div>
                   <div>
-                    <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">Current Unit Price</div>
+                    <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">${t('currentUnitPrice')}</div>
                     <div style="font-size:12px;font-family:var(--mono);color:var(--accent2);">$${_cup.toFixed(4)}</div>
                   </div>
                   <div>
-                    <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">Current Value</div>
+                    <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">${t('currentValue')}</div>
                     <div style="font-size:12px;font-family:var(--mono);color:var(--accent2);">$${fmtM(trancheVal)}</div>
                   </div>
                   <div>
-                    <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">Tranche P&L</div>
+                    <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">${t('tranchePnl')}</div>
                     <div style="font-size:12px;font-family:var(--mono);color:${gainColor};">${gainSign}$${fmtM(tranchePnl)} <span style="font-size:10px;opacity:0.75;">(${gainSign}${unitGainPct}%)</span></div>
                   </div>
                 </div>`;
@@ -3116,11 +3116,11 @@ function renderInvestors(investors, transactions) {
               </div>
               <div class="deposit-note">${t.note}</div>
               <div style="display:flex;flex-direction:column;gap:4px;">${t.verified ? badge('VERIFIED','green') : badge('PENDING','gold')}${lockLabel}</div>
-              <div style="color:var(--muted);font-size:10px;">Total: $${fmtM(running)}</div>
+              <div style="color:var(--muted);font-size:10px;">${t('totalRunning')}: $${fmtM(running)}</div>
             </div>`;
           }).join('');
         })()
-      : `<div style="padding:12px 0;color:var(--muted);font-size:11px;">No transaction records found</div>`;
+      : `<div style="padding:12px 0;color:var(--muted);font-size:11px;">${t('noOpenPositions').includes('positions') ? (currentLang==='fr'?'Aucun enregistrement de transaction trouvé':'No transaction records found') : 'No transaction records found'}</div>`;
 
     return `
       <div class="investor-card" id="inv-card-${idx}">
@@ -3129,7 +3129,7 @@ function renderInvestors(investors, transactions) {
             <div class="avatar-lg" style="${avStyle}" data-name="${inv.name}"></div>
             <div>
               <div class="investor-name">${getDisplayName(inv.name)}</div>
-              <div class="investor-meta">${ownershipPct.toFixed(4)}% ownership · ${daysText}</div>
+              <div class="investor-meta">${ownershipPct.toFixed(4)}% ${t('ownership')} · ${daysText}</div>
             </div>
           </div>
           <div class="investor-right">
@@ -3137,17 +3137,17 @@ function renderInvestors(investors, transactions) {
             <div style="width:1px;height:32px;background:var(--border);"></div>
             <div style="text-align:right;min-width:80px;">
               <div class="investor-total" style="font-size:16px;">$${fmtM((()=>{const u=window.unitAccounting?.results?.[inv.name];return u?.costBasis??netCapital;})())}</div>
-              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">Capital Invested</div>
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">${t('capitalInvested')}</div>
             </div>
             <div style="width:1px;height:32px;background:var(--border);"></div>
             <div style="text-align:right;min-width:80px;">
               <div style="font-size:16px;font-weight:600;font-family:var(--mono);color:var(--green);">${(inv.pnlShare>=0?'+':'')}$${fmtM((inv._unitValue || 0) + aggWithdrawn)}</div>
-              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">Total value</div>
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">${t('netPayout')}</div>
             </div>
             <div style="width:1px;height:32px;background:var(--border);"></div>
             <div style="text-align:right;min-width:80px;">
               <div style="font-size:16px;font-weight:500;font-family:var(--mono);color:${inv.pnlShare>=0?'var(--green)':'var(--red)'};">${(inv.pnlShare>=0?'+':'')}$${fmtM(inv.pnlShare)}</div>
-              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">P&L (Unit NAV)</div>
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">${t('pnlUnitNav')}</div>
             </div>
             <button class="chevron" id="chev-${idx}">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
@@ -3157,35 +3157,35 @@ function renderInvestors(investors, transactions) {
         <div class="investor-body collapsed" id="inv-body-${idx}">
           <div class="investor-summary-row">
             <div class="inv-stat-box">
-              <div class="inv-stat-label">Total Deposited</div>
+              <div class="inv-stat-label">${t('totalDeposited')}</div>
               <div class="inv-stat-value" style="color:var(--accent2)">$${fmtM(aggDeposited)}</div>
             </div>
             <div class="inv-stat-box">
-              <div class="inv-stat-label">Total Withdrawn</div>
+              <div class="inv-stat-label">${t('totalWithdrawn')}</div>
               <div class="inv-stat-value" style="color:${aggWithdrawn>0?'var(--red)':'var(--muted)'}">$${fmtM(aggWithdrawn)}</div>
             </div>
             <div class="inv-stat-box">
-              <div class="inv-stat-label">Net Capital</div>
+              <div class="inv-stat-label">${t('netCapital')}</div>
               <div class="inv-stat-value" style="color:var(--muted)">$${fmtM(netCapital)}</div>
             </div>
             <div class="inv-stat-box">
-              <div class="inv-stat-label">Capital Invested</div>
+              <div class="inv-stat-label">${t('capitalInvested')}</div>
               <div class="inv-stat-value" style="color:var(--text)" title="Original capital still at work after accounting for the capital portion of any withdrawals">$${fmtM((()=>{const u=window.unitAccounting?.results?.[inv.name];return u?.costBasis??netCapital;})())}</div>
             </div>
             <div class="inv-stat-box">
-              <div class="inv-stat-label">P&L (Unit NAV)</div>
+              <div class="inv-stat-label">${t('pnlUnitNav')}</div>
               <div class="inv-stat-value" style="color:${inv.pnlShare>=0?'var(--green)':'var(--red)'}">${sgn(inv.pnlShare)}$${fmtM(inv.pnlShare)}</div>
             </div>
             <div class="inv-stat-box">
-              <div class="inv-stat-label">Units Held</div>
+              <div class="inv-stat-label">${t('unitsHeld')}</div>
               <div class="inv-stat-value" style="color:var(--blue)">${inv._units ? fmtM(inv._units) : '—'}</div>
             </div>
             <div class="inv-stat-box">
-              <div class="inv-stat-label">Current Value</div>
+              <div class="inv-stat-label">${t('currentValue')}</div>
               <div class="inv-stat-value" style="color:var(--accent2)">${inv._unitValue ? '$'+fmtM(inv._unitValue) : '—'}</div>
             </div>
             <div class="inv-stat-box">
-              <div class="inv-stat-label">Return on Capital</div>
+              <div class="inv-stat-label">${t('returnOnCapital')}</div>
               <div class="inv-stat-value" style="color:${(inv._returnPct||0)>=0?'var(--green)':'var(--red)'}">${(inv._returnPct!==undefined?(inv._returnPct>=0?'+':'')+inv._returnPct.toFixed(2)+'%':'—')}</div>
             </div>
             ${(()=>{
@@ -3193,17 +3193,17 @@ function renderInvestors(investors, transactions) {
               if (!wl.length) return '';
               const totalRealised = wl.reduce((s,w)=>s+w.realisedPnl,0);
               return `<div class="inv-stat-box">
-                <div class="inv-stat-label">Realised on Exits</div>
+                <div class="inv-stat-label">${t('realisedOnExits')}</div>
                 <div class="inv-stat-value" style="color:${totalRealised>=0?'var(--green)':'var(--red)'}">${totalRealised>=0?'+':''}$${fmtM(totalRealised)}</div>
               </div>`;
             })()}
           </div>
           <div class="sparkline-wrap" id="spark-wrap-${idx}">
-            <div class="sparkline-label">Deposit Growth</div>
+            <div class="sparkline-label">${t('depositGrowth')}</div>
             <div style="height:52px;"><canvas id="spark-${idx}"></canvas></div>
           </div>
           <div style="padding:12px 0 4px;">
-            <div class="section-title" style="margin-bottom:8px;">Deposit History</div>
+            <div class="section-title" style="margin-bottom:8px;">${t('depositHistory')}</div>
             ${depositRows}
           </div>
           ${(() => {
@@ -3221,27 +3221,27 @@ function renderInvestors(investors, transactions) {
                   <div style="font-size:13px;font-family:var(--mono);font-weight:500;color:var(--red);">-$${fmtM(w.withdrawal)}</div>
                   <div style="margin-top:7px;padding:8px 10px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;display:flex;flex-wrap:wrap;gap:12px 20px;">
                     <div>
-                      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">Units Burned</div>
+                      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">${t('unitsBurned')}</div>
                       <div style="font-size:12px;font-family:var(--mono);color:var(--red);">-${fmtM(w.unitsBurned)}</div>
                     </div>
                     <div>
-                      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">Redemption Price</div>
+                      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">${t('redemptionPrice')}</div>
                       <div style="font-size:12px;font-family:var(--mono);color:var(--accent);">$${w.unitPrice.toFixed(4)}</div>
                     </div>
                     <div>
-                      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">NAV at Redemption</div>
+                      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">${t('navAtRedemption')}</div>
                       <div style="font-size:12px;font-family:var(--mono);color:var(--accent2);">$${fmtM(w.navAtWithdrawal)}</div>
                     </div>
                     <div>
-                      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">Realised P&L</div>
+                      <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px;">${t('realisedPnlLabel')}</div>
                       <div style="font-size:12px;font-family:var(--mono);color:${realisedColor};">${realisedSign}$${fmtM(w.realisedPnl)}</div>
                     </div>
                   </div>
                 </div>
-                <div style="display:flex;flex-direction:column;gap:4px;">${badge('REDEEMED','red')}</div>
+                <div style="display:flex;flex-direction:column;gap:4px;">${badge(t('redeemed'),'red')}</div>
               </div>`;
             }).join('');
-            return `<div style="padding:12px 0 4px;"><div class="section-title" style="margin-bottom:8px;">Withdrawal History</div>${rows}</div>`;
+            return `<div style="padding:12px 0 4px;"><div class="section-title" style="margin-bottom:8px;">${t('withdrawalHistory')}</div>${rows}</div>`;
           })()}
         </div>
       </div>`;
@@ -3287,7 +3287,7 @@ function renderInvestors(investors, transactions) {
       if (le) {
         share = le.remainingUnits * (_uaCP - le.unitPrice);
         const redeemed = le.unitsReceived - le.remainingUnits;
-        unitInfo = `<span style="color:var(--muted);font-size:9px;font-family:var(--mono);margin-top:1px;">${fmtM(le.remainingUnits)} units held @ $${le.unitPrice.toFixed(4)}/u · entry NAV $${fmtM(le.navAtDeposit)}${redeemed > 0.0001 ? ` · ${fmtM(redeemed)} redeemed` : ''}</span>`;
+        unitInfo = `<span style="color:var(--muted);font-size:9px;font-family:var(--mono);margin-top:1px;">${fmtM(le.remainingUnits)} ${t('unitsHeldAt')} $${le.unitPrice.toFixed(4)}/u · ${t('entryNav')} $${fmtM(le.navAtDeposit)}${redeemed > 0.0001 ? ` · ${fmtM(redeemed)} redeemed` : ''}</span>`;
       } else {
         share = investorTotal > 0 ? (t.deposit / investorTotal) * inv.pnlShare : 0;
       }
@@ -3310,7 +3310,7 @@ function renderInvestors(investors, transactions) {
           </div>
         </div>
         <div id="pnl-breakdown-${idx}" style="display:none;">
-          ${depositBreakdown || '<div style="padding:6px 0 6px 12px;font-size:11px;color:var(--muted);">No deposit breakdown available</div>'}
+          ${depositBreakdown || '<div style="padding:6px 0 6px 12px;font-size:11px;color:var(--muted);">${t('noDepositBreakdown')}</div>'}
         </div>
       </div>`;
   }).join('');
@@ -3343,7 +3343,7 @@ function renderInvestors(investors, transactions) {
             </div>
           </div>`;
       }).join('')}</div>`
-    : `<div style="color:var(--muted);font-size:12px;padding:16px 0;">No transaction data available</div>`;
+    : `<div style="color:var(--muted);font-size:12px;padding:16px 0;">${t('noTxnData')}</div>`;
 
   // ── Unit NAV Ledger (master only) ──
   const _ulCard = document.getElementById('unit-ledger-card');
@@ -3372,8 +3372,8 @@ function renderInvestors(investors, transactions) {
     const avgRedemptionPrice = totalBurned > 0 ? wl.reduce((s, w) => s + w.unitPrice * w.unitsBurned, 0) / totalBurned : null;
     const hasWithdrawals = wdr > 0;
     const lockText = inv.status === 'LOCKED'
-      ? `<span style="color:var(--red);font-family:var(--mono);font-size:11px;">${inv.daysToUnlock}d remaining</span>`
-      : `<span style="color:var(--green);font-size:11px;">Available now</span>`;
+      ? `<span style="color:var(--red);font-family:var(--mono);font-size:11px;">${inv.daysToUnlock}${t('dRemaining')}</span>`
+      : `<span style="color:var(--green);font-size:11px;">${t('available')}</span>`;
     return `<tr>
       <td class="label">${getDisplayName(inv.name)}</td>
       <td style="color:var(--accent2)">$${fmtM(dep)}</td>
@@ -3382,7 +3382,7 @@ function renderInvestors(investors, transactions) {
       <td style="color:${totalBurned>0?'var(--red)':'var(--muted)'}">${totalBurned>0?'-'+fmtM(totalBurned):'—'}</td>
       <td style="color:var(--accent)">${avgRedemptionPrice?'$'+avgRedemptionPrice.toFixed(4):'—'}</td>
       <td style="color:${totalRealised>=0?'var(--green)':'var(--red)'}">${totalRealised!==0?(totalRealised>=0?'+':'')+'$'+fmtM(totalRealised):'—'}</td>
-      <td>${inv.status==='LOCKED'?badge('LOCKED','red'):badge('UNLOCKED','green')}</td>
+      <td>${inv.status==='LOCKED'?badge(t('locked'),'red'):badge(t('unlockedBadge'),'green')}</td>
       <td>${lockText}</td>
     </tr>`;
   }).join('');
@@ -3574,7 +3574,7 @@ function calcPayout() {
   const d = window.lastData;
   if (!d || !d.investors) return;
   const container = $('payout-results');
-  if (amount <= 0) { container.innerHTML = '<div style="color:var(--muted);font-size:12px;">Enter an amount above to see payouts</div>'; return; }
+  if (amount <= 0) { container.innerHTML = '<div style="color:var(--muted);font-size:12px;">${t('enterAmountPayout')}</div>'; return; }
 
   // Build investor totals from transactions
   const txMap = {};
@@ -3594,8 +3594,8 @@ function calcPayout() {
     const payout = amount * pct;
     const locked = inv.status === 'LOCKED';
     const lockInfo = locked
-      ? `<span style="color:var(--red);font-size:10px;">${inv.daysToUnlock}d to unlock</span>`
-      : `<span style="color:var(--green);font-size:10px;">Available</span>`;
+      ? `<span style="color:var(--red);font-size:10px;">${inv.daysToUnlock}${t('dToUnlockShort')}</span>`
+      : `<span style="color:var(--green);font-size:10px;">${t('available')}</span>`;
     const unitLine = uInv ? `<span style="color:var(--muted);font-size:9px;">${fmtM(uInv.units)} units</span>` : '';
     return `<div class="payout-row">
       <div>
@@ -3919,7 +3919,7 @@ function renderUnitNavCard(d) {
               <div id="unit-price-val" style="font-size:28px;font-weight:600;font-family:var(--mono);color:var(--accent2);">$${cup.toFixed(4)}</div>
               <div style="font-size:13px;font-family:var(--mono);color:${gainColor};">${gainSign}${gainPct}% since inception</div>
             </div>
-            <div style="font-size:11px;color:var(--muted);margin-top:3px;">Inception price $1.0000 · ${ledger.length} issuance event${ledger.length!==1?'s':''}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:3px;">${t('inceptionPrice')} · ${ledger.length} ${currentLang==='fr'?'événement'+(ledger.length!==1?"s d'émission":" d'émission"):"issuance event"+(ledger.length!==1?'s':'')}</div>
           </div>
           <div style="width:1px;height:44px;background:var(--border);display:none;" id="unit-divider-1"></div>
           <!-- Stats -->
@@ -3968,7 +3968,7 @@ function renderUnitNavCard(d) {
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: { legend:{ display:false }, tooltip:{
-          callbacks:{ label: ctx => ' $' + ctx.parsed.y.toFixed(4) + '/unit' }
+          callbacks:{ label: ctx => ' $' + ctx.parsed.y.toFixed(4) + '/u' }
         }},
         scales: {
           x: { display: false },
@@ -4259,12 +4259,12 @@ function renderUnitLedger() {
   if (strip) {
     const totalRedeemed = (ua.withdrawalLedger || []).reduce((s, w) => s + w.unitsBurned, 0);
     strip.innerHTML = [
-      { label: 'Total Units Outstanding', val: fmtM(ua.totalUnits),                          cls: 'var(--blue)'    },
-      { label: 'Current Unit Price',       val: '$' + ua.currentUnitPrice.toFixed(4),         cls: 'var(--accent2)' },
-      { label: 'Fund NAV',                 val: '$' + fmtM(ua.liveNAV),                       cls: 'var(--green)'   },
-      { label: 'Units Ever Redeemed',      val: fmtM(totalRedeemed),                          cls: 'var(--red)'     },
-      { label: 'Total P&L Dist.',          val: (ua.totalPnlDistributed >= 0 ? '+' : '') + '$' + fmtM(ua.totalPnlDistributed),
-                                                                                               cls: ua.totalPnlDistributed >= 0 ? 'var(--green)' : 'var(--red)' },
+      { label: t('thTotalUnits'),      val: fmtM(ua.totalUnits),                          cls: 'var(--blue)'    },
+      { label: t('currentUnitPrice'),  val: '$' + ua.currentUnitPrice.toFixed(4),         cls: 'var(--accent2)' },
+      { label: t('fundNav'),           val: '$' + fmtM(ua.liveNAV),                       cls: 'var(--green)'   },
+      { label: t('unitsRedeemed'),     val: fmtM(totalRedeemed),                          cls: 'var(--red)'     },
+      { label: t('totalPnlDist'),      val: (ua.totalPnlDistributed >= 0 ? '+' : '') + '$' + fmtM(ua.totalPnlDistributed),
+                                                                                           cls: ua.totalPnlDistributed >= 0 ? 'var(--green)' : 'var(--red)' },
     ].map(s =>
       '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">'
       + '<div style="font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:3px;">' + s.label + '</div>'
@@ -4360,7 +4360,7 @@ function renderSparklines(investors, txnsByName) {
           tooltip: {
             callbacks: {
               title: ctx => ctx[0].label === 'Start' ? 'Inception' : ctx[0].label,
-              label: ctx => ' Net Capital: $' + fmtM(ctx.parsed.y)
+              label: ctx => ' ' + t('netCapitalTooltip') + ': $' + fmtM(ctx.parsed.y)
             }
           }
         },
@@ -4754,9 +4754,9 @@ function renderHeroNav(d) {
   }
   if (subEl)  subEl.innerHTML    = `<span style="color:${d.totalPnl>=0?'var(--green)':'var(--red)'}">${sgn(d.totalPnl)}$${fmtM(d.totalPnl)}</span> total P&amp;L &nbsp;·&nbsp; <span style="color:var(--green)">${sgn(d.totalReturn)}${(d.totalReturn*100).toFixed(2)}%</span> return`;
   if (statsEl) statsEl.innerHTML = [
-    {label:'Win Rate',  val:(d.winRate*100).toFixed(1)+'%',    cls:'var(--accent2)'},
-    {label:'Profit Factor', val:d.profitFactor.toFixed(2)+'×', cls:'var(--text)'},
-    {label:'Open Trades', val:(d.positions||[]).filter(p=>p.status==='Open').length, cls:'var(--blue)'},
+    {label:t('winRate'),       val:(d.winRate*100).toFixed(1)+'%',    cls:'var(--accent2)'},
+    {label:t('profitFactor'),  val:d.profitFactor.toFixed(2)+'×',     cls:'var(--text)'},
+    {label:t('openTrades'),    val:(d.positions||[]).filter(p=>p.status==='Open').length, cls:'var(--blue)'},
   ].map(s => `<div class="hero-stat-item">
     <div class="hero-stat-val" style="color:${s.cls}">${s.val}</div>
     <div class="hero-stat-label">${s.label}</div>
@@ -4775,7 +4775,7 @@ function renderInceptionStats(d) {
   const card = document.getElementById('mc-inception');
   if (card) {
     card.querySelector('.metric-value').textContent = daysOld + 'd';
-    card.querySelector('.metric-sub').textContent = 'Since ' + first.date + ' · ' + tradesPerWeek + ' trades/wk';
+    card.querySelector('.metric-sub').textContent = t('since') + ' ' + first.date + ' · ' + tradesPerWeek + ' trades/wk';
   }
 }
 
@@ -4954,7 +4954,7 @@ function generateStatement() {
       const remaining  = le.remainingUnits;
       const tranchePnl = remaining * (_cup - le.unitPrice);
       const pnlSign    = tranchePnl >= 0 ? '+' : '';
-      unitCells = `<td style="color:#1d4ed8">${fmtM(le.unitsReceived)}${remaining < le.unitsReceived - 0.0001 ? ` <span style="color:#dc2626;font-size:9px;">(${fmtM(remaining)} held)</span>` : ''}</td>`
+      unitCells = `<td style="color:#1d4ed8">${fmtM(le.unitsReceived)}${remaining < le.unitsReceived - 0.0001 ? ` <span style="color:#dc2626;font-size:9px;">(${fmtM(remaining)} ${t('unitsHeld')})</span>` : ''}</td>`
         + `<td style="color:#b45309">$${le.unitPrice.toFixed(4)}</td>`
         + `<td style="color:#b45309">$${_cup.toFixed(4)}</td>`
         + `<td style="color:${tranchePnl>=0?'#16a34a':'#dc2626'}">${pnlSign}$${fmtM(tranchePnl)}</td>`;
@@ -5187,12 +5187,12 @@ function generateStatement() {
     </div>
   </div>
   <div class="metrics" style="grid-template-columns:repeat(3,1fr);">
-    <div class="metric-box"><div class="label">Total Deposited</div><div class="value gold">$${fmtM(dep)}</div></div>
-    <div class="metric-box"><div class="label">Total Withdrawn</div><div class="value red">$${fmtM(wdr)}</div></div>
-    <div class="metric-box"><div class="label">Net Capital</div><div class="value" style="color:#888">$${fmtM(net)}</div></div>
+    <div class="metric-box"><div class="label">${t('totalDeposited')}</div><div class="value gold">$${fmtM(dep)}</div></div>
+    <div class="metric-box"><div class="label">${t('totalWithdrawn')}</div><div class="value red">$${fmtM(wdr)}</div></div>
+    <div class="metric-box"><div class="label">${t('netCapital')}</div><div class="value" style="color:#888">$${fmtM(net)}</div></div>
     <div class="metric-box" style="border-color:#c8a96e40;"><div class="label">Capital Invested</div><div class="value gold">$${fmtM(costBasis)}</div><div style="font-size:9px;color:#aaa;margin-top:3px;">Original capital still at work</div></div>
     <div class="metric-box"><div class="label">P&amp;L Share</div><div class="value ${pnl>=0?'green':'red'}">${pnl>=0?'+':''}$${fmtM(pnl)}</div></div>
-    <div class="metric-box"><div class="label">Return on Capital</div><div class="value ${retPct>=0?'green':'red'}">${retPct>=0?'+':''}${retPct}%</div></div>
+    <div class="metric-box"><div class="label">${t('returnOnCapitalStmt')}</div><div class="value ${retPct>=0?'green':'red'}">${retPct>=0?'+':''}${retPct}%</div></div>
     <div class="metric-box"><div class="label">Current Value</div><div class="value gold">${stmtCurVal}</div></div>
   </div>
 
@@ -5214,16 +5214,16 @@ function generateStatement() {
   <tbody>
     ${depositRows || ''}
     ${withdrawalRows || ''}
-    ${(!depositRows && !withdrawalRows) ? '<tr><td colspan=9 style="color:#aaa">No transactions found</td></tr>' : ''}
+    ${(!depositRows && !withdrawalRows) ? `<tr><td colspan=9 style='color:#aaa'>${t('noTxnFound')}</td></tr>` : ''}
   </tbody></table>
   ${_withdrawalLedger.length > 0 ? `
   <div style="margin-top:12px;padding:10px 14px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:11px;display:flex;justify-content:space-between;align-items:center;">
-    <span><b>Realised P&L from Withdrawals:</b> Units redeemed at the NAV price prevailing on each withdrawal date.</span>
+    <span>${t('realisedFromWithdrawals')}</span>
     <span style="font-family:monospace;font-weight:700;font-size:13px;color:${totalRealisedOnWithdrawals>=0?'#16a34a':'#dc2626'};">${totalRealisedOnWithdrawals>=0?'+':''}$${fmtM(totalRealisedOnWithdrawals)}</span>
   </div>` : ''}
   <div class="lockup-box ${isLocked?'lockup-locked':'lockup-unlocked'}">
     ${isLocked
-      ? `<b>Funds Locked</b> — ${inv.daysToUnlock} days remaining until withdrawal is available. Lockup period: ${inv.lockDays} days from deposit date.`
+      ? `<b>Funds Locked</b> — ${inv.daysToUnlock} ${currentLang==='fr'?'jours restants avant le retrait. Période de verrouillage :':'days remaining until withdrawal is available. Lockup period:'} ${inv.lockDays} days from deposit date.`
       : `<b>Funds Available</b> — Your capital is unlocked and available for withdrawal upon request.`}
   </div>
   <div class="footer">
@@ -5332,7 +5332,7 @@ function switchTab(name, el, mobileEl) {
     if (mItem) mItem.classList.add('active');
   }
   // Update mobile tab name in header
-  const tabNames = {overview:'Overview',positions:'Positions',investors:'Investors',analytics:'Analytics',calendar:'Calendar'};
+  const tabNames = {overview:t('overview'),positions:t('positions'),investors:t('investors'),analytics:t('analytics'),calendar:t('calendar'),activity:t('activity'),dispatches:t('dispatches')};
   const mobileLabel = document.getElementById('mobile-tab-name');
   if (mobileLabel) mobileLabel.textContent = tabNames[name] || name;
   // Render calendar if switching to it
@@ -5377,36 +5377,216 @@ function retryLoad() {
 let currentLang = 'en';
 const TRANSLATIONS = {
   en: {
+    // ── Nav tabs ──
     overview:'Overview', positions:'Positions', investors:'Investors',
-    analytics:'Analytics', calendar:'Calendar',
+    analytics:'Analytics', calendar:'Calendar', activity:'Activity',
+    dispatches:'Dispatches',
+    // ── Header ──
+    lock:'Lock', live:'LIVE',
+    // ── Overview metric cards ──
     fundNav:'Fund NAV', totalPnl:'Total P&L', totalReturn:'Total Return',
     winRate:'Win Rate', realisedPnl:'Realised P&L', unrealisedPnl:'Unrealised P&L',
     marginDeployed:'Margin Deployed', notional:'Notional Exp.',
     todayPnl:"Today's P&L", fundAge:'Fund Age',
+    // ── Overview metric subs ──
+    allClosedOpen:'All closed + open positions', sinceInception:'Since fund inception',
+    winsLosses:'wins / losses', closedTradesCount:'closed trades',
+    fromOpenPos:'From open positions', currentlyDeployed:'Currently deployed',
+    grossNotional:'Gross notional value', dailyReturn:'daily return',
+    noTradesDay:'No closed trades today',
+    // ── Overview card titles ──
+    unitNavPriceHistory:'Unit NAV Price History',
+    unitNavSince:'Price per unit since inception · $1.0000 base',
+    fundHealthScore:'Fund Health Score',
+    pnlBreakdown:'P&L Breakdown', assetClassPnl:'Asset Class P&L',
+    tradeOutcomes:'Trade Outcomes', riskMetrics:'Risk Metrics',
+    liveUnrealisedPnl:'Live Unrealised P&L', sessionTrack:'Session track · updates every 3s',
+    winLossHeatmap:'Win / Loss Heatmap',
+    // ── Overview hero ──
     netAssetValue:'Net asset value', realisedUnrealised:'Realised + Unrealised',
     onCapital:'On capital deposited', openPositions:'Open positions',
     activePositions:'Active positions', totalLeveraged:'Total leveraged',
-    closedTrades:'closed trades', lock:'Lock', live:'LIVE',
+    profitFactor:'Profit Factor', openTrades:'Open Trades',
+    // ── Positions ──
     openPos:'Open Positions', closedPos:'Closed Positions',
+    posRiskMeter:'Position Risk Meter', posRiskSub:'Open positions · SL & TP exposure',
     unrealisedPnlCol:'Unrealised P&L', entryDate:'Entry Date', exitDate:'Exit Date',
     duration:'Duration', entry:'Entry', exit:'Exit', hold:'Hold',
     result:'Result', side:'Side', class:'Class', ticker:'Ticker',
+    searchPlaceholder:'Search ticker, class, side...',
+    allPositions:'All Positions', openOnly:'Open Only', closedOnly:'Closed Only',
+    allResults:'All Results', tpHits:'TP Hits', slHits:'SL Hits', active:'Active',
+    noOpenPositions:'No open positions',
+    // ── Investors ──
+    totalCapital:'Total Capital', totalWithdrawn:'Total Withdrawn',
+    totalPnlDist:'Total P&L Dist.', totalInvestors:'Total Investors',
+    unitNavWeighted:'Unit NAV weighted', allTime:'All time', transactions:'transactions',
+    fundOwnership:'Fund Ownership', pnlShare:'P&L Share',
+    txnHistory:'Transaction History', withdrawalTracker:'Withdrawal Tracker',
+    unitNavLedger:'Unit NAV Ledger', unitAuditSub:'Full audit trail of unit issuance & redemption',
+    issuanceEvents:'Issuance Events (Deposits)', redemptionEvents:'Redemption Events (Withdrawals)',
+    // ── Investor card ──
+    capitalInvested:'Capital Invested', netCapital:'Net Capital',
+    totalDeposited:'Total Deposited', pnlUnitNav:'P&L (Unit NAV)',
+    unitsHeld:'Units Held', currentValue:'Current Value',
+    returnOnCapital:'Return on Capital', realisedOnExits:'Realised on Exits',
+    depositHistory:'Deposit History', withdrawalHistory:'Withdrawal History',
+    ownership:'ownership', available:'Available', dToUnlock:'d to unlock',
+    deposited:'Deposited', netPayout:'Total value',
+    unitsIssued:'Units Issued', unitsRedeemed:'Units Redeemed',
+    entryUnitPrice:'Entry Unit Price', currentUnitPrice:'Current Unit Price',
+    tranchePnl:'Tranche P&L', unitsBurned:'Units Burned',
+    redemptionPrice:'Redemption Price', navAtRedemption:'NAV at Redemption',
+    realisedPnlLabel:'Realised P&L',
+    // ── Analytics ──
+    fundNavVsBtc:'Fund NAV vs BTC', normalisedReturn:'Normalised % return since first trade',
+    dailyUnitNavLog:'Daily Unit NAV Price Log', reconstructedSub:'Reconstructed from closed trades · master only',
+    tradeStatistics:'Trade Statistics', winRateByClass:'Win Rate by Asset Class',
+    pnlByClass:'P&L by Asset Class', tradeHeatmap:'Trade P&L Heatmap',
+    hoverDetails:'Hover for details', rollingMomentum:'Rolling 7-Trade P&L Momentum',
+    rollingAvg:'7-trade rolling average', cumulativePnl:'Cumulative P&L',
+    closedTradesLabel:'Closed trades', pnlPerTrade:'P&L per Trade',
+    investorCapital:'Investor Capital Over Time',
+    recentClosedTrades:'Recent Closed Trades', last25:'Last 25',
+    investorProjections:'Investor Projections', annualisedRate:'At current annualised rate',
+    // ── Calendar ──
+    tradesThisMonth:'Trades This Month',
+    // ── Dispatches ──
+    dispatchesFeed:'Dispatches',
+    // ── Table headers ──
+    thInvestor:'Investor', thDeposit:'Total Deposited', thWithdrawn:'Total Withdrawn',
+    thCostBasis:'Cost Basis', thUnitsBurned:'Units Burned', thAvgRedemption:'Avg Redemption Price',
+    thRealisedPnl:'Realised P&L', thStatus:'Status', thLockup:'Lockup Remaining',
+    thDate:'Date', thEvent:'Event', thCumPnl:'Cum. P&L', thFundNav:'Fund NAV',
+    thTotalUnits:'Total Units', thUnitPrice:'Unit Price', thChange:'Change',
+    thCumPnlAt:'Cum. P&L at Date', thNavAt:'NAV at Date',
+    // ── Modals ──
+    payoutCalc:'Payout Calculator', payoutSub:'Simulate a fund distribution — see what each investor receives',
+    fundTransaction:'Fund Transaction', depositLabel:'Deposit', withdrawalLabel:'Withdrawal',
+    addFunds:'Add funds to the fund', requestPayout:'Request fund payout',
+    stmtRequest:'Request Account Statement',
+    stmtRequestSub:'Submit your details and the fund manager will send your statement directly.',
+    // ── Misc ──
+    noOpenSLTP:'No open positions with SL/TP set',
+    inceptionPrice:'Inception price $1.0000',
+    unitsHeldAt:'units held @', entryNav:'entry NAV', redeemed2:'redeemed',
+    noDepositBreakdown:'No deposit breakdown available',
+    noTxnData:'No transaction data available',
+    noTxnFound:'No transactions found',
+    totalRunning:'Total',
+    dToUnlockShort:'d to unlock', dRemaining:'d remaining',
+    realisedFromWithdrawals:'Realised P&L from Withdrawals: Units redeemed at the NAV price prevailing on each withdrawal date.',
+    onlyUnlockedWithdraw:'Only unlocked funds may be withdrawn. Enter the total cash amount you are receiving — this includes your original capital plus any P&L gains. The system will automatically calculate how many units are redeemed at the current unit NAV price.',
+    returnOnCapitalStmt:'Return on Capital',
+    verified:'Verified', pending:'Pending', unlocked:'Unlocked',
+    locked:'LOCKED', unlockedBadge:'UNLOCKED', redeemed:'REDEEMED',
+    totalLabel:'Total',
   },
   fr: {
+    // ── Nav tabs ──
     overview:'Aperçu', positions:'Positions', investors:'Investisseurs',
-    analytics:'Analytique', calendar:'Calendrier',
-    fundNav:'VNI du Fonds', totalPnl:'P&P Total', totalReturn:'Rendement Total',
-    winRate:'Taux de Réussite', realisedPnl:'P&P Réalisé', unrealisedPnl:'P&P Non Réalisé',
+    analytics:'Analytique', calendar:'Calendrier', activity:'Activité',
+    dispatches:'Bulletins',
+    // ── Header ──
+    lock:'Verrouiller', live:'EN DIRECT',
+    // ── Overview metric cards ──
+    fundNav:'VNI du Fonds', totalPnl:'P&G Total', totalReturn:'Rendement Total',
+    winRate:'Taux de Réussite', realisedPnl:'P&G Réalisé', unrealisedPnl:'P&G Non Réalisé',
     marginDeployed:'Marge Déployée', notional:'Exp. Notionnelle',
-    todayPnl:"P&P Aujourd'hui", fundAge:'Âge du Fonds',
+    todayPnl:"P&G Aujourd'hui", fundAge:'Âge du Fonds',
+    // ── Overview metric subs ──
+    allClosedOpen:'Toutes positions fermées + ouvertes', sinceInception:"Depuis la création du fonds",
+    winsLosses:'gagnants / perdants', closedTradesCount:'trades clôturés',
+    fromOpenPos:'Des positions ouvertes', currentlyDeployed:'Actuellement déployé',
+    grossNotional:'Valeur notionnelle brute', dailyReturn:'rendement journalier',
+    noTradesDay:'Aucun trade clôturé aujourd\'hui',
+    // ── Overview card titles ──
+    unitNavPriceHistory:'Historique Prix Unitaire VNI',
+    unitNavSince:'Prix par unité depuis la création · base $1.0000',
+    fundHealthScore:'Score de Santé du Fonds',
+    pnlBreakdown:'Répartition P&G', assetClassPnl:'P&G par Classe d\'Actifs',
+    tradeOutcomes:'Résultats des Trades', riskMetrics:'Métriques de Risque',
+    liveUnrealisedPnl:'P&G Non Réalisé en Direct', sessionTrack:'Session en cours · mise à jour toutes les 3s',
+    winLossHeatmap:'Carte Gagnants / Perdants',
+    // ── Overview hero ──
     netAssetValue:'Valeur nette des actifs', realisedUnrealised:'Réalisé + Non réalisé',
     onCapital:'Sur capital déposé', openPositions:'Positions ouvertes',
     activePositions:'Positions actives', totalLeveraged:'Total avec effet de levier',
-    closedTrades:'trades clôturés', lock:'Verrouiller', live:'EN DIRECT',
+    profitFactor:'Facteur de Profit', openTrades:'Trades Ouverts',
+    // ── Positions ──
     openPos:'Positions Ouvertes', closedPos:'Positions Clôturées',
-    unrealisedPnlCol:'P&P Non Réalisé', entryDate:"Date d'Entrée", exitDate:'Date de Sortie',
+    posRiskMeter:'Jauge de Risque', posRiskSub:'Positions ouvertes · exposition SL & TP',
+    unrealisedPnlCol:'P&G Non Réalisé', entryDate:"Date d'Entrée", exitDate:'Date de Sortie',
     duration:'Durée', entry:'Entrée', exit:'Sortie', hold:'Durée',
-    result:'Résultat', side:'Sens', class:'Classe', ticker:'Ticker',
+    result:'Résultat', side:'Sens', class:'Classe', ticker:'Symbole',
+    searchPlaceholder:'Rechercher symbole, classe, sens...',
+    allPositions:'Toutes Positions', openOnly:'Ouvertes Seulement', closedOnly:'Clôturées Seulement',
+    allResults:'Tous Résultats', tpHits:'Objectifs Atteints', slHits:'Stops Déclenchés', active:'Actif',
+    noOpenPositions:'Aucune position ouverte',
+    // ── Investors ──
+    totalCapital:'Capital Total', totalWithdrawn:'Total Retiré',
+    totalPnlDist:'P&G Dist. Total', totalInvestors:'Total Investisseurs',
+    unitNavWeighted:'Pondéré par VNI unitaire', allTime:'Depuis toujours', transactions:'transactions',
+    fundOwnership:'Propriété du Fonds', pnlShare:'Part de P&G',
+    txnHistory:'Historique des Transactions', withdrawalTracker:'Suivi des Retraits',
+    unitNavLedger:'Registre VNI Unitaire', unitAuditSub:"Journal d'audit complet des émissions et rachats",
+    issuanceEvents:'Événements d\'Émission (Dépôts)', redemptionEvents:'Événements de Rachat (Retraits)',
+    // ── Investor card ──
+    capitalInvested:'Capital Investi', netCapital:'Capital Net',
+    totalDeposited:'Total Déposé', pnlUnitNav:'P&G (VNI Unitaire)',
+    unitsHeld:'Unités Détenues', currentValue:'Valeur Actuelle',
+    returnOnCapital:'Rendement sur Capital', realisedOnExits:'Réalisé sur Sorties',
+    depositHistory:'Historique des Dépôts', withdrawalHistory:'Historique des Retraits',
+    ownership:'propriété', available:'Disponible', dToUnlock:'j restants',
+    deposited:'Déposé', netPayout:'Valeur Totale',
+    unitsIssued:'Unités Émises', unitsRedeemed:'Unités Rachetées',
+    entryUnitPrice:'Prix Unitaire d\'Entrée', currentUnitPrice:'Prix Unitaire Actuel',
+    tranchePnl:'P&G de Tranche', unitsBurned:'Unités Rachetées',
+    redemptionPrice:'Prix de Rachat', navAtRedemption:'VNI au Rachat',
+    realisedPnlLabel:'P&G Réalisé',
+    // ── Analytics ──
+    fundNavVsBtc:'VNI du Fonds vs BTC', normalisedReturn:'Rendement % normalisé depuis le premier trade',
+    dailyUnitNavLog:'Journal Prix VNI Unitaire Quotidien', reconstructedSub:'Reconstruit à partir des trades clôturés · maître seulement',
+    tradeStatistics:'Statistiques des Trades', winRateByClass:'Taux de Réussite par Classe',
+    pnlByClass:"P&G par Classe d'Actifs", tradeHeatmap:'Carte Thermique des Trades',
+    hoverDetails:'Survoler pour les détails', rollingMomentum:'Dynamique P&G sur 7 Trades',
+    rollingAvg:'Moyenne mobile 7 trades', cumulativePnl:'P&G Cumulatif',
+    closedTradesLabel:'Trades clôturés', pnlPerTrade:'P&G par Trade',
+    investorCapital:'Capital des Investisseurs dans le Temps',
+    recentClosedTrades:'Trades Clôturés Récents', last25:'25 derniers',
+    investorProjections:'Projections Investisseurs', annualisedRate:'Au taux annualisé actuel',
+    // ── Calendar ──
+    tradesThisMonth:'Trades ce Mois',
+    // ── Dispatches ──
+    dispatchesFeed:'Bulletins',
+    // ── Table headers ──
+    thInvestor:'Investisseur', thDeposit:'Total Déposé', thWithdrawn:'Total Retiré',
+    thCostBasis:'Base de Coût', thUnitsBurned:'Unités Rachetées', thAvgRedemption:'Prix Moyen de Rachat',
+    thRealisedPnl:'P&G Réalisé', thStatus:'Statut', thLockup:'Verrouillage Restant',
+    thDate:'Date', thEvent:'Événement', thCumPnl:'P&G Cum.', thFundNav:'VNI du Fonds',
+    thTotalUnits:'Total Unités', thUnitPrice:'Prix Unitaire', thChange:'Variation',
+    thCumPnlAt:'P&G Cum. à la Date', thNavAt:'VNI à la Date',
+    // ── Modals ──
+    payoutCalc:'Calculateur de Distribution', payoutSub:'Simuler une distribution du fonds — voir ce que chaque investisseur reçoit',
+    fundTransaction:'Transaction du Fonds', depositLabel:'Dépôt', withdrawalLabel:'Retrait',
+    addFunds:'Ajouter des fonds au fonds', requestPayout:'Demander un paiement',
+    stmtRequest:'Demander un Relevé de Compte',
+    stmtRequestSub:'Soumettez vos coordonnées et le gestionnaire vous enverra votre relevé.',
+    // ── Misc ──
+    noOpenSLTP:'Aucune position ouverte avec SL/TP défini',
+    inceptionPrice:'Prix d\'inception $1.0000',
+    unitsHeldAt:'unités détenues @', entryNav:'VNI d\'entrée', redeemed2:'rachetées',
+    noDepositBreakdown:'Aucune ventilation des dépôts disponible',
+    noTxnData:'Aucune donnée de transaction disponible',
+    noTxnFound:'Aucune transaction trouvée',
+    totalRunning:'Total',
+    dToUnlockShort:'j restants', dRemaining:'j restants',
+    realisedFromWithdrawals:'P&G Réalisé sur les Retraits : Unités rachetées au prix VNI en vigueur à la date de chaque retrait.',
+    onlyUnlockedWithdraw:'Seuls les fonds déverrouillés peuvent être retirés. Saisissez le montant total en espèces reçu — cela inclut votre capital initial et tout gain P&G. Le système calculera automatiquement le nombre d\'unités rachetées au prix VNI unitaire actuel.',
+    returnOnCapitalStmt:'Rendement sur Capital',
+    verified:'Vérifié', pending:'En attente', unlocked:'Déverrouillé',
+    locked:'VERROUILLÉ', unlockedBadge:'DÉVERROUILLÉ', redeemed:'RACHETÉ',
+    totalLabel:'Total',
   }
 };
 
@@ -5416,36 +5596,86 @@ function setLang(lang) {
   currentLang = lang;
   document.getElementById('lang-en').classList.toggle('active', lang==='en');
   document.getElementById('lang-fr').classList.toggle('active', lang==='fr');
-  // Update nav tabs
+
+  // ── Nav tabs ──
   document.querySelectorAll('.nav-tab').forEach(tab => {
     const onclick = tab.getAttribute('onclick')||'';
     const match = onclick.match(/'(\w+)'/);
-    if (match) {
-      const key = match[1];
-      if (TRANSLATIONS[lang][key]) { tab.textContent = t(key); tab.style.textTransform = lang==='fr' ? 'none' : ''; }
+    if (match && TRANSLATIONS.en[match[1]]) {
+      tab.textContent = t(match[1]);
+      tab.style.textTransform = lang==='fr' ? 'none' : '';
     }
   });
-  // Update mobile nav items
+
+  // ── Mobile nav ──
   document.querySelectorAll('.mobile-nav-item').forEach(item => {
     const tabKey = item.getAttribute('data-tab');
-    if (tabKey) {
-      const svg = item.querySelector('svg');
-      item.textContent = t(tabKey);
-      if (svg) item.prepend(svg);
-    }
+    if (tabKey) { const svg = item.querySelector('svg'); item.textContent = t(tabKey); if (svg) item.prepend(svg); }
   });
-  // Update header buttons
+
+  // ── Header ──
   const lockBtn = document.querySelector('.logout-btn');
   if (lockBtn) lockBtn.textContent = t('lock');
-  // Update live badge text without destroying the dot
   const liveBadge = document.querySelector('.live-badge');
-  if (liveBadge) {
-    const dot = liveBadge.querySelector('.live-dot');
-    liveBadge.innerHTML = '';
-    if (dot) liveBadge.appendChild(dot);
-    liveBadge.appendChild(document.createTextNode(t('live')));
+  if (liveBadge) { const dot = liveBadge.querySelector('.live-dot'); liveBadge.innerHTML = ''; if (dot) liveBadge.appendChild(dot); liveBadge.appendChild(document.createTextNode(t('live'))); }
+
+  // ── Static card titles (HTML elements with data-i18n) ──
+  // Use a helper to update card titles by ID
+  const ct = (id, key) => { const el = document.getElementById(id); if (el) el.textContent = t(key); };
+
+  // Overview card titles
+  const setCardTitle = (selector, key) => { const el = document.querySelector(selector); if (el) el.textContent = t(key); };
+
+  // ── All static card title spans — update by iterating with data- attributes ──
+  // We'll update them via querySelectorAll on card-title spans that have a data-i18n attribute
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+
+  // ── Static card titles in HTML — update known ones directly ──
+  document.querySelectorAll('.card-title').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (key) el.textContent = t(key);
+  });
+
+  // ── Position search placeholder ──
+  const posSearch = document.getElementById('pos-search');
+  if (posSearch) posSearch.placeholder = t('searchPlaceholder');
+
+  // ── Position filter dropdowns ──
+  const statusFilter = document.getElementById('pos-filter-status');
+  if (statusFilter) {
+    statusFilter.options[0].text = t('allPositions');
+    statusFilter.options[1].text = t('openOnly');
+    statusFilter.options[2].text = t('closedOnly');
   }
-  // Re-render current page
+  const resultFilter = document.getElementById('pos-filter-result');
+  if (resultFilter) {
+    resultFilter.options[0].text = t('allResults');
+    resultFilter.options[1].text = t('tpHits');
+    resultFilter.options[2].text = t('slHits');
+    resultFilter.options[3].text = t('active');
+  }
+
+  // ── Withdrawal tracker table headers ──
+  const wdrThead = document.querySelector('#withdrawal-tbody')?.closest('table')?.querySelector('thead tr');
+  if (wdrThead) wdrThead.innerHTML = `<th>${t('thInvestor')}</th><th>${t('thDeposit')}</th><th>${t('thWithdrawn')}</th><th>${t('thCostBasis')}</th><th>${t('thUnitsBurned')}</th><th>${t('thAvgRedemption')}</th><th>${t('thRealisedPnl')}</th><th>${t('thStatus')}</th><th>${t('thLockup')}</th>`;
+
+  // ── Unit NAV log table headers ──
+  const unitLogThead = document.querySelector('#unit-nav-log-tbody')?.closest('table')?.querySelector('thead tr');
+  if (unitLogThead) unitLogThead.innerHTML = `<th>#</th><th>${t('thDate')}</th><th>${t('thEvent')}</th><th>${t('thCumPnl')}</th><th>${t('thFundNav')}</th><th>${t('thTotalUnits')}</th><th>${t('thUnitPrice')}</th><th>${t('thChange')}</th>`;
+
+  // ── Withdrawal tracker table header ──
+  const wdrTh = document.getElementById('wdr-tracker-thead');
+  if (wdrTh) wdrTh.innerHTML = `<tr><th>${t('thInvestor')}</th><th>${t('thDeposit')}</th><th>${t('thWithdrawn')}</th><th>${t('thCostBasis')}</th><th>${t('thUnitsBurned')}</th><th>${t('thAvgRedemption')}</th><th>${t('thRealisedPnl')}</th><th>${t('thStatus')}</th><th>${t('thLockup')}</th></tr>`;
+
+  // ── Statement request modal ──
+  const stmtTitle = document.querySelector('#stmt-req-modal .modal-title');
+  if (stmtTitle) stmtTitle.textContent = t('stmtRequest');
+  const stmtSub = document.querySelector('#stmt-req-modal .modal-sub');
+  if (stmtSub) stmtSub.textContent = t('stmtRequestSub');
+
+  // ── Re-render current page ──
   if (window.lastData) renderAll(window.lastData);
 }
 
@@ -5570,7 +5800,7 @@ function sortClosed(field) {
   const labels = {cls:'Class',ticker:'Ticker',date:'Entry Date',exitDate:'Exit Date',hold:'Hold',pnl:'P&L',result:'Result'};
   const lbl = document.getElementById('closed-sort-label');
   const btn = document.getElementById('closed-sort-clear');
-  if (lbl) { lbl.textContent = 'Sorted by ' + labels[field] + ' ' + (closedSortDir==='asc'?'↑':'↓'); lbl.style.display='inline'; }
+  if (lbl) { lbl.textContent = t('sortedBy') + ' ' + labels[field] + ' ' + (closedSortDir==='asc'?'↑':'↓'); lbl.style.display='inline'; }
   if (btn) btn.style.display = 'inline-flex';
   if (window.lastData) renderPositions(window.lastData.positions||[]);
 }
@@ -5646,25 +5876,25 @@ function renderCalSummary(positions, year, month) {
   const worst     = Math.min(...monthTrades.map(p=>p.pnl));
   el.innerHTML = `<div class="cal-summary-bar">
     <div class="cal-sum-item">
-      <div class="cal-sum-label">Monthly P&L</div>
+      <div class="cal-sum-label">${t('monthlyPnl')}</div>
       <div class="cal-sum-val" style="color:${totalPnl>=0?'var(--green)':'var(--red)'}">
         ${totalPnl>=0?'+':''}$${fmtM(totalPnl)}
       </div>
     </div>
     <div class="cal-sum-item">
-      <div class="cal-sum-label">Trades</div>
+      <div class="cal-sum-label">${t('trades')}</div>
       <div class="cal-sum-val" style="color:var(--text)">${monthTrades.length}</div>
     </div>
     <div class="cal-sum-item">
-      <div class="cal-sum-label">Win Rate (closed)</div>
+      <div class="cal-sum-label">${t('winRate')}</div>
       <div class="cal-sum-val" style="color:var(--accent2)">${closedMonth.length > 0 ? ((wins/winDenom)*100).toFixed(0)+'%' : '—'}</div>
     </div>
     <div class="cal-sum-item">
-      <div class="cal-sum-label">Best Trade</div>
+      <div class="cal-sum-label">${t('bestTrade')}</div>
       <div class="cal-sum-val" style="color:var(--green)">+$${fmtM(best)}</div>
     </div>
     <div class="cal-sum-item">
-      <div class="cal-sum-label">Worst Trade</div>
+      <div class="cal-sum-label">${t('worstTrade')}</div>
       <div class="cal-sum-val" style="color:var(--red)">${worst>=0?'+':''}$${fmtM(worst)}</div>
     </div>
   </div>`;
@@ -5936,8 +6166,8 @@ function buildActivityLog(d) {
       icon: isTP ? '✓' : isSL ? '✗' : '●',
       iconBg: isTP ? 'rgba(62,207,142,0.15)' : isSL ? 'rgba(232,83,74,0.15)' : 'rgba(74,158,255,0.15)',
       iconColor: isTP ? 'var(--green)' : isSL ? 'var(--red)' : 'var(--blue)',
-      title: (isTP ? 'TP Hit' : isSL ? 'SL Hit' : 'Closed') + ' — ' + p.ticker,
-      meta: p.cls + ' · ' + p.side + ' · Hold: ' + (p.hold||0) + 'd · Exit: ' + (p.exitDate||p.date||'—'),
+      title: (isTP ? t('tpHit') : isSL ? t('slHit') : t('closed')) + ' — ' + p.ticker,
+      meta: p.cls + ' · ' + p.side + ' · ' + t('hold') + ': ' + (p.hold||0) + 'd · ' + t('exitDate') + ': ' + (p.exitDate||p.date||'—'),
       amount: (p.pnl>=0?'+':'') + '$' + fmtM(p.pnl),
       amountColor: p.pnl >= 0 ? 'var(--green)' : 'var(--red)',
     });
@@ -5948,9 +6178,9 @@ function buildActivityLog(d) {
       date: p.date||'', type: 'trade',
       sortKey: p.id || 0,
       icon: '▶', iconBg: 'rgba(200,169,110,0.15)', iconColor: 'var(--accent)',
-      title: 'Position Opened — ' + p.ticker,
-      meta: p.cls + ' · ' + p.side + ' · Entry: ' + p.entry + ' · Since: ' + (p.date||'—'),
-      amount: 'ACTIVE', amountColor: 'var(--blue)',
+      title: t('positionOpened') + ' — ' + p.ticker,
+      meta: p.cls + ' · ' + p.side + ' · ' + t('entry') + ': ' + p.entry + ' · ' + t('since') + ': ' + (p.date||'—'),
+      amount: t('active'), amountColor: 'var(--blue)',
     });
   });
   // Deposits/Withdrawals from transactions
@@ -5962,7 +6192,7 @@ function buildActivityLog(d) {
       icon: isDep ? '↓' : '↑',
       iconBg: isDep ? 'rgba(62,207,142,0.15)' : 'rgba(232,83,74,0.15)',
       iconColor: isDep ? 'var(--green)' : 'var(--red)',
-      title: (isDep ? 'Deposit' : 'Withdrawal') + ' — ' + getDisplayName(t.name),
+      title: (isDep ? t('depositActivity') : t('withdrawalActivity')) + ' — ' + getDisplayName(t.name),
       meta: t.date + (t.note ? ' · ' + t.note : ''),
       amount: (isDep?'+':'-') + '$' + fmtM(isDep?t.deposit:t.withdrawal),
       amountColor: isDep ? 'var(--green)' : 'var(--red)',
@@ -5983,11 +6213,11 @@ function renderActivityLog() {
   const filter = document.getElementById('activity-filter')?.value || 'all';
   const events = buildActivityLog(d).filter(e => filter==='all' || e.type===filter);
   const countEl = document.getElementById('activity-count');
-  if (countEl) countEl.textContent = events.length + ' events';
+  if (countEl) countEl.textContent = events.length + ' ' + t('events');
   const listEl = document.getElementById('activity-list');
   if (!listEl) return;
   listEl.innerHTML = events.length === 0
-    ? '<div style="color:var(--muted);font-size:12px;padding:16px 0;">No activity found</div>'
+    ? '<div style="color:var(--muted);font-size:12px;padding:16px 0;">${t('noActivity')}</div>'
     : events.map(e => `
       <div class="activity-item">
         <div class="activity-icon" style="background:${e.iconBg};color:${e.iconColor};">${e.icon}</div>
@@ -6547,7 +6777,7 @@ function selectDWType(type) {
   if (type === 'deposit') {
     notice.innerHTML = '<div class="dw-notice">&#9432; Minimum deposit is <strong>$200,000</strong>. Your request will be reviewed by the fund manager and you will be contacted with payment instructions.</div>';
   } else {
-    notice.innerHTML = '<div class="dw-notice warning">&#9888; <strong>Only unlocked funds may be withdrawn.</strong> Enter the <strong>total cash amount you are receiving</strong> — this includes your original capital plus any P&L gains. The system will automatically calculate how many units are redeemed at the current unit NAV price.</div>';
+    notice.innerHTML = `<div class="dw-notice warning">&#9888; ${t('onlyUnlockedWithdraw')}</div>`;
   }
 }
 
@@ -6901,7 +7131,7 @@ function renderRiskMeter(positions) {
   if(!el) return;
   const open = positions.filter(p=>p.status==='Open'&&p.sl&&p.tp&&p.entry);
   if(!open.length){
-    el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px 0;">No open positions with SL/TP set</div>';
+    el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px 0;">'+t('noOpenSLTP')+'</div>';
     return;
   }
   el.innerHTML = open.map(p=>{
