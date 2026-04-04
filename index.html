@@ -749,15 +749,7 @@
     #pnl-live-ticker .ticker-dot   { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s ease-in-out infinite; }
     
 
-    /* ── LANGUAGE TOGGLE ── */
-    .lang-btn {
-      font-size: 10px; color: var(--muted); letter-spacing: 0.06em;
-      background: none; border: 1px solid var(--border); border-radius: 6px;
-      padding: 5px 8px; cursor: pointer; transition: all 0.15s;
-      text-transform: uppercase; font-family: var(--font);
-    }
-    .lang-btn:hover { color: var(--accent); border-color: var(--accent); }
-    .lang-btn.active { color: var(--accent2); border-color: var(--accent); background: rgba(200,169,110,0.1); }
+
 
 
     /* ── SORT CONTROLS ── */
@@ -967,7 +959,6 @@
       .logo-text { font-size: 12px; }
       .logo-sub  { display: none; }
       /* Hide EN/FR, date, access badge on mobile — too cramped */
-      .lang-btn, #lang-en, #lang-fr { display: none !important; }
       #live-date { display: none; }
       #access-badge { display: none !important; }
       /* Shrink header-right items */
@@ -1149,7 +1140,6 @@
       .logo-text { font-size: 12px; }
       .logo-sub  { display: none; }
       /* Hide EN/FR, date, access badge on mobile — too cramped */
-      .lang-btn, #lang-en, #lang-fr { display: none !important; }
       #live-date { display: none; }
       #access-badge { display: none !important; }
       /* Shrink header-right items */
@@ -1341,8 +1331,7 @@
         <div id="mobile-tab-name">Overview</div>
       </div>
       <div class="date-label" id="live-date">—</div>
-      <button class="lang-btn active" id="lang-en" onclick="setLang('en')">EN</button>
-      <button class="lang-btn" id="lang-fr" onclick="setLang('fr')">FR</button>
+
       <button class="notif-bell" onclick="toggleNotifPanel()" id="notif-bell-btn">
         &#128276;
         <div class="notif-badge" id="notif-badge">0</div>
@@ -5024,7 +5013,6 @@ function generateStatement() {
       .logo-text { font-size: 12px; }
       .logo-sub  { display: none; }
       /* Hide EN/FR, date, access badge on mobile — too cramped */
-      .lang-btn, #lang-en, #lang-fr { display: none !important; }
       #live-date { display: none; }
       #access-badge { display: none !important; }
       /* Shrink header-right items */
@@ -5373,81 +5361,18 @@ function retryLoad() {
 
 
 
-// ── LANGUAGE SUPPORT ─────────────────────────────────────────────
-let currentLang = 'en';
+// ── LANGUAGE SUPPORT (EN only) ───────────────────────────────────
 const TRANSLATIONS = {
   en: {
     overview:'Overview', positions:'Positions', investors:'Investors',
     analytics:'Analytics', calendar:'Calendar',
-    fundNav:'Fund NAV', totalPnl:'Total P&L', totalReturn:'Total Return',
-    winRate:'Win Rate', realisedPnl:'Realised P&L', unrealisedPnl:'Unrealised P&L',
-    marginDeployed:'Margin Deployed', notional:'Notional Exp.',
-    todayPnl:"Today's P&L", fundAge:'Fund Age',
-    netAssetValue:'Net asset value', realisedUnrealised:'Realised + Unrealised',
-    onCapital:'On capital deposited', openPositions:'Open positions',
-    activePositions:'Active positions', totalLeveraged:'Total leveraged',
-    closedTrades:'closed trades', lock:'Lock', live:'LIVE',
-    openPos:'Open Positions', closedPos:'Closed Positions',
-    unrealisedPnlCol:'Unrealised P&L', entryDate:'Entry Date', exitDate:'Exit Date',
-    duration:'Duration', entry:'Entry', exit:'Exit', hold:'Hold',
-    result:'Result', side:'Side', class:'Class', ticker:'Ticker',
+    entry:'Entry', exit:'Exit', hold:'Hold', result:'Result',
+    side:'Side', class:'Class', ticker:'Ticker',
+    entryDate:'Entry Date', exitDate:'Exit Date', duration:'Duration',
   },
-  fr: {
-    overview:'Aperçu', positions:'Positions', investors:'Investisseurs',
-    analytics:'Analytique', calendar:'Calendrier',
-    fundNav:'VNI du Fonds', totalPnl:'P&P Total', totalReturn:'Rendement Total',
-    winRate:'Taux de Réussite', realisedPnl:'P&P Réalisé', unrealisedPnl:'P&P Non Réalisé',
-    marginDeployed:'Marge Déployée', notional:'Exp. Notionnelle',
-    todayPnl:"P&P Aujourd'hui", fundAge:'Âge du Fonds',
-    netAssetValue:'Valeur nette des actifs', realisedUnrealised:'Réalisé + Non réalisé',
-    onCapital:'Sur capital déposé', openPositions:'Positions ouvertes',
-    activePositions:'Positions actives', totalLeveraged:'Total avec effet de levier',
-    closedTrades:'trades clôturés', lock:'Verrouiller', live:'EN DIRECT',
-    openPos:'Positions Ouvertes', closedPos:'Positions Clôturées',
-    unrealisedPnlCol:'P&P Non Réalisé', entryDate:"Date d'Entrée", exitDate:'Date de Sortie',
-    duration:'Durée', entry:'Entrée', exit:'Sortie', hold:'Durée',
-    result:'Résultat', side:'Sens', class:'Classe', ticker:'Ticker',
-  }
 };
 
-function t(key) { return TRANSLATIONS[currentLang][key] || TRANSLATIONS.en[key] || key; }
-
-function setLang(lang) {
-  currentLang = lang;
-  document.getElementById('lang-en').classList.toggle('active', lang==='en');
-  document.getElementById('lang-fr').classList.toggle('active', lang==='fr');
-  // Update nav tabs
-  document.querySelectorAll('.nav-tab').forEach(tab => {
-    const onclick = tab.getAttribute('onclick')||'';
-    const match = onclick.match(/'(\w+)'/);
-    if (match) {
-      const key = match[1];
-      if (TRANSLATIONS[lang][key]) { tab.textContent = t(key); tab.style.textTransform = lang==='fr' ? 'none' : ''; }
-    }
-  });
-  // Update mobile nav items
-  document.querySelectorAll('.mobile-nav-item').forEach(item => {
-    const tabKey = item.getAttribute('data-tab');
-    if (tabKey) {
-      const svg = item.querySelector('svg');
-      item.textContent = t(tabKey);
-      if (svg) item.prepend(svg);
-    }
-  });
-  // Update header buttons
-  const lockBtn = document.querySelector('.logout-btn');
-  if (lockBtn) lockBtn.textContent = t('lock');
-  // Update live badge text without destroying the dot
-  const liveBadge = document.querySelector('.live-badge');
-  if (liveBadge) {
-    const dot = liveBadge.querySelector('.live-dot');
-    liveBadge.innerHTML = '';
-    if (dot) liveBadge.appendChild(dot);
-    liveBadge.appendChild(document.createTextNode(t('live')));
-  }
-  // Re-render current page
-  if (window.lastData) renderAll(window.lastData);
-}
+function t(key) { return TRANSLATIONS.en[key] || key; }
 
 // ── ASSET CLASS FILTER CHIPS ─────────────────────────────────────
 let activeChips = new Set(['all']);
@@ -7000,7 +6925,6 @@ function exportPDF() {
       .logo-text { font-size: 12px; }
       .logo-sub  { display: none; }
       /* Hide EN/FR, date, access badge on mobile — too cramped */
-      .lang-btn, #lang-en, #lang-fr { display: none !important; }
       #live-date { display: none; }
       #access-badge { display: none !important; }
       /* Shrink header-right items */
@@ -7181,7 +7105,6 @@ function exportPDF() {
       .logo-text { font-size: 12px; }
       .logo-sub  { display: none; }
       /* Hide EN/FR, date, access badge on mobile — too cramped */
-      .lang-btn, #lang-en, #lang-fr { display: none !important; }
       #live-date { display: none; }
       #access-badge { display: none !important; }
       /* Shrink header-right items */
