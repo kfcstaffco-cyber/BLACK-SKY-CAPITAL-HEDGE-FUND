@@ -1592,6 +1592,14 @@
       <div class="chart-wrap tall"><canvas id="cumulativePnlChart"></canvas></div>
     </div>
     <div class="card">
+      <div class="card-header">
+        <span class="card-title">Drawdown Curve</span>
+        <span style="font-size:10px;color:var(--muted);">Peak-to-trough decline over time · % of peak NAV</span>
+      </div>
+      <div id="drawdown-summary" style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:14px;padding:12px 16px;background:rgba(232,83,74,0.05);border:1px solid rgba(232,83,74,0.15);border-radius:10px;"></div>
+      <div class="chart-wrap tall"><canvas id="drawdownChart"></canvas></div>
+    </div>
+    <div class="card">
       <div class="card-header"><span class="card-title">P&L per Trade</span></div>
       <div class="chart-wrap tall"><canvas id="plBarChart"></canvas></div>
     </div>
@@ -1686,6 +1694,9 @@
         <div id="dw-step2-notice"></div>
         <label style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Your Name</label>
         <input class="modal-input" id="dw-name" type="text" placeholder="e.g. Gustavo Fring" />
+        <label style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Your Email <span style="color:var(--muted);font-weight:400;">(for confirmation)</span></label>
+        <input class="modal-input" id="dw-email" type="email" placeholder="e.g. you@email.com" style="margin-bottom:4px;" />
+        <div style="font-size:10px;color:var(--muted);margin-bottom:12px;">Optional — if provided you'll receive a confirmation copy</div>
         <label style="font-size:10px;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Amount ($)</label>
         <input class="modal-input" id="dw-amount" type="text" placeholder="e.g. 50,000,000" oninput="formatDWAmount()" />
         <div id="dw-amount-error" style="font-size:11px;color:var(--red);min-height:16px;margin-bottom:8px;"></div>
@@ -2800,14 +2811,27 @@ function renderOverview(d) {
     {label:'Margin Deployed',val:'$'+fmtM(d.marginDeployed), cls:'blue',  sub:'Currently deployed',                          key:'marginDeployed'},
     {label:'Notional Exp.',  val:'$'+fmtM(d.notional),       cls:'blue',  sub:'Gross notional value',                           key:'notional'},
     {label:"Today's P&L", val:(()=>{
-      const t=getTodayPnl(d.positions);
+      const liveNav = (window.unitAccounting||{}).liveNAV || d.nav || 0;
+      const t=getTodayPnl(d.positions, liveNav);
       return (t>=0?'+':(t<0?'-':''))+'$'+fmtM(Math.abs(t));
-    })(), cls:(()=>{const t=getTodayPnl(d.positions);return t>0?'green':t<0?'red':'muted';})(),
+    })(), cls:(()=>{
+      const liveNav = (window.unitAccounting||{}).liveNAV || d.nav || 0;
+      const t=getTodayPnl(d.positions, liveNav);
+      return t>0?'green':t<0?'red':'muted';
+    })(),
     sub:(()=>{
-      const t=getTodayPnl(d.positions);
-      const nav=Math.max(d.nav||d.totalDeposited||1,1);
+      const liveNav = (window.unitAccounting||{}).liveNAV || d.nav || 0;
+      const t=getTodayPnl(d.positions, liveNav);
+      const nav=Math.max(liveNav||d.totalDeposited||1,1);
       const pct=(t/nav*100);
-      return t!==0?(pct>=0?'+':'')+pct.toFixed(2)+'% daily return':'No closed trades today';
+      const closedToday = (d.positions||[]).some(p => {
+        const today = new Date();
+        const todayStr = String(today.getDate()).padStart(2,'0')+'/'+String(today.getMonth()+1).padStart(2,'0')+'/'+today.getFullYear();
+        return p.status==='Closed' && (p.exitDate===todayStr||p.date===todayStr);
+      });
+      return t!==0
+        ? (pct>=0?'+':'')+pct.toFixed(2)+'% · '+(closedToday?'closed trades':'NAV movement')
+        : 'No change since open';
     })(), key:'todayPnl'},
     {label:'Fund Age',       val:(()=>{
       const txns=(d.transactions||[]).filter(t=>t.type==='Deposit');
@@ -3505,6 +3529,7 @@ function renderAnalytics(d) {
 
   renderNewAnalytics(d.positions);
   renderStreaks(d.positions||[]);
+  renderDrawdownChart(d);
   setTimeout(addChartDownloadButtons, 200);
 }
 
@@ -3880,13 +3905,14 @@ function renderUnitNavCard(d) {
   const ua = window.unitAccounting;
   if (!ua || !ua.currentUnitPrice) { banner.style.display = 'none'; return; }
 
-  const cup   = ua.currentUnitPrice;
-  const gain  = cup - 1.0; // inception price = $1.00/unit
-  const gainPct = (gain * 100).toFixed(2);
+  const cup      = ua.currentUnitPrice;
+  const gain     = cup - 1.0;
+  const gainPct  = (gain * 100).toFixed(2);
   const gainSign = gain >= 0 ? '+' : '';
   const gainColor = gain >= 0 ? 'var(--green)' : 'var(--red)';
   const totalUnits = ua.totalUnits;
-  const liveNAV    = ua.liveNAV;
+  // Always use the single authoritative NAV
+  const liveNAV  = window.LIVE_NAV || ua.liveNAV || d.nav || 0;
 
   // Build unit price history from unit ledger (sorted chronologically)
   // Track each deposit's unit price as historical data points
@@ -4726,20 +4752,23 @@ function renderHeroNav(d) {
   if (!block) return;
   block.style.display = 'flex';
 
+  // Always use the authoritative single-source NAV
+  const liveNav = window.LIVE_NAV || d.nav || 0;
+
   const navEl  = document.getElementById('hero-nav-val');
   const subEl  = document.getElementById('hero-nav-sub');
   const statsEl= document.getElementById('hero-stats');
 
   if (navEl) {
     const oldNavNum = parseFloat(navEl.getAttribute('data-raw')||'0');
-    navEl.setAttribute('data-raw', d.nav);
-    if (oldNavNum > 0 && Math.abs(d.nav - oldNavNum) > 1) {
+    navEl.setAttribute('data-raw', liveNav);
+    if (oldNavNum > 0 && Math.abs(liveNav - oldNavNum) > 1) {
       navEl.classList.remove('tick-up','tick-down');
       void navEl.offsetWidth;
-      navEl.classList.add(d.nav > oldNavNum ? 'tick-up' : 'tick-down');
+      navEl.classList.add(liveNav > oldNavNum ? 'tick-up' : 'tick-down');
       setTimeout(() => navEl.classList.remove('tick-up','tick-down'), 600);
     }
-    navEl.textContent = '$' + fmtM(d.nav);
+    navEl.textContent = '$' + fmtM(liveNav);
   }
   if (subEl)  subEl.innerHTML    = `<span style="color:${d.totalPnl>=0?'var(--green)':'var(--red)'}">${sgn(d.totalPnl)}$${fmtM(d.totalPnl)}</span> total P&amp;L &nbsp;·&nbsp; <span style="color:var(--green)">${sgn(d.totalReturn)}${(d.totalReturn*100).toFixed(2)}%</span> return`;
   if (statsEl) statsEl.innerHTML = [
@@ -5329,15 +5358,43 @@ function switchTab(name, el, mobileEl) {
 }
 
 // ── TODAY'S P&L ──────────────────────────────────────────────────
-function getTodayPnl(positions) {
+// Track session-start NAV so Today's P&L = current NAV - opening NAV
+const TODAY_NAV_KEY = 'bsc_today_nav';
+const TODAY_NAV_DATE_KEY = 'bsc_today_nav_date';
+let _sessionOpeningNav = null;
+
+function getTodayOpeningNav(currentNav) {
+  const today = new Date().toISOString().slice(0, 10);
+  const savedDate = localStorage.getItem(TODAY_NAV_DATE_KEY);
+  if (savedDate === today) {
+    const saved = parseFloat(localStorage.getItem(TODAY_NAV_KEY));
+    if (!isNaN(saved) && saved > 0) {
+      _sessionOpeningNav = saved;
+      return saved;
+    }
+  }
+  // New day or first load — set opening NAV
+  localStorage.setItem(TODAY_NAV_DATE_KEY, today);
+  localStorage.setItem(TODAY_NAV_KEY, String(currentNav));
+  _sessionOpeningNav = currentNav;
+  return currentNav;
+}
+
+function getTodayPnl(positions, currentNav) {
+  // First try: closed trades today (most accurate for active trading days)
   const today = new Date();
   const dd = String(today.getDate()).padStart(2,'0');
   const mm = String(today.getMonth()+1).padStart(2,'0');
   const yyyy = today.getFullYear();
   const todayStr = dd+'/'+mm+'/'+yyyy;
-  return (positions||[])
+  const closedToday = (positions||[])
     .filter(p => p.status==='Closed' && (p.exitDate===todayStr || p.date===todayStr))
     .reduce((s,p) => s+p.pnl, 0);
+  if (closedToday !== 0) return closedToday;
+  // Fallback: NAV movement since session open
+  if (!currentNav) return 0;
+  const openingNav = getTodayOpeningNav(currentNav);
+  return currentNav - openingNav;
 }
 
 // ── ERROR STATE ──────────────────────────────────────────────────
@@ -5598,7 +5655,7 @@ function renderCalSummary(positions, year, month) {
 // ── CHART DOWNLOAD BUTTONS ───────────────────────────────────────
 function addChartDownloadButtons() {
   const chartIds = ['plBarChart','assetPnlChart','cumulativePnlChart',
-                    'navChart','investorCapitalChart',
+                    'drawdownChart','navChart','investorCapitalChart',
                     'winRateChart','momentumChart','unitNavChart'];
   chartIds.forEach(id => {
     const canvas = document.getElementById(id);
@@ -5755,6 +5812,132 @@ function updateCalc() {
         }).join('')
       + '</div>';
   }
+}
+
+// ── DRAWDOWN CHART ────────────────────────────────────────────────
+function renderDrawdownChart(d) {
+  destroyChart('drawdownChart');
+  const canvas = document.getElementById('drawdownChart');
+  const summaryEl = document.getElementById('drawdown-summary');
+  if (!canvas || !d.positions) return;
+
+  const closed = d.positions.filter(p => p.status === 'Closed');
+  if (closed.length < 2) return;
+
+  // Build NAV series from closed trades
+  const totalDeposited = d.totalDeposited || 0;
+  let cumPnl = 0;
+  let peakNAV = totalDeposited;
+  let maxDrawdownPct = 0;
+  let maxDrawdownAbs = 0;
+  let maxDrawdownDate = '';
+  let currentDrawdownPct = 0;
+  let recoveryCount = 0;
+
+  const labels = [];
+  const drawdownData = []; // % below peak
+  const navData = [];
+
+  closed.forEach(p => {
+    cumPnl += p.pnl;
+    const nav = totalDeposited + cumPnl;
+    const label = p.exitDate || p.date || ('#' + p.id);
+    labels.push(label);
+    navData.push(nav);
+    if (nav > peakNAV) {
+      peakNAV = nav;
+      if (currentDrawdownPct < 0) recoveryCount++;
+      currentDrawdownPct = 0;
+    }
+    const dd = peakNAV > 0 ? ((nav - peakNAV) / peakNAV) * 100 : 0;
+    currentDrawdownPct = dd;
+    drawdownData.push(+dd.toFixed(4));
+    if (dd < maxDrawdownPct) {
+      maxDrawdownPct = dd;
+      maxDrawdownAbs = peakNAV - nav;
+      maxDrawdownDate = label;
+    }
+  });
+
+  // Add current live NAV point
+  const liveNAV = (window.unitAccounting || {}).liveNAV || d.nav || 0;
+  if (liveNAV > 0) {
+    if (liveNAV > peakNAV) peakNAV = liveNAV;
+    const liveDd = peakNAV > 0 ? ((liveNAV - peakNAV) / peakNAV) * 100 : 0;
+    labels.push('Now');
+    drawdownData.push(+liveDd.toFixed(4));
+    currentDrawdownPct = liveDd;
+  }
+
+  // Summary strip
+  if (summaryEl) {
+    const items = [
+      { label: 'Max Drawdown', val: maxDrawdownPct.toFixed(2) + '%', color: 'var(--red)' },
+      { label: 'Max Loss ($)',  val: '-$' + fmtM(maxDrawdownAbs),    color: 'var(--red)' },
+      { label: 'At Date',       val: maxDrawdownDate || '—',          color: 'var(--muted)' },
+      { label: 'Current DD',    val: currentDrawdownPct.toFixed(2) + '%', color: currentDrawdownPct < -1 ? 'var(--red)' : 'var(--green)' },
+      { label: 'Recoveries',    val: recoveryCount + ' new highs',    color: 'var(--green)' },
+    ];
+    summaryEl.innerHTML = items.map(i =>
+      `<div>
+        <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:3px;">${i.label}</div>
+        <div style="font-size:15px;font-family:var(--mono);font-weight:600;color:${i.color};">${i.val}</div>
+      </div>`
+    ).join('');
+  }
+
+  charts.drawdownChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Drawdown %',
+          data: drawdownData,
+          borderColor: '#e8534a',
+          backgroundColor: 'rgba(232,83,74,0.12)',
+          borderWidth: 2, pointRadius: 2, pointHoverRadius: 5,
+          fill: true, tension: 0.35,
+        },
+        {
+          // Zero line reference
+          label: 'Peak (0%)',
+          data: labels.map(() => 0),
+          borderColor: 'rgba(62,207,142,0.4)',
+          borderWidth: 1, pointRadius: 0,
+          borderDash: [4, 4],
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(10,12,15,0.95)',
+          borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
+          padding: 10, cornerRadius: 8,
+          callbacks: {
+            title: ctx => ctx[0].label,
+            label: ctx => {
+              if (ctx.datasetIndex === 1) return null;
+              const v = ctx.parsed.y;
+              return ` Drawdown: ${v.toFixed(2)}% (${v < 0 ? '-' : ''}$${fmtM(Math.abs(navData[ctx.dataIndex] - (navData[ctx.dataIndex] / (1 + v/100) * (v/100))))})`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#6b7380', maxTicksLimit: 8 } },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#6b7380', callback: v => v.toFixed(1) + '%' },
+          max: 1,
+        }
+      }
+    }
+  });
 }
 
 // ── ROLLING WIN RATE CHART ────────────────────────────────────────
@@ -6299,13 +6482,16 @@ function renderDispatches() {
 // ── RENDER ALL ───────────────────────────────────────────────────
 function renderAll(d) {
   window.lastData = d;
-  // Compute unit accounting — pass sheet NAV as the live value;
-  // if sheet NAV is zero/missing, the engine will use runningNAV (deposits minus withdrawals)
+  // ── SINGLE SOURCE OF TRUTH FOR NAV ──────────────────────────────
+  // 1. Compute unit accounting using sheet NAV as the live value
   window.unitAccounting = calcUnitAccounting(d.transactions || [], d.positions || [], d.nav || 0);
-  // Sync d.nav to unit accounting liveNAV so all downstream consumers are consistent
-  if (window.unitAccounting.liveNAV > 0 && (!d.nav || d.nav === 0)) {
-    d.nav = window.unitAccounting.liveNAV;
-  }
+  // 2. Always use unitAccounting.liveNAV as the authoritative NAV —
+  //    it's computed from actual transactions + P&L, not just the sheet cell
+  //    which can lag or be inconsistent. All renders read from window.LIVE_NAV.
+  const _uaNav = window.unitAccounting.liveNAV;
+  window.LIVE_NAV = (_uaNav > 0) ? _uaNav : (d.nav || 0);
+  // 3. Backfill d.nav so legacy code paths are also consistent
+  d.nav = window.LIVE_NAV;
   $('live-date').textContent = new Date().toLocaleString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}).replace(/\//g,'.');
   renderOverview(d);
   renderChips(d.positions||[]);
@@ -6451,7 +6637,7 @@ function openDWModal() {
   dwGoStep(1);
   document.getElementById('dw-modal').classList.add('open');
   // Reset fields
-  ['dw-name','dw-amount','dw-note'].forEach(id => { const el=$(id); if(el) el.value=''; });
+  ['dw-name','dw-email','dw-amount','dw-note'].forEach(id => { const el=$(id); if(el) el.value=''; });
   document.getElementById('dw-amount-error').textContent = '';
   document.getElementById('dw-btn-deposit').classList.remove('selected');
   document.getElementById('dw-btn-withdrawal').classList.remove('selected');
@@ -6544,14 +6730,40 @@ async function submitDWRequest() {
   }
   if (amount <= 0) { errEl.textContent = 'Please enter a valid amount.'; return; }
 
+  // ── LOCKUP CHECK — block withdrawals for locked investors ──
+  if (dwType === 'withdrawal') {
+    const d = window.lastData;
+    if (d && d.investors) {
+      // Case-insensitive name match
+      const match = d.investors.find(inv =>
+        inv.name.toLowerCase() === name.toLowerCase()
+      );
+      if (match && match.status === 'LOCKED') {
+        errEl.innerHTML = `<span style="color:var(--red);">⛔ Your funds are locked for <strong>${match.daysToUnlock} more days</strong>. Withdrawal requests cannot be submitted until your lockup period ends.</span>`;
+        return;
+      }
+      // Warn if name not recognised (could be typo)
+      if (!match) {
+        errEl.innerHTML = `<span style="color:var(--accent2);">⚠ Name not found in investor records — please check spelling. Contact the fund manager if you believe this is an error.</span>`;
+        // Don't block — they might just have a different name format — just warn
+      }
+    }
+  }
+
   const amtFormatted = '$' + fmtM(amount);
   const typeLabel    = dwType === 'deposit' ? 'Deposit' : 'Withdrawal';
   const timestamp    = new Date().toLocaleString('en-GB');
+  const investorEmail = (document.getElementById('dw-email')?.value || '').trim();
 
-  // Build email message
+  // Build fund manager notification message
   const message = dwType === 'deposit'
-    ? `New deposit request received.\n\nInvestor: ${name}\nAmount: ${amtFormatted}\nNote: ${note||'—'}\nTime: ${timestamp}`
-    : `New withdrawal request received.\n\nInvestor: ${name}\nAmount: ${amtFormatted}\nNote: ${note||'—'}\nTime: ${timestamp}\n\nIMPORTANT: Verify investor lockup status before processing.`;
+    ? `New deposit request received.\n\nInvestor: ${name}\nEmail: ${investorEmail||'not provided'}\nAmount: ${amtFormatted}\nNote: ${note||'—'}\nTime: ${timestamp}`
+    : `New withdrawal request received.\n\nInvestor: ${name}\nEmail: ${investorEmail||'not provided'}\nAmount: ${amtFormatted}\nNote: ${note||'—'}\nTime: ${timestamp}\n\nIMPORTANT: Verify investor lockup status before processing.`;
+
+  // Build investor confirmation message
+  const investorMessage = dwType === 'deposit'
+    ? `Hi ${name},\n\nYour deposit request of ${amtFormatted} has been received by Black-Sky Capital.\n\nThe fund manager will be in touch shortly with payment instructions.\n\nReference: ${timestamp}\n\n— Black-Sky Capital Team`
+    : `Hi ${name},\n\nYour withdrawal request of ${amtFormatted} has been received by Black-Sky Capital.\n\nYour request is under review. You will be contacted once processing is complete. Please note only unlocked funds are eligible.\n\nReference: ${timestamp}\n\n— Black-Sky Capital Team`;
 
   // Show loading state
   const submitBtn = document.querySelector('#dw-step-2 .modal-btn');
@@ -6560,26 +6772,50 @@ async function submitDWRequest() {
   submitBtn.disabled = true;
 
   try {
-    // Init EmailJS (safe to call multiple times)
     emailjs.init(EMAILJS_PUBLIC_KEY);
 
+    // ── 1. Notify fund manager ──
     await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
       type:           typeLabel,
       investor_name:  name,
+      investor_email: investorEmail || 'not provided',
       amount:         amtFormatted,
       note:           note || '—',
       timestamp:      timestamp,
       message:        message,
-      reply_to:       'kfcstaffco@gmail.com',
+      reply_to:       investorEmail || 'kfcstaffco@gmail.com',
     });
 
+    // ── 2. Send investor confirmation if email provided ──
+    if (investorEmail && investorEmail.includes('@')) {
+      try {
+        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+          type:           typeLabel + ' Confirmation',
+          investor_name:  name,
+          investor_email: investorEmail,
+          amount:         amtFormatted,
+          note:           note || '—',
+          timestamp:      timestamp,
+          message:        investorMessage,
+          reply_to:       'kfcstaffco@gmail.com',
+        });
+      } catch(confErr) {
+        console.warn('Investor confirmation email failed:', confErr);
+        // Non-fatal — fund manager was still notified
+      }
+    }
+
     // Success
+    const emailNote = investorEmail && investorEmail.includes('@')
+      ? `<br><br><span style="color:var(--green);font-size:11px;">✓ A confirmation has been sent to ${investorEmail}</span>`
+      : '';
+
     dwGoStep(3);
-    document.getElementById('dw-success-icon').textContent  = dwType==='deposit' ? '✓' : '✓';
+    document.getElementById('dw-success-icon').textContent  = '✓';
     document.getElementById('dw-success-title').textContent = typeLabel + ' Request Submitted';
     document.getElementById('dw-success-msg').innerHTML     = dwType === 'deposit'
-      ? `Thank you, <strong>${name}</strong>! Your deposit request of <strong>${amtFormatted}</strong> has been received.<br><br>The fund manager will review your request and reach out to you shortly with payment instructions.<br><br><span style="color:var(--muted);">— Black-Sky Capital Team</span>`
-      : `Thank you, <strong>${name}</strong>. Your withdrawal request of <strong>${amtFormatted}</strong> has been submitted.<br><br>Please note that only unlocked funds are eligible for withdrawal. Processing delays may be expected. You will be contacted once your request is reviewed.<br><br><span style="color:var(--muted);">— Black-Sky Capital Team</span>`;
+      ? `Thank you, <strong>${name}</strong>! Your deposit request of <strong>${amtFormatted}</strong> has been received.<br><br>The fund manager will review your request and reach out to you shortly with payment instructions.${emailNote}<br><br><span style="color:var(--muted);">— Black-Sky Capital Team</span>`
+      : `Thank you, <strong>${name}</strong>. Your withdrawal request of <strong>${amtFormatted}</strong> has been submitted.<br><br>Only unlocked funds are eligible. You will be contacted once your request is reviewed.${emailNote}<br><br><span style="color:var(--muted);">— Black-Sky Capital Team</span>`;
 
   } catch(err) {
     console.error('EmailJS error:', err);
